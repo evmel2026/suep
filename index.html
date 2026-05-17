@@ -2505,7 +2505,21 @@ function restoreOriginalPwd(usuario){
     var SB_URL = 'https://xvgbnkzcflyzykwbxxfb.supabase.co';
     var SB_KEY = 'sb_publishable_MNs7qJThiHXuYGTOS7Oz0g_5xhY0Bbp';
     var clienteS = supabase.createClient(SB_URL, SB_KEY);
-
+const canal = supabase
+  .channel('realtime-novedades')
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'novedades'
+    },
+    (payload) => {
+      console.log('Cambio en novedades:', payload);
+      cargarNovedades();
+    }
+  )
+  .subscribe();
     // 1 y 3. FUNCIÓN PARA CARGAR TODO Y VER CONTENIDO
     async function cargarDatosSincronizados() {
         console.log("Sincronizando con Supabase...");
