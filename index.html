@@ -1981,6 +1981,8 @@ function buildForm(data){
             <input type="file" accept="image/*" class="fi" id="f_${f.key}"
               onchange="loadImg(this,'${f.key}')"
               style="padding:8px;cursor:pointer">
+            <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">📸 La imagen se optimiza automáticamente para ahorrar espacio</small>
+            <div id="info_${f.key}" style="display:none;margin-top:6px;font-size:11px;color:#34d399;font-weight:500"></div>
             ${data[f.key]
               ?`<div style="margin-top:10px;position:relative;display:inline-block">
                   <img src="${data[f.key]||''}" style="max-width:100%;max-height:220px;border-radius:10px;border:1px solid rgba(122,175,212,.2);display:block" id="prev_${f.key}">
@@ -1998,7 +2000,7 @@ function buildForm(data){
   const attHTML = `
     <div class="form-field att-section">
       <label>📎 Archivos adjuntos <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#7aafd4">(opcional)</span></label>
-      <small>PDF, Excel o imágenes — hasta 2 MB por archivo</small>
+      <small>PDF y Excel hasta 2 MB. Las imágenes se comprimen automáticamente, podés subirlas a cualquier tamaño.</small>
       <input type="file" class="fi att-input" id="f_attach"
         accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg,.webp,image/*,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         multiple onchange="addAttachments(this)">
@@ -2011,44 +2013,71 @@ function buildForm(data){
 
 function loadImg(input, key){
   const file = input.files[0];
-  if(!file) return;
-  // Comprimir si es muy grande
+  if(!input || !file) return;
+  // Solo aceptar imágenes
+  if(!file.type.startsWith('image/')){
+    alert('Solo se pueden cargar imágenes (JPG, PNG, etc.).');
+    input.value = '';
+    return;
+  }
+  const sizeOrigKB = (file.size/1024).toFixed(0);
+  // Comprimimos siempre, no importa el tamaño original
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
+    img.onerror = () => alert('No se pudo leer la imagen. Probá con otra.');
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const maxW = 1200, maxH = 1200;
+      // Tamaño máximo más chico: 1024px de ancho/alto. Más que suficiente para horarios y diagramas
+      const maxW = 1024, maxH = 1024;
       let w = img.width, h = img.height;
       if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
       if(h > maxH){ w = Math.round(w * maxH / h); h = maxH; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      // Calidad 75% — visualmente prácticamente igual pero archivo mucho más liviano
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
       tempImgs[key] = compressed;
       const prev = document.getElementById(`prev_${key}`);
       if(prev){ prev.src = compressed; prev.style.display = 'block'; }
+      // Mostrar info de compresión al lado de la previsualización
+      const sizeFinalKB = Math.round((compressed.length * 0.75) / 1024); // aprox tras decodear base64
+      const info = document.getElementById(`info_${key}`);
+      if(info){
+        info.textContent = `✓ Imagen optimizada: ${sizeOrigKB} KB → ${sizeFinalKB} KB`;
+        info.style.display = 'block';
+      }
     };
     img.src = e.target.result;
   };
+  reader.onerror = () => alert('No se pudo leer el archivo.');
   reader.readAsDataURL(file);
 }
 
 // ══════════════════════════════════════════════
 // ARCHIVOS ADJUNTOS (PDF, Excel, imágenes) — universal
 // ══════════════════════════════════════════════
-const ATT_MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+const ATT_MAX_SIZE = 2 * 1024 * 1024; // 2 MB — solo aplica a NO imágenes (PDF, Excel, etc.)
+const ATT_MAX_SIZE_IMG_COMPRESSED = 1.5 * 1024 * 1024; // 1.5 MB — tope para una imagen YA comprimida (raro que pase)
 
 async function addAttachments(input){
   const files = Array.from(input.files || []);
   input.value = ''; // permitir re-subir el mismo archivo si fue removido
   for(const file of files){
-    if(file.size > ATT_MAX_SIZE){
-      alert(`"${file.name}" supera 2 MB (${(file.size/1024/1024).toFixed(1)} MB). No se puede adjuntar.`);
+    const isImage = file.type.startsWith('image/');
+    // Para NO imágenes (PDF, Excel, etc.) chequeamos antes el tamaño original
+    if(!isImage && file.size > ATT_MAX_SIZE){
+      alert(`"${file.name}" supera 2 MB (${(file.size/1024/1024).toFixed(1)} MB).\n\nPara PDF y Excel grandes, comprimilos antes de subirlos.`);
       continue;
     }
     try {
       const att = await processAttachment(file);
+      // Si es imagen comprimida y sigue siendo grande (cosa muy rara), avisar
+      if(isImage && att.size > ATT_MAX_SIZE_IMG_COMPRESSED){
+        if(!confirm(`La imagen "${file.name}" pesa ${fmtSize(att.size)} incluso después de comprimirla. ¿Adjuntar igual?`)){
+          continue;
+        }
+      }
       tempAttachments.push(att);
       renderAttList();
     } catch(err){
@@ -2063,29 +2092,32 @@ function processAttachment(file){
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
     reader.onload = e => {
-      // Comprimir imágenes para ahorrar espacio
+      // Comprimir imágenes para ahorrar espacio y datos móviles
       if(file.type.startsWith('image/')){
         const img = new Image();
         img.onerror = () => reject(new Error('Imagen inválida'));
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxW = 1400, maxH = 1400;
+          // Tope más bajo: 1024px máximo y calidad 75% — visualmente igual, archivo mucho más liviano
+          const maxW = 1024, maxH = 1024;
           let w = img.width, h = img.height;
           if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
           if(h > maxH){ w = Math.round(w * maxH / h); h = maxH; }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          const compressed = canvas.toDataURL('image/jpeg', 0.75);
+          // Tamaño aprox del archivo: el base64 ocupa ~33% más que el binario real
+          const realSize = Math.round(compressed.length * 0.75);
           resolve({
-            name: file.name,
+            name: file.name.replace(/\.[a-z]+$/i, '') + '.jpg',
             type: 'image/jpeg',
-            size: compressed.length,
+            size: realSize,
             data: compressed
           });
         };
         img.src = e.target.result;
       } else {
-        // PDF, Excel y otros se guardan tal cual
+        // PDF, Excel y otros se guardan tal cual (ya están comprimidos por su formato)
         resolve({
           name: file.name,
           type: file.type || 'application/octet-stream',
@@ -2760,3 +2792,4 @@ async function descargarExcel(){
 </script>
 </body>
 </html>
+
