@@ -1135,7 +1135,7 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', modules:[
+  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', universal:true, modules:[
     { id:'MINUTAS_MOD', name:'Minutas', fields:[
       {key:'fecha',      label:'Fecha',                             type:'date',     req:true},
       {key:'hora',       label:'Hora',                             type:'time'},
@@ -1146,7 +1146,7 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'NOVEDADES', name:'Novedades', icon:'📢', color:'#6d28d9', bg:'#ede9fe', modules:[
+  { id:'NOVEDADES', name:'Novedades', icon:'📢', color:'#6d28d9', bg:'#ede9fe', universal:true, modules:[
     { id:'NOVEDADES_MOD', name:'Novedades', fields:[
       {key:'fecha',       label:'Fecha',        type:'date',     req:true},
       {key:'sector',      label:'Sector',       type:'text',     req:true},
@@ -1323,6 +1323,7 @@ function newNotif(sId,mId,rec){
   const sec=SECTORS.find(s=>s.id===sId), mod=sec?.modules.find(m=>m.id===mId);
   const notifs=S.gn();
   notifs.unshift({id:Date.now().toString(),
+    secId:sId, modId:mId, rId:rec._id,
     txt:`<strong>${rec._por}</strong> cargó un nuevo registro en <strong>${mod?.name||mId}</strong>`,
     sec:sec?.name||sId, icon:sec?.icon||'📌',
     time:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
@@ -1341,7 +1342,7 @@ function renderNotifs(){
   const el=document.getElementById('notifList');
   if(!notifs.length){el.innerHTML='<div class="notif-empty">Sin notificaciones aún</div>';return;}
   el.innerHTML=notifs.map(n=>`
-    <div class="notif-item ${n.leida?'':'unread'}" onclick="readN('${n.id}')">
+    <div class="notif-item ${n.leida?'':'unread'}" onclick="notifGo('${n.id}')">
       <div class="n-dot ${n.leida?'read':''}"></div>
       <div><div class="n-text">${n.icon} ${n.txt} <span style="color:#4a6a88;font-size:10px">[${n.sec}]</span></div>
       <div class="n-time">${n.time}</div></div>
@@ -1350,6 +1351,56 @@ function renderNotifs(){
 function readN(id){
   S.sn(S.gn().map(n=>n.id===id?{...n,leida:true}:n));
   refreshBadge(); renderNotifs();
+}
+// Al clickear una notificación: marca como leída, cierra el panel y navega al sector/módulo
+function notifGo(id){
+  const notifs = S.gn();
+  const n = notifs.find(x=>x.id===id);
+  if(!n){ return; }
+  // Marcar como leída
+  S.sn(notifs.map(x=>x.id===id?{...x,leida:true}:x));
+  refreshBadge();
+  // Cerrar el panel de notificaciones
+  ntOpen=false;
+  document.getElementById('notifPanel').classList.remove('show');
+  // Si la notificación tiene IDs de sector/módulo, navegar
+  if(n.secId){
+    const sec = SECTORS.find(s=>s.id===n.secId);
+    if(!sec){
+      alert('El sector de esta notificación ya no existe.');
+      return;
+    }
+    // Verificar que el usuario actual tiene acceso a ese sector
+    const veTodo = CU.permiso==='admin' || CU.permiso==='visor' || CU.permiso==='cargar-global';
+    const puedeVer = veTodo || sec.universal || sec.custom || (CU.sectores||[]).includes(n.secId);
+    if(!puedeVer){
+      alert('No tenés permiso para ver este sector.');
+      return;
+    }
+    // Cerrar sidebar móvil si estaba abierto
+    if(typeof closeSidebar==='function') closeSidebar();
+    selectSector(n.secId);
+    // Si la notificación apunta a un módulo específico (sub-pestaña), seleccionarlo
+    if(n.modId && sec.modules){
+      // Buscar en modules y en subTabs
+      let targetMod = sec.modules.find(m=>m.id===n.modId);
+      if(!targetMod){
+        for(const m of sec.modules){
+          if(m.subTabs){
+            const sub = m.subTabs.find(st=>st.id===n.modId);
+            if(sub){ targetMod = sub; break; }
+          }
+        }
+      }
+      if(targetMod){
+        CM = targetMod;
+        setTimeout(()=>renderTable(), 100);
+      }
+    }
+  } else {
+    // Notificación vieja sin IDs: solo refrescamos la lista
+    renderNotifs();
+  }
 }
 function markAllRead(){
   S.sn(S.gn().map(n=>({...n,leida:true})));
@@ -1600,10 +1651,14 @@ function renderTable(searchOverride){
     return;
   }
   const cols=fields.filter(f=>f.type!=='textarea').slice(0,5);
+  // Detectamos los campos textarea para mostrarlos como detalle expandible debajo del título
+  const textAreas = fields.filter(f=>f.type==='textarea');
   const showRows = (CS.id==='RECLUTAMIENTO') ? filteredRows : rows;
   // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos
   const hasAnyAtt = rows.some(r => r._attachments && r._attachments.length);
   const showActions = canEdit || hasAnyAtt;
+  // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
+  const colSpan = cols.length + 2 + (showActions ? 1 : 0);
   area.innerHTML=`${orgToggleBar}${CS.id==='RECLUTAMIENTO'?`<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px"><div style="position:relative;flex:1;max-width:380px"><span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span><input id="recluSearch" class="fi" type="text" placeholder="Buscar por DNI o apellido y nombre..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}"></div><span style="font-size:12px;color:#7aafd4">${filteredRows.length} de ${rows.length} postulante${rows.length!==1?'s':''}</span></div>`:''}<div class="rec-count" style="${CS.id==='RECLUTAMIENTO'?'display:none':''}">${rows.length} registro${rows.length!==1?'s':''}</div>
     <div class="data-wrap fade-in">
     <table class="data-table">
@@ -1615,6 +1670,11 @@ function renderTable(searchOverride){
       <tbody>
         ${showRows.map(r=>{
           const nAtt = (r._attachments && r._attachments.length) || 0;
+          // Armamos el detalle (textareas con contenido) que va debajo del registro
+          const detail = textAreas
+            .filter(f => r[f.key] && String(r[f.key]).trim())
+            .map(f => `<div style="margin:4px 0;padding:8px 10px;background:rgba(122,175,212,.08);border-left:3px solid ${CS.color||'#7aafd4'};border-radius:6px;font-size:12px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word"><strong style="color:#7aafd4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">${f.label}</strong>${String(r[f.key]).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`)
+            .join('');
           return `<tr>
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
           <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
@@ -1624,7 +1684,8 @@ function renderTable(searchOverride){
             ${canEdit?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
             <button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
           </div></td>`:''}
-        </tr>`;
+        </tr>
+        ${detail?`<tr class="detail-row"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
         }).join('')}
       </tbody>
     </table></div>`;
@@ -2502,67 +2563,200 @@ function restoreOriginalPwd(usuario){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    var SB_URL = 'https://xvgbnkzcflyzykwbxxfb.supabase.co';
-    var SB_KEY = 'sb_publishable_MNs7qJThiHXuYGTOS7Oz0g_5xhY0Bbp';
-    var clienteS = supabase.createClient(SB_URL, SB_KEY);
-const canal = supabase
-  .channel('realtime-novedades')
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'novedades'
-    },
-    (payload) => {
-      console.log('Cambio en novedades:', payload);
-      cargarNovedades();
+// ═══════════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN MULTI-DISPOSITIVO CON SUPABASE
+// ═══════════════════════════════════════════════════════════════════
+// Mantiene localStorage como caché local y usa Supabase como fuente de
+// verdad compartida entre todos los dispositivos. Al guardar/editar/
+// borrar, escribe a localStorage Y a Supabase. La suscripción realtime
+// recibe los cambios de otros dispositivos y actualiza la pantalla.
+// ═══════════════════════════════════════════════════════════════════
+
+var SB_URL = 'https://xvgbnkzcflyzykwbxxfb.supabase.co';
+var SB_KEY = 'sb_publishable_MNs7qJThiHXuYGTOS7Oz0g_5xhY0Bbp';
+var clienteS = supabase.createClient(SB_URL, SB_KEY);
+
+// ─── ID único de este dispositivo (para ignorar nuestros propios cambios) ───
+if(!localStorage.getItem('suep_device_id')){
+  localStorage.setItem('suep_device_id', Date.now().toString(36)+Math.random().toString(36).slice(2));
+}
+var DEVICE_ID = localStorage.getItem('suep_device_id');
+
+// ─── Indicador de sincronización en pantalla ───
+function syncStatus(msg, color){
+  let el = document.getElementById('syncStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'syncStatus';
+    el.style.cssText = 'position:fixed;bottom:14px;right:14px;background:rgba(13,22,35,.92);color:#7aafd4;padding:8px 14px;border-radius:20px;font-size:11px;letter-spacing:.5px;z-index:9999;border:1px solid rgba(122,175,212,.3);font-family:Inter,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.4);transition:opacity .3s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  if(color) el.style.color = color;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.opacity = '0.35'; }, 2500);
+}
+
+// ─── Sobreescribimos S (storage) para que también escriba en Supabase ───
+// Guardamos referencias originales que solo escriben en localStorage
+var _S_set_local = function(s,m,d){ localStorage.setItem(S.key(s,m), JSON.stringify(d)); };
+var _S_sn_local  = function(n){ localStorage.setItem('suep_notifs', JSON.stringify(n)); };
+
+// Reemplazamos los setters de S para que sincronicen a Supabase
+var _origSet = S.set;
+var _origSn  = S.sn;
+
+S.set = function(s, m, d){
+  _S_set_local(s, m, d);
+  // Sincronizar a Supabase (en segundo plano, sin bloquear)
+  syncToSupabase(S.key(s,m), d);
+};
+S.sn = function(n){
+  _S_sn_local(n);
+  syncToSupabase('suep_notifs', n);
+};
+
+// ─── Escribir una clave a Supabase ───
+var _pendingWrites = {};
+var _writeDebounce = null;
+function syncToSupabase(key, value){
+  // Acumulamos escrituras en una ventana corta para mandarlas juntas
+  _pendingWrites[key] = value;
+  clearTimeout(_writeDebounce);
+  _writeDebounce = setTimeout(flushWrites, 350);
+}
+async function flushWrites(){
+  const writes = _pendingWrites;
+  _pendingWrites = {};
+  const keys = Object.keys(writes);
+  if(!keys.length) return;
+  syncStatus('☁️ Sincronizando...', '#fbbf24');
+  try{
+    const rows = keys.map(k => ({
+      key: k,
+      value: writes[k],
+      device_id: DEVICE_ID,
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await clienteS.from('app_data').upsert(rows, { onConflict: 'key' });
+    if(error){
+      console.error('Error subiendo a Supabase:', error);
+      syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+    } else {
+      syncStatus('✓ Sincronizado', '#34d399');
     }
-  )
-  .subscribe();
-    // 1 y 3. FUNCIÓN PARA CARGAR TODO Y VER CONTENIDO
-    async function cargarDatosSincronizados() {
-        console.log("Sincronizando con Supabase...");
-        const { data, error } = await clienteS.from('novedades').select('*').order('fecha', { ascending: false });
-        
-        if (data) {
-            const contenedor = document.getElementById('news-list') || document.querySelector('.novedades-container');
-            if (contenedor) {
-                contenedor.innerHTML = data.map(n => `
-                    <div style="background:white; color:black; padding:15px; margin:10px; border-radius:10px; border-left:5px solid #08111f; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        <small>${new Date(n.fecha).toLocaleString()} - Por: ${n.usuario}</small>
-                        <p style="font-weight:bold; margin:5px 0;">Sector: ${n.sector || 'General'}</p>
-                        <div style="background:#f1f1f1; padding:10px; border-radius:5px; font-size:15px; color:#000;">
-                            ${n.texto}
-                        </div>
-                    </div>
-                `).join('');
+  }catch(err){
+    console.error('Error de red al sincronizar:', err);
+    syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+  }
+}
+
+// ─── Bajar TODO desde Supabase y reemplazar el localStorage local ───
+async function pullAllFromSupabase(){
+  syncStatus('☁️ Descargando datos...', '#fbbf24');
+  try{
+    const { data, error } = await clienteS.from('app_data').select('key,value,updated_at');
+    if(error){
+      console.error('Error bajando de Supabase:', error);
+      syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
+      return false;
+    }
+    if(data && data.length){
+      data.forEach(row => {
+        try{
+          localStorage.setItem(row.key, JSON.stringify(row.value));
+        }catch(e){
+          console.warn('No se pudo guardar', row.key, e);
+        }
+      });
+    }
+    syncStatus('✓ Datos al día ('+(data?.length||0)+' claves)', '#34d399');
+    return true;
+  }catch(err){
+    console.error('Error de red al descargar:', err);
+    syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
+    return false;
+  }
+}
+
+// ─── Suscribirse a cambios remotos ───
+function subscribeRealtime(){
+  clienteS
+    .channel('app_data_changes')
+    .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'app_data' },
+        (payload) => {
+          const row = payload.new || payload.old;
+          if(!row) return;
+          // Ignorar nuestras propias escrituras (vienen del mismo dispositivo)
+          if(payload.new && payload.new.device_id === DEVICE_ID) return;
+          if(payload.eventType === 'DELETE'){
+            localStorage.removeItem(row.key);
+          } else {
+            try{
+              localStorage.setItem(row.key, JSON.stringify(row.value));
+            }catch(e){
+              console.warn('No se pudo aplicar cambio remoto', row.key, e);
+              return;
             }
+          }
+          // Si la clave que cambió es del sector/módulo que estoy mirando, refrescar tabla
+          if(row.key === 'suep_notifs'){
+            refreshBadge();
+            if(typeof ntOpen !== 'undefined' && ntOpen) renderNotifs();
+          } else if(CS && CM && row.key === S.key(CS.id, CM.id)){
+            renderTable();
+          }
+          syncStatus('🔄 Actualizado desde otro dispositivo', '#7aafd4');
         }
+    )
+    .subscribe();
+}
+
+// ─── Engancharse al login para sincronizar al entrar ───
+var _origDoLogin = doLogin;
+window.doLogin = function(){
+  _origDoLogin();
+  // Esperamos un poco a que doLogin (que tiene un setTimeout interno) termine
+  setTimeout(async ()=>{
+    if(!CU) return; // login falló
+    const ok = await pullAllFromSupabase();
+    if(ok){
+      // Refrescar la pantalla con los datos recién bajados
+      if(typeof buildSidebar==='function') buildSidebar();
+      if(typeof refreshBadge==='function') refreshBadge();
+      if(CS && CM && typeof renderTable==='function') renderTable();
     }
+    subscribeRealtime();
+  }, 600);
+};
 
-    // 2. FUNCIÓN PARA DESCARGAR EXCEL
-    async function descargarExcel() {
-        const { data, error } = await clienteS.from('novedades').select('*');
-        if (data) {
-            const hoja = XLSX.utils.json_to_sheet(data);
-            const libro = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(libro, hoja, "Novedades");
-            XLSX.writeFile(libro, "Reporte_SUEP.xlsx");
-        } else {
-            alert("No hay datos para exportar");
-        }
+// ─── Función para refrescar manualmente desde Supabase ───
+window.recargarDesdeNube = async function(){
+  const ok = await pullAllFromSupabase();
+  if(ok){
+    if(typeof buildSidebar==='function') buildSidebar();
+    if(typeof refreshBadge==='function') refreshBadge();
+    if(CS && CM && typeof renderTable==='function') renderTable();
+    alert('✅ Datos actualizados desde la nube.');
+  } else {
+    alert('⚠️ No se pudo conectar con la nube. Estás trabajando con la copia local.');
+  }
+};
+
+// ─── Función para descargar Excel (mantengo la original) ───
+async function descargarExcel(){
+    const { data, error } = await clienteS.from('app_data').select('*');
+    if(data && data.length){
+        const hoja = XLSX.utils.json_to_sheet(data);
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, "Datos");
+        XLSX.writeFile(libro, "Reporte_SUEP.xlsx");
+    } else {
+        alert("No hay datos para exportar");
     }
-
-    // Vinculamos el botón de Excel que ya tenés en tu HTML
-    document.addEventListener('click', function(e) {
-        if (e.target.innerText.toLowerCase().includes('excel')) {
-            descargarExcel();
-        }
-    });
-
-    // IMPORTANTE: Solo cargar cuando el usuario ya entró
-    // Agregá 'cargarDatosSincronizados()' dentro de tu función de Login exitoso.
+}
 </script>
 </body>
 </html>
