@@ -1675,17 +1675,17 @@ function renderTable(searchOverride){
             .filter(f => r[f.key] && String(r[f.key]).trim())
             .map(f => `<div style="margin:4px 0;padding:8px 10px;background:rgba(122,175,212,.08);border-left:3px solid ${CS.color||'#7aafd4'};border-radius:6px;font-size:12px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word"><strong style="color:#7aafd4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">${f.label}</strong>${String(r[f.key]).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`)
             .join('');
-          return `<tr>
+          return `<tr class="clickable-row" onclick="viewDetail('${r._id}')" style="cursor:pointer" title="Tocá para ver el detalle completo">
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
           <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
           <td style="font-size:11px;color:#4a6a88;white-space:nowrap">${r._ts||'—'}</td>
-          ${showActions?`<td><div class="row-acts">
+          ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
             ${nAtt?`<button class="att-badge" onclick="viewAttachments('${r._id}')" title="Ver ${nAtt} archivo${nAtt>1?'s':''} adjunto${nAtt>1?'s':''}">📎 ${nAtt}</button>`:''}
             ${canEdit?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
             <button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
           </div></td>`:''}
         </tr>
-        ${detail?`<tr class="detail-row"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
+        ${detail?`<tr class="detail-row clickable-row" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
         }).join('')}
       </tbody>
     </table></div>`;
@@ -1927,6 +1927,41 @@ function openEdit(id){
   buildForm(r);
   document.getElementById('modalOverlay').style.display='flex';
 }
+// Desbloquea/bloquea el campo auto-correlativo para edición manual
+function toggleAutoField(key){
+  const input = document.getElementById('f_'+key);
+  const btn = document.getElementById('btn_edit_'+key);
+  const hint = document.getElementById('hint_'+key);
+  if(!input) return;
+  const isLocked = input.hasAttribute('readonly');
+  if(isLocked){
+    // Desbloquear para editar
+    input.removeAttribute('readonly');
+    input.style.background = 'rgba(255,255,255,.09)';
+    input.style.color = '#fff';
+    input.style.cursor = 'text';
+    btn.style.background = 'rgba(248,113,113,.18)';
+    btn.style.borderColor = 'rgba(248,113,113,.4)';
+    btn.style.color = '#f87171';
+    btn.textContent = '🔒';
+    btn.title = 'Bloquear y restaurar número original';
+    if(hint) hint.innerHTML = '<span style="color:#fbbf24">⚠️ Modo edición manual — revisá que el número no esté repetido</span>';
+    input.focus();
+    input.select();
+  } else {
+    // Bloquear nuevamente
+    input.setAttribute('readonly','');
+    input.style.background = 'rgba(122,175,212,.08)';
+    input.style.color = '#9ab4d0';
+    input.style.cursor = 'not-allowed';
+    btn.style.background = 'rgba(122,175,212,.12)';
+    btn.style.borderColor = 'rgba(122,175,212,.3)';
+    btn.style.color = '#7aafd4';
+    btn.textContent = '✏️';
+    btn.title = 'Editar manualmente el número';
+    if(hint) hint.textContent = 'Tocá ✏️ para editar el número manualmente';
+  }
+}
 function getNextAutoValue(field){
   // Calcular próximo número correlativo según el tipo
   const rows = S.get(CS.id, CM.id);
@@ -1950,16 +1985,21 @@ function buildForm(data){
   // Inicializar adjuntos desde el registro (si está editando) o vacío
   tempAttachments = (data && data._attachments) ? [...data._attachments] : [];
   const formHTML = CM.fields.map(f=>{
-    // Campo auto-correlativo: readonly con próximo número
+    // Campo auto-correlativo: readonly con próximo número (con lápiz para editar manualmente)
     if(f.auto){
       const val = data[f.key] || getNextAutoValue(f);
       const isNew = !editId;
       return `
     <div class="form-field">
       <label>${f.label}${f.req?' *':''}</label>
-      <input class="fi" type="text" id="f_${f.key}" value="${val}" readonly
-        style="background:rgba(122,175,212,.08);color:#9ab4d0;cursor:not-allowed;font-weight:700">
-      ${isNew?`<small style="color:#5a7a9a;font-size:10px;display:block;margin-top:4px">Asignado automáticamente · correlativo anual</small>`:''}
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <input class="fi" type="text" id="f_${f.key}" value="${val}" readonly
+          style="background:rgba(122,175,212,.08);color:#9ab4d0;cursor:not-allowed;font-weight:700;flex:1">
+        <button type="button" id="btn_edit_${f.key}" onclick="toggleAutoField('${f.key}')"
+          style="padding:0 14px;border-radius:11px;border:1px solid rgba(122,175,212,.3);background:rgba(122,175,212,.12);color:#7aafd4;cursor:pointer;font-size:16px;flex-shrink:0;transition:all .15s"
+          title="Editar manualmente el número">✏️</button>
+      </div>
+      <small id="hint_${f.key}" style="color:#5a7a9a;font-size:10px;display:block;margin-top:4px">${isNew?'Asignado automáticamente · correlativo anual · tocá ✏️ para editarlo manualmente':'Tocá ✏️ para editar el número manualmente'}</small>
     </div>`;
     }
     return `
@@ -2199,6 +2239,93 @@ function downloadAttachment(a){
   document.body.appendChild(link);
   link.click();
   setTimeout(() => link.remove(), 100);
+}
+
+// Ver el detalle COMPLETO de un registro (todos los campos sin truncar)
+function viewDetail(recordId){
+  const r = S.get(CS.id, CM.id).find(x => x._id === recordId);
+  if(!r) return;
+  const fields = CM.fields;
+  const accent = CS.color || '#7aafd4';
+
+  // Construir el contenido del detalle: todos los campos, sin recortar
+  const escape = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const rows = fields.map(f => {
+    const v = r[f.key];
+    let display;
+    if(v === undefined || v === null || v === ''){
+      display = '<span style="color:#5a7a9a;font-style:italic">— sin dato —</span>';
+    } else if(f.type === 'image'){
+      display = `<img src="${v}" style="max-width:100%;max-height:280px;border-radius:10px;border:1px solid rgba(122,175,212,.2);display:block;margin-top:4px;cursor:zoom-in" onclick="viewImg('${v}')">`;
+    } else if(f.type === 'textarea'){
+      display = `<div style="white-space:pre-wrap;word-break:break-word;line-height:1.5;color:#dbe6f0">${escape(v)}</div>`;
+    } else {
+      display = `<div style="word-break:break-word;color:#dbe6f0">${escape(v)}</div>`;
+    }
+    return `
+      <div style="padding:11px 13px;background:rgba(122,175,212,.05);border-left:3px solid ${accent};border-radius:8px;margin-bottom:8px">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${accent};margin-bottom:5px">${f.label}</div>
+        <div style="font-size:13.5px">${display}</div>
+      </div>`;
+  }).join('');
+
+  // Adjuntos (si tiene)
+  const nAtt = (r._attachments && r._attachments.length) || 0;
+  const attBlock = nAtt ? `
+    <div style="padding:11px 13px;background:rgba(251,191,36,.08);border-left:3px solid #fbbf24;border-radius:8px;margin-bottom:8px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fbbf24;margin-bottom:8px">📎 Archivos adjuntos (${nAtt})</div>
+      <button type="button" onclick="event.stopPropagation();document.querySelector('[data-detail-ov]').remove();viewAttachments('${r._id}')" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.12);color:#fbbf24;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit">Ver ${nAtt} archivo${nAtt>1?'s':''}</button>
+    </div>` : '';
+
+  // Metadatos
+  const meta = `
+    <div style="margin-top:12px;padding:10px 13px;background:rgba(13,22,35,.6);border-radius:8px;font-size:11.5px;color:#7aafd4;display:flex;flex-wrap:wrap;gap:12px;border:1px dashed rgba(122,175,212,.18)">
+      <div><strong style="color:#9ab4d0">Cargado por:</strong> ${escape(r._por || '—')}</div>
+      <div><strong style="color:#9ab4d0">Fecha:</strong> ${escape(r._ts || '—')}</div>
+      ${r._editPor ? `<div><strong style="color:#9ab4d0">Editado por:</strong> ${escape(r._editPor)}</div>` : ''}
+      ${r._editTs ? `<div><strong style="color:#9ab4d0">Última edición:</strong> ${escape(r._editTs)}</div>` : ''}
+    </div>`;
+
+  // Botones de acción (si tiene permisos)
+  const canEdit = CU.permiso === 'admin';
+  const actionBtns = canEdit ? `
+    <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,175,212,.15)">
+      <button type="button" onclick="document.querySelector('[data-detail-ov]').remove();openEdit('${r._id}')" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,${accent},${dk(accent)});color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">✏️ Editar</button>
+      <button type="button" onclick="document.querySelector('[data-detail-ov]').remove();delRec('${r._id}')" style="padding:11px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">🗑️</button>
+    </div>` : '';
+
+  // Crear overlay
+  const ov = document.createElement('div');
+  ov.setAttribute('data-detail-ov','1');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .18s ease';
+  ov.onclick = e => { if(e.target === ov) ov.remove(); };
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#0d1928;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border:1px solid rgba(122,175,212,.2);border-bottom:none;animation:slideUp .26s ease';
+  if(window.matchMedia('(min-width:600px)').matches){
+    box.style.borderRadius = '20px';
+    box.style.borderBottom = '1px solid rgba(122,175,212,.2)';
+    ov.style.alignItems = 'center';
+    ov.style.padding = '20px';
+  }
+
+  box.innerHTML = `
+    <div style="position:sticky;top:0;background:#0d1928;padding:16px 20px 12px;border-bottom:1px solid rgba(122,175,212,.15);display:flex;align-items:center;justify-content:space-between;z-index:2">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:11px;color:${accent};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px">${CS.icon||''} ${escape(CS.name)}</div>
+        <div style="font-size:16px;font-weight:700;color:#dbe6f0">Detalle del registro</div>
+      </div>
+      <button type="button" onclick="this.closest('[data-detail-ov]').remove()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(122,175,212,.25);background:rgba(122,175,212,.08);color:#9ab4d0;cursor:pointer;font-size:14px;font-family:inherit;flex-shrink:0;margin-left:10px">✕</button>
+    </div>
+    <div style="padding:16px 20px 20px">
+      ${rows}
+      ${attBlock}
+      ${meta}
+      ${actionBtns}
+    </div>`;
+
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 
 // Ver los adjuntos de un registro existente (desde la tabla)
