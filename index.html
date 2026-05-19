@@ -664,13 +664,13 @@ const USERS = [
   { usuario:'melina.lafuente', password:'lafuente2026', permiso:'admin', sectores:[], nombre:'Melina Ailén La Fuente', rol:'Administradora' },
 
   // ─── Encargados de sector (solo agregan en su sector) ───
-  { usuario:'elias.munoz', password:'munoz2026', permiso:'cargar', sectores:['OPERACIONAL'], nombre:'Elías Miguel Muñoz', rol:'Jefe Secretaría Operacional' },
+  { usuario:'elias.munoz', password:'munoz2026', permiso:'cargar-global', sectores:[], nombre:'Elías Miguel Muñoz', rol:'Jefe Secretaría Operacional' },
   { usuario:'juana.catricura', password:'catricura2026', permiso:'cargar', sectores:['ADMINISTRATIVA'], nombre:'Juana Abigail Catricura', rol:'Administrativa' },
-  { usuario:'adriana.sanchez', password:'sanchez2026', permiso:'cargar', sectores:['LOGISTICA'], nombre:'Adriana María Luján Sánchez', rol:'Jefe de Logística' },
+  { usuario:'adriana.sanchez', password:'sanchez2026', permiso:'cargar-global', sectores:[], nombre:'Adriana María Luján Sánchez', rol:'Jefe de Logística' },
   { usuario:'miguel.baracco', password:'baracco2026', permiso:'cargar', sectores:['ENFERMERIA'], nombre:'Miguel Ángel Baracco', rol:'Médico Policial' },
 
   // ─── Instructores + Supervisor Operacional + Jefes de Guardia ───
-  { usuario:'ariel.cumillan', password:'cumillan2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Ariel Osvaldo Cumillan', rol:'Supervisor Operacional' },
+  { usuario:'ariel.cumillan', password:'cumillan2026', permiso:'cargar-global', sectores:[], nombre:'Ariel Osvaldo Cumillan', rol:'Supervisor Operacional' },
   { usuario:'nahuel.calderon', password:'calderon2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Nahuel Calderón', rol:'Instructor' },
   { usuario:'micaela.castillo', password:'castillo2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Micaela Florencia Castillo', rol:'Instructor' },
   { usuario:'daniela.euliarte', password:'euliarte2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Daniela Euliarte', rol:'Instructor' },
@@ -1320,7 +1320,16 @@ function seedOrganigrama(){
 // NOTIFICACIONES
 // ══════════════════════════════════════════════
 function newNotif(sId,mId,rec){
-  const sec=SECTORS.find(s=>s.id===sId), mod=sec?.modules.find(m=>m.id===mId);
+  const sec=SECTORS.find(s=>s.id===sId);
+  let mod = sec?.modules.find(m=>m.id===mId);
+  if(!mod && sec){
+    for(const m of sec.modules){
+      if(m.subTabs){
+        const sub = m.subTabs.find(st=>st.id===mId);
+        if(sub){ mod=sub; break; }
+      }
+    }
+  }
   const notifs=S.gn();
   notifs.unshift({id:Date.now().toString(),
     secId:sId, modId:mId, rId:rec._id,
@@ -1560,11 +1569,11 @@ function selectSector(id){
   document.getElementById('shName').textContent=sec.name;
   document.getElementById('shCount').textContent=`${sec.modules.length} módulo${sec.modules.length>1?'s':''}`;
   const isCustom = !!sec.custom;
-  // canAdd: admin (todo) | cargar-global (todo) | cargar (si el sector está en sus sectores asignados)
+  // canAdd: admin (todo) | cargar-global (todo) | cargar (si el sector está en sus sectores asignados O es universal)
   const canAdd = !isCustom && (
     CU.permiso==='admin' ||
     CU.permiso==='cargar-global' ||
-    (CU.permiso==='cargar' && (CU.sectores||[]).includes(sec.id))
+    (CU.permiso==='cargar' && ((CU.sectores||[]).includes(sec.id) || !!sec.universal))
   );
   document.getElementById('addBtn').style.display=canAdd?'flex':'none';
   document.getElementById('exportBtn').style.display=isCustom?'none':'flex';
@@ -2919,4 +2928,3 @@ async function descargarExcel(){
 </script>
 </body>
 </html>
-
