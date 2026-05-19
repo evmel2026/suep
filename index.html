@@ -300,7 +300,7 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 .modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:12px}
 .form-field label{display:block;font-size:10px;font-weight:700;color:#7aafd4;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
 .fi{width:100%;padding:10px 13px;border-radius:10px;border:1.5px solid rgba(122,175,212,.2);background:rgba(255,255,255,.05);color:#c8dff0;font-size:13px;outline:none;transition:border-color .2s,background .2s;font-family:inherit}
-.fi:focus{border-color:#08111f;background:#fff}
+.fi:focus{border-color:#08111f;background:#fff;color:#111927}
 textarea.fi{resize:vertical;min-height:72px}
 .modal-foot{padding:14px 22px 20px;display:flex;gap:8px;position:sticky;bottom:0;background:#0d1928;border-top:1px solid rgba(122,175,212,.15)}
 .btn-save{flex:1;padding:12px;border-radius:10px;border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;font-family:inherit}
@@ -362,6 +362,21 @@ textarea.fi{resize:vertical;min-height:72px}
 .padm-search{width:100%;padding:10px 14px 10px 36px;border-radius:10px;border:1px solid rgba(122,175,212,.2);background:rgba(255,255,255,.04);color:#c8dff0;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:14px}
 .padm-search-wrap{position:relative;margin-bottom:4px}
 .padm-search-wrap::before{content:'🔍';position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px}
+
+/* ═════ BANNER DE ACTUALIZACIÓN ═════ */
+#updateBanner{position:fixed;bottom:0;left:0;right:0;z-index:9999;display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:linear-gradient(135deg,#1a3a5c,#0f2540);border-top:2px solid #7aafd4;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
+#updateBanner.show{display:flex;animation:slideUp .35s ease}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.upd-text{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.upd-icon{font-size:22px;flex-shrink:0}
+.upd-msg{font-size:12.5px;color:#c8dff0;line-height:1.4}
+.upd-msg strong{color:#fff;display:block;font-size:13px;font-weight:800;letter-spacing:.3px}
+.upd-actions{display:flex;gap:8px;flex-shrink:0}
+.upd-btn-ok{padding:9px 18px;border-radius:9px;border:none;background:linear-gradient(135deg,#7aafd4,#4a80a8);color:#fff;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;font-family:inherit;transition:all .2s}
+.upd-btn-ok:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(122,175,212,.35)}
+.upd-btn-skip{padding:9px 14px;border-radius:9px;border:1.5px solid rgba(122,175,212,.3);background:transparent;color:#7aafd4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.upd-btn-skip:hover{border-color:#7aafd4;color:#c8dff0}
+@media(max-width:480px){#updateBanner{flex-direction:column;align-items:flex-start}.upd-actions{width:100%}.upd-btn-ok,.upd-btn-skip{flex:1;text-align:center}}
 
 /* Footer marca de agua */
 .app-footer{
@@ -475,6 +490,21 @@ textarea.fi{resize:vertical;min-height:72px}
 </style>
 </head>
 <body>
+
+<!-- ████ BANNER ACTUALIZACIÓN ████ -->
+<div id="updateBanner">
+  <div class="upd-text">
+    <div class="upd-icon">🔄</div>
+    <div class="upd-msg">
+      <strong>¡Nueva actualización disponible!</strong>
+      Hay una nueva versión de SUEP. Recargá para obtener las últimas mejoras.
+    </div>
+  </div>
+  <div class="upd-actions">
+    <button class="upd-btn-skip" onclick="dismissUpdate()">Ahora no</button>
+    <button class="upd-btn-ok" onclick="applyUpdate()">⚡ Actualizar</button>
+  </div>
+</div>
 
 <!-- ████ SPLASH ████ -->
 <div id="splash" class="screen">
@@ -712,6 +742,34 @@ textarea.fi{resize:vertical;min-height:72px}
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+// VERSIÓN DE LA APP — Cambiá este número cada vez que modifiques el archivo
+// para que los usuarios vean la notificación de actualización.
+// Ejemplo: '1.0.0' → '1.0.1' → '1.1.0'
+// ══════════════════════════════════════════════
+const APP_VERSION = '1.0.0';
+
+(function checkAppVersion(){
+  const stored = localStorage.getItem('suep_app_version');
+  if(stored && stored !== APP_VERSION){
+    document.addEventListener('DOMContentLoaded', ()=>{
+      setTimeout(()=> document.getElementById('updateBanner').classList.add('show'), 1500);
+    });
+  } else if(!stored){
+    localStorage.setItem('suep_app_version', APP_VERSION);
+  }
+})();
+
+function applyUpdate(){
+  localStorage.setItem('suep_app_version', APP_VERSION);
+  document.getElementById('updateBanner').classList.remove('show');
+  location.reload(true);
+}
+function dismissUpdate(){
+  localStorage.setItem('suep_app_version', APP_VERSION);
+  document.getElementById('updateBanner').classList.remove('show');
+}
+
 // Para cambiar usuario/contraseña: editá esta lista
 // ══════════════════════════════════════════════
 const USERS = [
@@ -1765,21 +1823,29 @@ function renderTable(searchOverride){
   const orgToggleBar = isOrgan ? orgToggleHTML(rows.length) : '';
   // ────────────────────────────────────────────────────
 
-  // ─── Buscador universal (para todos los módulos) ───
+  // ─── Buscador individual por módulo ───
   const searchId = 'universalSearch_' + CM.id;
   const searchVal = searchOverride !== undefined ? searchOverride :
     (document.getElementById(searchId) ? document.getElementById(searchId).value.toLowerCase() : '');
 
-  // Campos de texto por los que filtrar (excluye image, textarea queda incluido)
+  // Campos de texto por los que filtrar (excluye image)
   const searchableFields = fields.filter(f => f.type !== 'image');
   const filteredRows = searchVal
     ? rows.filter(r => searchableFields.some(f => String(r[f.key]||'').toLowerCase().includes(searchVal))
         || String(r._por||'').toLowerCase().includes(searchVal))
     : rows;
 
+  // Buscador HTML — se muestra siempre, aunque el módulo esté vacío
+  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="${searchId}" class="fi" type="text" placeholder="Buscar en ${CM.name}..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}">
+    </div>
+    <span style="font-size:12px;color:#7aafd4">${searchVal ? filteredRows.length+' de '+rows.length+' resultado'+(filteredRows.length!==1?'s':'') : rows.length+' registro'+(rows.length!==1?'s':'')}</span>
+  </div>`;
+
   if(!filteredRows.length && !rows.length){
-    area.innerHTML=`${orgToggleBar}<div class="rec-count">0 registros</div>
-    <div class="data-wrap"><div class="empty-state">
+    area.innerHTML=`${orgToggleBar}${searchBar}<div class="data-wrap"><div class="empty-state">
       <div class="empty-icon">📋</div>
       <p>Sin registros todavía</p>
       <small>Tocá "+ Agregar" para cargar el primer registro</small>
@@ -1795,14 +1861,6 @@ function renderTable(searchOverride){
   const showActions = canEdit || hasAnyAtt;
   // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
   const colSpan = cols.length + 2 + (showActions ? 1 : 0);
-
-  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
-    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
-      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
-      <input id="${searchId}" class="fi" type="text" placeholder="Buscar en ${CM.name}..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}">
-    </div>
-    <span style="font-size:12px;color:#7aafd4">${searchVal ? filteredRows.length+' de '+rows.length+' resultado'+(filteredRows.length!==1?'s':'') : rows.length+' registro'+(rows.length!==1?'s':'')}</span>
-  </div>`;
 
   area.innerHTML=`${orgToggleBar}${searchBar}
     <div class="data-wrap fade-in">
@@ -2614,6 +2672,69 @@ function exportExcel(){
 // ══════════════════════════════════════════════
 // REGISTRO DE ACCESOS
 // ══════════════════════════════════════════════
+function renderAccesosTable(q){
+  const accesos = JSON.parse(localStorage.getItem('suep_accesos')||'[]');
+  const area = document.getElementById('dataArea');
+  const sq = (q||'').toLowerCase().trim();
+  const filtrados = sq ? accesos.filter(a =>
+    (a.nombre||'').toLowerCase().includes(sq) ||
+    (a.usuario||'').toLowerCase().includes(sq) ||
+    (a.sector||'').toLowerCase().includes(sq) ||
+    (a.rol||'').toLowerCase().includes(sq) ||
+    (a.entrada||'').toLowerCase().includes(sq)
+  ) : accesos;
+
+  const exportAccesos = () => {
+    if(!accesos.length){alert('Sin registros');return;}
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ['Usuario','Nombre','Sector','Rol','Fecha y Hora Entrada','Fecha y Hora Salida','Duración','Estado'],
+      ...accesos.map(a=>[a.usuario,a.nombre,a.sector,a.rol,a.entrada,a.salida,a.duracion,a.activo?'🟢 Activo':'⚫ Cerrado'])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:18},{wch:22},{wch:18},{wch:18},{wch:22},{wch:22},{wch:12},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,'Accesos');
+    XLSX.writeFile(wb,`SUEP_Accesos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
+  };
+
+  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="accesosSearch" class="fi" type="text" placeholder="Buscar por nombre, usuario, sector..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderAccesosTable(this.value)" value="${sq}">
+    </div>
+    <span style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+accesos.length+' resultado'+(filtrados.length!==1?'s':'') : accesos.length+' registro'+(accesos.length!==1?'s':'')}</span>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
+      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');renderAccesosTable('');}">🗑️ Limpiar</button>
+    </div>
+  </div>`;
+
+  if(!accesos.length){
+    area.innerHTML=searchBar+'<div class="data-wrap"><div class="empty-state"><div class="empty-icon">👁️</div><p>Sin accesos registrados aún</p><small>Los accesos se registrarán automáticamente</small></div></div>';
+    return;
+  }
+
+  area.innerHTML=`${searchBar}
+    <div class="data-wrap fade-in">
+    <table class="data-table">
+      <thead><tr>
+        <th>Nombre</th><th>Usuario</th><th>Sector</th>
+        <th>Entrada</th><th>Salida</th><th>Duración</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${filtrados.length ? filtrados.map(a=>`<tr>
+          <td style="font-weight:600;color:#a8c8e0">${a.nombre}</td>
+          <td style="font-size:11px;color:#5a7a9a">${a.usuario}</td>
+          <td><span class="badge bb" style="font-size:10px">${a.sector}</span></td>
+          <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.entrada}</td>
+          <td style="font-size:11px;color:${a.salida==='—'?'#5a7a9a':'#7aafd4'};white-space:nowrap">${a.salida}</td>
+          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#5a7a9a':'#a8c8e0'}">${a.duracion}</td>
+          <td><span class="badge ${a.activo?'bg':'bx'}" style="font-size:10px">${a.activo?'🟢 Activo':'⚫ Cerrado'}</span></td>
+        </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#5a7a9a;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
+      </tbody>
+    </table></div>`;
+}
+
 function showAccesos(){
   // Marcar activo en sidebar
   document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
@@ -2629,54 +2750,7 @@ function showAccesos(){
   document.getElementById('exportBtn').style.display='none';
   document.getElementById('modTabs').innerHTML='';
 
-  const accesos = JSON.parse(localStorage.getItem('suep_accesos')||'[]');
-  const area = document.getElementById('dataArea');
-
-  // Botón limpiar + exportar
-  const exportAccesos = () => {
-    if(!accesos.length){alert('Sin registros');return;}
-    const wb = XLSX.utils.book_new();
-    const data = [
-      ['Usuario','Nombre','Sector','Rol','Fecha y Hora Entrada','Fecha y Hora Salida','Duración','Estado'],
-      ...accesos.map(a=>[a.usuario,a.nombre,a.sector,a.rol,a.entrada,a.salida,a.duracion,a.activo?'🟢 Activo':'⚫ Cerrado'])
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols']=[{wch:18},{wch:22},{wch:18},{wch:18},{wch:22},{wch:22},{wch:12},{wch:12}];
-    XLSX.utils.book_append_sheet(wb,ws,'Accesos');
-    XLSX.writeFile(wb,`SUEP_Accesos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
-  };
-
-  if(!accesos.length){
-    area.innerHTML='<div class="rec-count">0 registros</div><div class="data-wrap"><div class="empty-state"><div class="empty-icon">👁️</div><p>Sin accesos registrados aún</p><small>Los accesos se registrarán automáticamente</small></div></div>';
-    return;
-  }
-
-  area.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px 8px">
-      <div class="rec-count" style="padding:0">${accesos.length} registro${accesos.length!==1?'s':''}</div>
-      <div style="display:flex;gap:8px">
-        <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
-        <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');showAccesos();}">🗑️ Limpiar</button>
-      </div>
-    </div>
-    <div class="data-wrap fade-in">
-    <table class="data-table">
-      <thead><tr>
-        <th>Nombre</th><th>Usuario</th><th>Sector</th>
-        <th>Entrada</th><th>Salida</th><th>Duración</th><th>Estado</th>
-      </tr></thead>
-      <tbody>
-        ${accesos.map(a=>`<tr>
-          <td style="font-weight:600;color:#a8c8e0">${a.nombre}</td>
-          <td style="font-size:11px;color:#5a7a9a">${a.usuario}</td>
-          <td><span class="badge bb" style="font-size:10px">${a.sector}</span></td>
-          <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.entrada}</td>
-          <td style="font-size:11px;color:${a.salida==='—'?'#5a7a9a':'#7aafd4'};white-space:nowrap">${a.salida}</td>
-          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#5a7a9a':'#a8c8e0'}">${a.duracion}</td>
-          <td><span class="badge ${a.activo?'bg':'bx'}" style="font-size:10px">${a.activo?'🟢 Activo':'⚫ Cerrado'}</span></td>
-        </tr>`).join('')}
-      </tbody>
-    </table></div>`;
+  renderAccesosTable('');
   closeSidebar();
 }
 
@@ -2965,12 +3039,22 @@ function switchPadmTab(tab){
   else if(tab === 'nuevo') renderPadmNuevo(null);
 }
 
-function renderPadmUsuarios(){
+function renderPadmUsuarios(filtro){
   const body = document.getElementById('padmBody');
   const todos = getAllUsers();
-  const lista = todos;
+  const q = (filtro||'').toLowerCase().trim();
+  const lista = q ? todos.filter(u =>
+    u.nombre.toLowerCase().includes(q) ||
+    u.usuario.toLowerCase().includes(q) ||
+    (u.rol||'').toLowerCase().includes(q) ||
+    (PERMISOS_LABELS[u.permiso]||'').toLowerCase().includes(q)
+  ) : todos;
 
   body.innerHTML = `
+    <div style="position:relative;margin-bottom:14px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px">🔍</span>
+      <input class="fi" type="text" placeholder="Buscar usuario por nombre, rol o permiso..." style="padding:9px 12px 9px 34px;font-size:13px;width:100%;box-sizing:border-box" oninput="renderPadmUsuarios(this.value)" value="${filtro||''}">
+    </div>
     <div style="font-size:11px;color:#5a7a9a;margin-bottom:12px">${lista.length} de ${todos.length} usuario${todos.length!==1?'s':''}</div>
     ${lista.map(u => {
       const color = avatarColor(u.nombre);
