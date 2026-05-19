@@ -317,6 +317,52 @@ textarea.fi{resize:vertical;min-height:72px}
 .welcome-state p{font-size:15px;font-weight:600}
 .welcome-state small{font-size:12px;color:#a0aab8}
 
+/* ═════ PANEL ADMINISTRACIÓN ═════ */
+.padm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+@media(min-width:640px){.padm-overlay{align-items:center;padding:20px}}
+.padm-modal{background:#0a1525;border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:94vh;overflow:hidden;display:flex;flex-direction:column;border:1px solid rgba(122,175,212,.18);border-bottom:none}
+@media(min-width:640px){.padm-modal{border-radius:20px;border-bottom:1px solid rgba(122,175,212,.18)}}
+.padm-head{padding:18px 22px 14px;border-bottom:1px solid rgba(122,175,212,.12);display:flex;align-items:center;justify-content:space-between;background:#0a1525;flex-shrink:0}
+.padm-head h3{font-size:16px;font-weight:800;color:#c8dff0;margin:0}
+.padm-head p{font-size:11px;color:#5a7a9a;margin:2px 0 0}
+.padm-tabs{display:flex;gap:6px;padding:14px 22px 0;flex-shrink:0;border-bottom:1px solid rgba(122,175,212,.1)}
+.padm-tab{padding:9px 16px;border-radius:10px 10px 0 0;border:none;background:transparent;color:#5a7a9a;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s}
+.padm-tab.active{color:#7aafd4;border-bottom-color:#7aafd4;background:rgba(122,175,212,.06)}
+.padm-body{padding:18px 22px;overflow-y:auto;flex:1}
+.padm-x{background:rgba(255,255,255,.07);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;color:#8ab4d0;display:flex;align-items:center;justify-content:center}
+
+/* Tarjeta de usuario en el panel admin */
+.ua-card{background:rgba(255,255,255,.03);border:1px solid rgba(122,175,212,.12);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:background .15s}
+.ua-card:hover{background:rgba(122,175,212,.06)}
+.ua-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.ua-info{flex:1;min-width:0}
+.ua-name{font-size:13px;font-weight:700;color:#c8dff0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ua-meta{font-size:11px;color:#5a7a9a;margin-top:2px}
+.ua-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.5px;white-space:nowrap}
+.ua-badge-admin{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.ua-badge-cg{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.22)}
+.ua-badge-c{background:rgba(250,204,21,.12);color:#fbbf24;border:1px solid rgba(250,204,21,.22)}
+.ua-badge-v{background:rgba(122,175,212,.1);color:#7aafd4;border:1px solid rgba(122,175,212,.2)}
+.ua-actions{display:flex;gap:6px;flex-shrink:0}
+.ua-btn{padding:7px 12px;border-radius:8px;border:1px solid rgba(122,175,212,.2);background:rgba(122,175,212,.06);color:#8ab4d0;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.ua-btn:hover{background:rgba(122,175,212,.14);color:#c8dff0}
+.ua-btn-danger{border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.07);color:#f87171}
+.ua-btn-danger:hover{background:rgba(248,113,113,.15)}
+
+/* Formulario nuevo usuario */
+.padm-form{background:rgba(255,255,255,.02);border:1px solid rgba(122,175,212,.12);border-radius:14px;padding:18px;margin-bottom:16px}
+.padm-form h4{font-size:13px;font-weight:700;color:#7aafd4;margin:0 0 14px;letter-spacing:.5px;text-transform:uppercase}
+.padm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.padm-grid{grid-template-columns:1fr}}
+.padm-field label{display:block;font-size:10px;font-weight:700;color:#5a7a9a;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.padm-msg{padding:10px 14px;border-radius:9px;font-size:12px;font-weight:600;margin-top:10px;display:none}
+.padm-msg.show{display:block}
+.padm-msg.ok{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.22)}
+.padm-msg.err{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.22)}
+.padm-search{width:100%;padding:10px 14px 10px 36px;border-radius:10px;border:1px solid rgba(122,175,212,.2);background:rgba(255,255,255,.04);color:#c8dff0;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:14px}
+.padm-search-wrap{position:relative;margin-bottom:4px}
+.padm-search-wrap::before{content:'🔍';position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px}
+
 /* Footer marca de agua */
 .app-footer{
   text-align:center;
@@ -647,9 +693,25 @@ textarea.fi{resize:vertical;min-height:72px}
   </div>
 </div>
 
+<!-- ████ PANEL DE ADMINISTRACIÓN ████ -->
+<div class="padm-overlay" id="padmOverlay" style="display:none" onclick="if(event.target.id==='padmOverlay')closePanelAdmin()">
+  <div class="padm-modal">
+    <div class="padm-head">
+      <div>
+        <h3>🛠️ Panel de Administración</h3>
+        <p id="padmSubtitle">Solo visible para Administradoras</p>
+      </div>
+      <button class="padm-x" onclick="closePanelAdmin()">✕</button>
+    </div>
+    <div class="padm-tabs">
+      <button class="padm-tab active" id="padmTab_usuarios" onclick="switchPadmTab('usuarios')">👤 Usuarios</button>
+      <button class="padm-tab" id="padmTab_nuevo" onclick="switchPadmTab('nuevo')">➕ Nuevo usuario</button>
+    </div>
+    <div class="padm-body" id="padmBody"></div>
+  </div>
+</div>
+
 <script>
-// ══════════════════════════════════════════════
-// USUARIOS
 // Para cambiar usuario/contraseña: editá esta lista
 // ══════════════════════════════════════════════
 const USERS = [
@@ -665,7 +727,7 @@ const USERS = [
 
   // ─── Encargados de sector (solo agregan en su sector) ───
   { usuario:'elias.munoz', password:'munoz2026', permiso:'cargar-global', sectores:[], nombre:'Elías Miguel Muñoz', rol:'Jefe Secretaría Operacional' },
-  { usuario:'juana.catricura', password:'catricura2026', permiso:'cargar', sectores:['ADMINISTRATIVA'], nombre:'Juana Abigail Catricura', rol:'Administrativa' },
+  { usuario:'juana.catricura', password:'catricura2026', permiso:'cargar-global', sectores:[], nombre:'Juana Abigail Catricura', rol:'Administrativa' },
   { usuario:'adriana.sanchez', password:'sanchez2026', permiso:'cargar-global', sectores:[], nombre:'Adriana María Luján Sánchez', rol:'Jefe de Logística' },
   { usuario:'miguel.baracco', password:'baracco2026', permiso:'cargar', sectores:['ENFERMERIA'], nombre:'Miguel Ángel Baracco', rol:'Médico Policial' },
 
@@ -927,6 +989,19 @@ const SECTORS = [
       {key:'obs',       label:'Observaciones', type:'textarea'},
     ]},
 
+    { id:'MATAFUEGO', name:'Matafuegos', fields:[
+      {key:'numero',      label:'Número / Identificación',   type:'text',   req:true},
+      {key:'tipo',        label:'Tipo',                      type:'select',
+        opts:['ABC Polvo seco','CO₂','Hídrico','Halón','Espuma']},
+      {key:'capacidad',   label:'Capacidad (kg/L)',          type:'text'},
+      {key:'ubicacion',   label:'Ubicación',                 type:'text',   req:true},
+      {key:'estado',      label:'Estado',                    type:'select', req:true,
+        opts:['Operativo','Vencido','En recarga','Baja','Sin verificar']},
+      {key:'fechaCarga',  label:'Fecha de última carga',     type:'date'},
+      {key:'vencimiento', label:'Fecha de vencimiento',      type:'date',   req:true},
+      {key:'obs',         label:'Observaciones',             type:'textarea'},
+    ]},
+
   ]},
   { id:'ENFERMERIA', name:'Enfermería', icon:'🏥', color:'#be123c', bg:'#ffe4e6', modules:[
 
@@ -1072,12 +1147,37 @@ const SECTORS = [
   ]},
 
   { id:'SECCIONES_GEN', name:'Secciones', icon:'👥', color:'#4d7c0f', bg:'#ecfccb', universal:true, modules:[
-    { id:'SECCIONES_GEN', name:'Secciones', fields:[
-      {key:'seccion',       label:'Sección',          type:'select', req:true,
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
-      {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
-      {key:'dni',           label:'DNI',               type:'text', req:true},
-      {key:'obs',           label:'Observaciones',     type:'textarea'},
+    { id:'SEC_GRUPO', name:'Secciones', subTabs:[
+      { id:'SECC_1', name:'📋 Sección 1', fields:[
+        {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
+        {key:'dni',           label:'DNI',               type:'text', req:true},
+        {key:'estado',        label:'Estado',            type:'select', opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
+        {key:'obs',           label:'Observaciones',     type:'textarea'},
+      ]},
+      { id:'SECC_2', name:'📋 Sección 2', fields:[
+        {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
+        {key:'dni',           label:'DNI',               type:'text', req:true},
+        {key:'estado',        label:'Estado',            type:'select', opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
+        {key:'obs',           label:'Observaciones',     type:'textarea'},
+      ]},
+      { id:'SECC_3', name:'📋 Sección 3', fields:[
+        {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
+        {key:'dni',           label:'DNI',               type:'text', req:true},
+        {key:'estado',        label:'Estado',            type:'select', opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
+        {key:'obs',           label:'Observaciones',     type:'textarea'},
+      ]},
+      { id:'SECC_4', name:'📋 Sección 4', fields:[
+        {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
+        {key:'dni',           label:'DNI',               type:'text', req:true},
+        {key:'estado',        label:'Estado',            type:'select', opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
+        {key:'obs',           label:'Observaciones',     type:'textarea'},
+      ]},
+      { id:'SECC_5', name:'📋 Sección 5', fields:[
+        {key:'apellidoNombre',label:'Apellido y Nombre', type:'text', req:true},
+        {key:'dni',           label:'DNI',               type:'text', req:true},
+        {key:'estado',        label:'Estado',            type:'select', opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
+        {key:'obs',           label:'Observaciones',     type:'textarea'},
+      ]},
     ]},
   ]},
 
@@ -1175,6 +1275,23 @@ const SECTORS = [
       {key:'ubicacion', label:'Ubicación / Sector donde está',          type:'text'},
       {key:'usuario',   label:'Usuario (si aplica)',                    type:'text'},
       {key:'obs',       label:'Observaciones',                          type:'textarea'},
+    ]},
+  ]},
+
+  // ─── Pestaña: Aspirantes ───
+  { id:'ASPIRANTES', name:'Aspirantes', icon:'🎽', color:'#b45309', bg:'#fef3c7', universal:true, modules:[
+    { id:'ASPIRANTES_STATS', name:'Estadísticas', fields:[
+      {key:'fecha',        label:'Fecha',                    type:'date',     req:true},
+      {key:'descripcion',  label:'Descripción / Observación', type:'textarea', req:true},
+      {key:'inscriptos',   label:'Inscriptos',               type:'number'},
+      {key:'presentes',    label:'Presentes',                type:'number'},
+      {key:'femeninos',    label:'Cantidad Femeninos',       type:'number'},
+      {key:'masculinos',   label:'Cantidad Masculinos',      type:'number'},
+      {key:'bajas',        label:'Bajas',                    type:'number'},
+      {key:'desistieron',  label:'Desistieron',              type:'number'},
+      {key:'ausentes',     label:'Ausentes',                 type:'number'},
+      {key:'desafectados', label:'Desafectados',             type:'number'},
+      {key:'obs',          label:'Observaciones',            type:'textarea'},
     ]},
   ]},
 
@@ -1543,7 +1660,7 @@ function buildSidebar(){
     const first = (CU.sectores && CU.sectores[0]) || null;
     if(first) setTimeout(()=>selectSector(first),120);
   }
-  // Panel de accesos solo para ADMIN
+  // Panel de accesos y administración solo para ADMIN
   if(isAdmin){
     const adminSec = document.getElementById('sectorList');
     adminSec.insertAdjacentHTML('beforeend',`
@@ -1552,6 +1669,10 @@ function buildSidebar(){
         <button class="sector-btn" id="sb_ACCESOS" onclick="showAccesos()">
           <span class="s-icon">👁️</span>
           <span class="s-name">Registro de Accesos</span>
+        </button>
+        <button class="sector-btn" id="sb_PANEL_ADMIN" onclick="showPanelAdmin()">
+          <span class="s-icon">🛠️</span>
+          <span class="s-name">Panel de Administración</span>
         </button>
       </div>`);
   }
@@ -1644,15 +1765,29 @@ function renderTable(searchOverride){
   const orgToggleBar = isOrgan ? orgToggleHTML(rows.length) : '';
   // ────────────────────────────────────────────────────
 
-  // Buscador especial para POSTULANTES
+  // ─── Buscador individual por módulo ───
+  const searchId = 'universalSearch_' + CM.id;
   const searchVal = searchOverride !== undefined ? searchOverride :
-    (document.getElementById('recluSearch') ? document.getElementById('recluSearch').value.toLowerCase() : '');
-  const filteredRows = (CS.id==='RECLUTAMIENTO' && searchVal)
-    ? rows.filter(r=>(r.apellidoNombre||'').toLowerCase().includes(searchVal)||(r.dni||'').includes(searchVal))
+    (document.getElementById(searchId) ? document.getElementById(searchId).value.toLowerCase() : '');
+
+  // Campos de texto por los que filtrar (excluye image)
+  const searchableFields = fields.filter(f => f.type !== 'image');
+  const filteredRows = searchVal
+    ? rows.filter(r => searchableFields.some(f => String(r[f.key]||'').toLowerCase().includes(searchVal))
+        || String(r._por||'').toLowerCase().includes(searchVal))
     : rows;
+
+  // Buscador HTML — se muestra siempre, aunque el módulo esté vacío
+  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="${searchId}" class="fi" type="text" placeholder="Buscar en ${CM.name}..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}">
+    </div>
+    <span style="font-size:12px;color:#7aafd4">${searchVal ? filteredRows.length+' de '+rows.length+' resultado'+(filteredRows.length!==1?'s':'') : rows.length+' registro'+(rows.length!==1?'s':'')}</span>
+  </div>`;
+
   if(!filteredRows.length && !rows.length){
-    area.innerHTML=`${orgToggleBar}<div class="rec-count">0 registros</div>
-    <div class="data-wrap"><div class="empty-state">
+    area.innerHTML=`${orgToggleBar}${searchBar}<div class="data-wrap"><div class="empty-state">
       <div class="empty-icon">📋</div>
       <p>Sin registros todavía</p>
       <small>Tocá "+ Agregar" para cargar el primer registro</small>
@@ -1662,13 +1797,14 @@ function renderTable(searchOverride){
   const cols=fields.filter(f=>f.type!=='textarea').slice(0,5);
   // Detectamos los campos textarea para mostrarlos como detalle expandible debajo del título
   const textAreas = fields.filter(f=>f.type==='textarea');
-  const showRows = (CS.id==='RECLUTAMIENTO') ? filteredRows : rows;
+  const showRows = filteredRows;
   // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos
   const hasAnyAtt = rows.some(r => r._attachments && r._attachments.length);
   const showActions = canEdit || hasAnyAtt;
   // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
   const colSpan = cols.length + 2 + (showActions ? 1 : 0);
-  area.innerHTML=`${orgToggleBar}${CS.id==='RECLUTAMIENTO'?`<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px"><div style="position:relative;flex:1;max-width:380px"><span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span><input id="recluSearch" class="fi" type="text" placeholder="Buscar por DNI o apellido y nombre..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}"></div><span style="font-size:12px;color:#7aafd4">${filteredRows.length} de ${rows.length} postulante${rows.length!==1?'s':''}</span></div>`:''}<div class="rec-count" style="${CS.id==='RECLUTAMIENTO'?'display:none':''}">${rows.length} registro${rows.length!==1?'s':''}</div>
+
+  area.innerHTML=`${orgToggleBar}${searchBar}
     <div class="data-wrap fade-in">
     <table class="data-table">
       <thead><tr>
@@ -2478,6 +2614,69 @@ function exportExcel(){
 // ══════════════════════════════════════════════
 // REGISTRO DE ACCESOS
 // ══════════════════════════════════════════════
+function renderAccesosTable(q){
+  const accesos = JSON.parse(localStorage.getItem('suep_accesos')||'[]');
+  const area = document.getElementById('dataArea');
+  const sq = (q||'').toLowerCase().trim();
+  const filtrados = sq ? accesos.filter(a =>
+    (a.nombre||'').toLowerCase().includes(sq) ||
+    (a.usuario||'').toLowerCase().includes(sq) ||
+    (a.sector||'').toLowerCase().includes(sq) ||
+    (a.rol||'').toLowerCase().includes(sq) ||
+    (a.entrada||'').toLowerCase().includes(sq)
+  ) : accesos;
+
+  const exportAccesos = () => {
+    if(!accesos.length){alert('Sin registros');return;}
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ['Usuario','Nombre','Sector','Rol','Fecha y Hora Entrada','Fecha y Hora Salida','Duración','Estado'],
+      ...accesos.map(a=>[a.usuario,a.nombre,a.sector,a.rol,a.entrada,a.salida,a.duracion,a.activo?'🟢 Activo':'⚫ Cerrado'])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:18},{wch:22},{wch:18},{wch:18},{wch:22},{wch:22},{wch:12},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,'Accesos');
+    XLSX.writeFile(wb,`SUEP_Accesos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
+  };
+
+  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="accesosSearch" class="fi" type="text" placeholder="Buscar por nombre, usuario, sector..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderAccesosTable(this.value)" value="${sq}">
+    </div>
+    <span style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+accesos.length+' resultado'+(filtrados.length!==1?'s':'') : accesos.length+' registro'+(accesos.length!==1?'s':'')}</span>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
+      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');renderAccesosTable('');}">🗑️ Limpiar</button>
+    </div>
+  </div>`;
+
+  if(!accesos.length){
+    area.innerHTML=searchBar+'<div class="data-wrap"><div class="empty-state"><div class="empty-icon">👁️</div><p>Sin accesos registrados aún</p><small>Los accesos se registrarán automáticamente</small></div></div>';
+    return;
+  }
+
+  area.innerHTML=`${searchBar}
+    <div class="data-wrap fade-in">
+    <table class="data-table">
+      <thead><tr>
+        <th>Nombre</th><th>Usuario</th><th>Sector</th>
+        <th>Entrada</th><th>Salida</th><th>Duración</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${filtrados.length ? filtrados.map(a=>`<tr>
+          <td style="font-weight:600;color:#a8c8e0">${a.nombre}</td>
+          <td style="font-size:11px;color:#5a7a9a">${a.usuario}</td>
+          <td><span class="badge bb" style="font-size:10px">${a.sector}</span></td>
+          <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.entrada}</td>
+          <td style="font-size:11px;color:${a.salida==='—'?'#5a7a9a':'#7aafd4'};white-space:nowrap">${a.salida}</td>
+          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#5a7a9a':'#a8c8e0'}">${a.duracion}</td>
+          <td><span class="badge ${a.activo?'bg':'bx'}" style="font-size:10px">${a.activo?'🟢 Activo':'⚫ Cerrado'}</span></td>
+        </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#5a7a9a;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
+      </tbody>
+    </table></div>`;
+}
+
 function showAccesos(){
   // Marcar activo en sidebar
   document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
@@ -2493,54 +2692,7 @@ function showAccesos(){
   document.getElementById('exportBtn').style.display='none';
   document.getElementById('modTabs').innerHTML='';
 
-  const accesos = JSON.parse(localStorage.getItem('suep_accesos')||'[]');
-  const area = document.getElementById('dataArea');
-
-  // Botón limpiar + exportar
-  const exportAccesos = () => {
-    if(!accesos.length){alert('Sin registros');return;}
-    const wb = XLSX.utils.book_new();
-    const data = [
-      ['Usuario','Nombre','Sector','Rol','Fecha y Hora Entrada','Fecha y Hora Salida','Duración','Estado'],
-      ...accesos.map(a=>[a.usuario,a.nombre,a.sector,a.rol,a.entrada,a.salida,a.duracion,a.activo?'🟢 Activo':'⚫ Cerrado'])
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols']=[{wch:18},{wch:22},{wch:18},{wch:18},{wch:22},{wch:22},{wch:12},{wch:12}];
-    XLSX.utils.book_append_sheet(wb,ws,'Accesos');
-    XLSX.writeFile(wb,`SUEP_Accesos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
-  };
-
-  if(!accesos.length){
-    area.innerHTML='<div class="rec-count">0 registros</div><div class="data-wrap"><div class="empty-state"><div class="empty-icon">👁️</div><p>Sin accesos registrados aún</p><small>Los accesos se registrarán automáticamente</small></div></div>';
-    return;
-  }
-
-  area.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px 8px">
-      <div class="rec-count" style="padding:0">${accesos.length} registro${accesos.length!==1?'s':''}</div>
-      <div style="display:flex;gap:8px">
-        <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
-        <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');showAccesos();}">🗑️ Limpiar</button>
-      </div>
-    </div>
-    <div class="data-wrap fade-in">
-    <table class="data-table">
-      <thead><tr>
-        <th>Nombre</th><th>Usuario</th><th>Sector</th>
-        <th>Entrada</th><th>Salida</th><th>Duración</th><th>Estado</th>
-      </tr></thead>
-      <tbody>
-        ${accesos.map(a=>`<tr>
-          <td style="font-weight:600;color:#a8c8e0">${a.nombre}</td>
-          <td style="font-size:11px;color:#5a7a9a">${a.usuario}</td>
-          <td><span class="badge bb" style="font-size:10px">${a.sector}</span></td>
-          <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.entrada}</td>
-          <td style="font-size:11px;color:${a.salida==='—'?'#5a7a9a':'#7aafd4'};white-space:nowrap">${a.salida}</td>
-          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#5a7a9a':'#a8c8e0'}">${a.duracion}</td>
-          <td><span class="badge ${a.activo?'bg':'bx'}" style="font-size:10px">${a.activo?'🟢 Activo':'⚫ Cerrado'}</span></td>
-        </tr>`).join('')}
-      </tbody>
-    </table></div>`;
+  renderAccesosTable('');
   closeSidebar();
 }
 
@@ -2726,7 +2878,362 @@ function restoreOriginalPwd(usuario){
   renderUserList();
   setTimeout(()=>document.getElementById('pwdResetMsg').classList.remove('show'), 2500);
 }
+
+// ══════════════════════════════════════════════
+// PANEL DE ADMINISTRACIÓN — GESTIÓN DE USUARIOS
+// ══════════════════════════════════════════════
+// Los usuarios dinámicos se guardan en localStorage (y se sincronizan a Supabase)
+// bajo la clave 'suep_dyn_users'. Al cargar, se FUSIONAN con USERS (el array base),
+// permitiendo agregar y editar sin tocar el código.
+
+let padmTab = 'usuarios';
+let padmEditUser = null; // usuario que se está editando (string usuario id)
+
+function getDynUsers(){
+  try{ return JSON.parse(localStorage.getItem('suep_dyn_users')||'[]'); }
+  catch(e){ return []; }
+}
+function setDynUsers(arr){
+  localStorage.setItem('suep_dyn_users', JSON.stringify(arr));
+  // Sincronizar a Supabase
+  if(typeof syncToSupabase === 'function') syncToSupabase('suep_dyn_users', arr);
+}
+
+// Retorna la lista completa de usuarios: base + dinámicos (los dinámicos pueden pisar al base por usuario)
+function getAllUsers(){
+  const dyn = getDynUsers();
+  // Clonar USERS base
+  const result = USERS.map(u => ({...u}));
+  dyn.forEach(du => {
+    const idx = result.findIndex(u => u.usuario === du.usuario);
+    if(idx >= 0){
+      // Override: aplicar campos editados (excepto password, que se maneja aparte)
+      result[idx] = {...result[idx], ...du};
+    } else {
+      result.push({...du});
+    }
+  });
+  return result;
+}
+
+// Guardar una modificación dinámica de un usuario
+function saveDynUser(usuarioId, campos){
+  const dyn = getDynUsers();
+  const idx = dyn.findIndex(u => u.usuario === usuarioId);
+  if(idx >= 0){
+    dyn[idx] = {...dyn[idx], ...campos};
+  } else {
+    dyn.push({usuario: usuarioId, ...campos});
+  }
+  setDynUsers(dyn);
+}
+
+// Desactivar un usuario dinámicamente (no se puede borrar del array USERS base, solo marcar inactivo)
+function toggleUserActivo(usuarioId){
+  const allUsers = getAllUsers();
+  const u = allUsers.find(x => x.usuario === usuarioId);
+  if(!u) return;
+  const nuevo = !u.desactivado;
+  if(!confirm(`¿${nuevo ? 'Desactivar' : 'Reactivar'} a ${u.nombre}?
+${nuevo ? 'No podrá iniciar sesión.' : 'Podrá volver a ingresar.'}`)) return;
+  saveDynUser(usuarioId, {desactivado: nuevo});
+  renderPadmUsuarios();
+}
+
+const PERMISOS_LABELS = {
+  'admin': 'Administradora',
+  'cargar-global': 'Cargador Global',
+  'cargar': 'Cargador Sectorial',
+  'visor': 'Visor (solo lectura)'
+};
+const PERMISOS_BADGE = {
+  'admin': 'ua-badge-admin',
+  'cargar-global': 'ua-badge-cg',
+  'cargar': 'ua-badge-c',
+  'visor': 'ua-badge-v'
+};
+const AVATAR_COLORS = ['#0f766e','#1d4ed8','#b45309','#7c3aed','#be123c','#0369a1','#166534','#6d28d9'];
+function avatarColor(nombre){ let h=0; for(const c of nombre) h=(h+c.charCodeAt(0))%AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
+function avatarInitial(nombre){ return (nombre||'?')[0].toUpperCase(); }
+
+function showPanelAdmin(){
+  if(CU.permiso !== 'admin'){ alert('Solo administradoras.'); return; }
+  // Marcar activo en sidebar
+  document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
+  const ab = document.getElementById('sb_PANEL_ADMIN');
+  if(ab){ab.classList.add('active');ab.style.background='#1a3a5a';ab.style.color='#fff';}
+  padmTab = 'usuarios';
+  padmEditUser = null;
+  document.getElementById('padmOverlay').style.display = 'flex';
+  switchPadmTab('usuarios');
+  closeSidebar();
+}
+function closePanelAdmin(){
+  document.getElementById('padmOverlay').style.display = 'none';
+  padmEditUser = null;
+}
+function switchPadmTab(tab){
+  padmTab = tab;
+  document.querySelectorAll('.padm-tab').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById('padmTab_' + tab);
+  if(el) el.classList.add('active');
+  if(tab === 'usuarios') renderPadmUsuarios();
+  else if(tab === 'nuevo') renderPadmNuevo(null);
+}
+
+function renderPadmUsuarios(filtro){
+  const body = document.getElementById('padmBody');
+  const todos = getAllUsers();
+  const q = (filtro||'').toLowerCase().trim();
+  const lista = q ? todos.filter(u =>
+    u.nombre.toLowerCase().includes(q) ||
+    u.usuario.toLowerCase().includes(q) ||
+    (u.rol||'').toLowerCase().includes(q) ||
+    (PERMISOS_LABELS[u.permiso]||'').toLowerCase().includes(q)
+  ) : todos;
+
+  body.innerHTML = `
+    <div style="position:relative;margin-bottom:14px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px">🔍</span>
+      <input class="fi" type="text" placeholder="Buscar usuario por nombre, rol o permiso..." style="padding:9px 12px 9px 34px;font-size:13px;width:100%;box-sizing:border-box" oninput="renderPadmUsuarios(this.value)" value="${filtro||''}">
+    </div>
+    <div style="font-size:11px;color:#5a7a9a;margin-bottom:12px">${lista.length} de ${todos.length} usuario${todos.length!==1?'s':''}</div>
+    ${lista.map(u => {
+      const color = avatarColor(u.nombre);
+      const desact = !!u.desactivado;
+      const pwdChanged = isPasswordChanged(u.usuario);
+      return `
+      <div class="ua-card" style="${desact?'opacity:.5':''}">
+        <div class="ua-avatar" style="background:${color}20;border:2px solid ${color}40;color:${color}">
+          ${avatarInitial(u.nombre)}
+        </div>
+        <div class="ua-info">
+          <div class="ua-name">${u.nombre}${desact?' <span style="color:#f87171;font-size:10px">(Desactivado)</span>':''}</div>
+          <div class="ua-meta">@${u.usuario} · ${u.rol||'—'} ${pwdChanged?'· <span style="color:#fbbf24;font-size:10px">🔑 pwd modificada</span>':''}</div>
+          <div style="margin-top:5px"><span class="ua-badge ${PERMISOS_BADGE[u.permiso]||'ua-badge-v'}">${PERMISOS_LABELS[u.permiso]||u.permiso}</span></div>
+        </div>
+        <div class="ua-actions">
+          <button class="ua-btn" onclick="abrirEdicion('${u.usuario}')">✏️ Editar</button>
+          ${u.usuario !== CU.usuario
+            ? `<button class="ua-btn ua-btn-danger" onclick="toggleUserActivo('${u.usuario}')">${desact?'✅ Reactivar':'🚫 Desactivar'}</button>`
+            : '<span style="font-size:10px;color:#3a5a7a">Sos vos</span>'
+          }
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function abrirEdicion(usuarioId){
+  padmEditUser = usuarioId;
+  const allUsers = getAllUsers();
+  const u = allUsers.find(x => x.usuario === usuarioId);
+  if(!u) return;
+  // Cambiar a tab "nuevo" que usamos como formulario universal
+  document.querySelectorAll('.padm-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('padmTab_nuevo').classList.add('active');
+  padmTab = 'nuevo';
+  renderPadmNuevo(u);
+}
+
+const TODOS_SECTORES = ['ACADEMICA','OPERACIONAL','MOVILES','LOGISTICA','ENFERMERIA','RECLUTAMIENTO','ADMINISTRATIVA'];
+const SECTORES_LABELS = {
+  'ACADEMICA':'Académica','OPERACIONAL':'Operacional','MOVILES':'Móviles',
+  'LOGISTICA':'Logística','ENFERMERIA':'Enfermería','RECLUTAMIENTO':'Reclutamiento','ADMINISTRATIVA':'Administrativa'
+};
+
+function renderPadmNuevo(userData){
+  const esEdicion = !!userData;
+  const body = document.getElementById('padmBody');
+  const u = userData || {};
+  const sectoresActuales = u.sectores || [];
+
+  body.innerHTML = `
+    <div class="padm-form">
+      <h4>${esEdicion ? '✏️ Editando: ' + u.nombre : '➕ Nuevo usuario'}</h4>
+      <div class="padm-grid">
+        <div class="padm-field form-field">
+          <label>Nombre completo *</label>
+          <input class="fi" id="pf_nombre" type="text" placeholder="Apellido y Nombre" value="${u.nombre||''}">
+        </div>
+        <div class="padm-field form-field">
+          <label>Rol / Cargo</label>
+          <input class="fi" id="pf_rol" type="text" placeholder="Ej: Instructor, Médico..." value="${u.rol||''}">
+        </div>
+        <div class="padm-field form-field">
+          <label>Usuario (login) *</label>
+          <input class="fi" id="pf_usuario" type="text" placeholder="apellido.nombre" value="${u.usuario||''}" ${esEdicion?'readonly style="opacity:.6;cursor:not-allowed"':''}>
+        </div>
+        <div class="padm-field form-field">
+          <label>${esEdicion?'Nueva contraseña (dejar vacío = sin cambio)':'Contraseña *'}</label>
+          <input class="fi" id="pf_pass" type="password" placeholder="${esEdicion?'Dejar vacío para no cambiar':'Mínimo 4 caracteres'}">
+        </div>
+      </div>
+
+      <div class="padm-field form-field" style="margin-top:10px">
+        <label>Permiso / Nivel de acceso *</label>
+        <select class="fi" id="pf_permiso" onchange="renderSectoresCheck()">
+          <option value="">Seleccionar...</option>
+          ${Object.entries(PERMISOS_LABELS).map(([k,v]) =>
+            `<option value="${k}" ${u.permiso===k?'selected':''}>${v}</option>`
+          ).join('')}
+        </select>
+      </div>
+
+      <div id="pf_sectores_wrap" style="margin-top:10px;display:none">
+        <div class="padm-field">
+          <label>Sectores habilitados</label>
+          <div id="pf_sectores_list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+          </div>
+          <small style="color:#5a7a9a;font-size:10px;margin-top:4px;display:block">El usuario puede cargar solo en los sectores marcados. También puede ver módulos universales.</small>
+        </div>
+      </div>
+
+      <div id="pf_msg" class="padm-msg"></div>
+
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn-save" style="background:linear-gradient(135deg,#0f766e,#0a5751);font-size:13px" onclick="guardarUsuarioPadm()">
+          ${esEdicion ? '💾 GUARDAR CAMBIOS' : '✅ CREAR USUARIO'}
+        </button>
+        ${esEdicion ? `<button class="btn-cancel" onclick="cancelarEdicion()">Cancelar</button>` : ''}
+      </div>
+    </div>
+
+    ${!esEdicion ? `<div style="font-size:11px;color:#5a7a9a;padding:8px 2px">
+      💡 Los usuarios creados acá se guardan en la nube (Supabase) y se sincronizan a todos los dispositivos.
+      El usuario podrá cambiar su contraseña después desde ⚙️ → Cambiar mi contraseña.
+    </div>` : ''}
+  `;
+
+  // Renderizar checkboxes de sectores si corresponde
+  renderSectoresCheck(sectoresActuales);
+}
+
+function renderSectoresCheck(preselect){
+  const permiso = document.getElementById('pf_permiso').value;
+  const wrap = document.getElementById('pf_sectores_wrap');
+  const lista = document.getElementById('pf_sectores_list');
+  if(!wrap || !lista) return;
+
+  // Solo mostrar selector de sectores para permiso 'cargar'
+  if(permiso === 'cargar'){
+    wrap.style.display = 'block';
+    const current = preselect !== undefined ? preselect :
+      Array.from(lista.querySelectorAll('input[type=checkbox]:checked')).map(c => c.value);
+    lista.innerHTML = TODOS_SECTORES.map(s => `
+      <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(122,175,212,.06);border:1px solid rgba(122,175,212,.14);border-radius:8px;cursor:pointer;font-size:12px;color:#a0bcd4">
+        <input type="checkbox" value="${s}" ${current.includes(s)?'checked':''} style="accent-color:#7aafd4">
+        ${SECTORES_LABELS[s]}
+      </label>`).join('');
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function cancelarEdicion(){
+  padmEditUser = null;
+  document.querySelectorAll('.padm-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('padmTab_usuarios').classList.add('active');
+  padmTab = 'usuarios';
+  renderPadmUsuarios();
+}
+
+function guardarUsuarioPadm(){
+  const nombre  = (document.getElementById('pf_nombre').value||'').trim();
+  const rol     = (document.getElementById('pf_rol').value||'').trim();
+  const usuario = padmEditUser || (document.getElementById('pf_usuario').value||'').trim().toLowerCase();
+  const pass    = (document.getElementById('pf_pass').value||'').trim();
+  const permiso = document.getElementById('pf_permiso').value;
+  const esEdicion = !!padmEditUser;
+
+  const showMsg = (txt, tipo) => {
+    const m = document.getElementById('pf_msg');
+    m.textContent = txt; m.className = 'padm-msg show ' + tipo;
+    setTimeout(()=>{ if(m) m.classList.remove('show'); }, 3000);
+  };
+
+  // Validaciones
+  if(!nombre){ showMsg('Completá el nombre completo.','err'); return; }
+  if(!usuario){ showMsg('Completá el usuario de login.','err'); return; }
+  if(/\s/.test(usuario)){ showMsg('El usuario no puede tener espacios.','err'); return; }
+  if(!permiso){ showMsg('Seleccioná el nivel de acceso.','err'); return; }
+  if(!esEdicion && pass.length < 4){ showMsg('La contraseña debe tener al menos 4 caracteres.','err'); return; }
+  if(esEdicion && pass && pass.length < 4){ showMsg('La nueva contraseña debe tener al menos 4 caracteres.','err'); return; }
+
+  // Verificar que el usuario no esté duplicado (solo en creación)
+  if(!esEdicion){
+    const todos = getAllUsers();
+    if(todos.find(u => u.usuario === usuario)){ showMsg('Ya existe un usuario con ese nombre de login.','err'); return; }
+  }
+
+  // Sectores
+  let sectores = [];
+  if(permiso === 'cargar'){
+    sectores = Array.from(document.querySelectorAll('#pf_sectores_list input[type=checkbox]:checked')).map(c => c.value);
+  }
+
+  // Guardar en dynUsers
+  const campos = { nombre, rol, permiso, sectores };
+  if(!esEdicion) campos.password = pass;
+  saveDynUser(usuario, campos);
+
+  // Si hay password nueva, guardarla en el override
+  if(pass) setUserPassword(usuario, pass);
+
+  showMsg(esEdicion ? `✅ Cambios guardados para ${nombre}.` : `✅ Usuario ${nombre} creado.`, 'ok');
+
+  setTimeout(() => {
+    padmEditUser = null;
+    switchPadmTab('usuarios');
+  }, 1200);
+}
+
+// ── Sobreescribir doLogin para considerar usuarios dinámicos ──
+// Guardamos la función original del módulo Supabase que ya sobreescribió doLogin
+// y la integramos con la lógica de usuarios dinámicos.
+// Hacemos que al login se busque también en getDynUsers().
+var _origDoLoginBase = window.doLogin;
+window.doLogin = function(){
+  // Parche: antes de ejecutar el login original, pre-cargar usuarios dinámicos en USERS[]
+  _mergeAllDynUsers();
+  _origDoLoginBase();
+};
+
+function _mergeAllDynUsers(){
+  const dyn = getDynUsers();
+  dyn.forEach(du => {
+    if(!du.usuario) return;
+    const idx = USERS.findIndex(u => u.usuario === du.usuario);
+    if(idx >= 0){
+      Object.assign(USERS[idx], du);
+    } else {
+      // Usuario nuevo creado dinámicamente: agregar al array runtime
+      USERS.push({
+        usuario: du.usuario,
+        password: du.password || '',
+        permiso: du.permiso || 'visor',
+        sectores: du.sectores || [],
+        nombre: du.nombre || du.usuario,
+        rol: du.rol || '—',
+        ...du
+      });
+    }
+  });
+}
+
+// Correr el merge al cargar la página por si hay usuarios dinámicos previos
+_mergeAllDynUsers();
+
+// También al bajar datos de Supabase, re-mergear (para sincronizar usuarios creados en otro dispositivo)
+var _origPullAll = window.pullAllFromSupabase;
+if(_origPullAll) window.pullAllFromSupabase = async function(){
+  const res = await _origPullAll();
+  _mergeAllDynUsers();
+  return res;
+};
+
 </script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
