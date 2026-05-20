@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -169,10 +169,10 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 .notif-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;width:17px;height:17px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid #08111f}
 .notif-badge.show{display:flex}
 
-.h-user{text-align:right}
+.h-user{text-align:right;display:flex;flex-direction:column;gap:2px}
 .h-user .h-name{font-size:12px;font-weight:600;color:#fff}
 .h-user .h-rol{font-size:9px;color:#7aafd4;font-weight:700;letter-spacing:1px;text-transform:uppercase}
-@media(max-width:480px){.h-user{display:none}}
+@media(max-width:480px){.h-user{display:flex !important;gap:2px;max-width:120px}.h-user .h-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.h-user .h-rol{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 
 .logout-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:6px 11px;color:rgba(255,255,255,.7);cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;transition:all .2s;font-family:inherit}
 .logout-btn:hover{background:rgba(239,68,68,.2);border-color:#ef4444;color:#fff}
@@ -487,6 +487,23 @@ textarea.fi{resize:vertical;min-height:72px}
 .alm-row-name{font-size:13px;color:#dde9f3;flex:1}
 .alm-row-time{font-size:10px;color:#5a7a9a}
 .alm-empty{text-align:center;color:#5a7a9a;font-size:13px;padding:24px 12px;font-style:italic}
+/* ════ NUEVO: Highlight para registros nuevos ════ */
+.row-new{background:rgba(74,222,128,.15);border-left:4px solid #4ade80}
+.row-new td{color:#86efac}
+.row-new .detail-row{background:rgba(74,222,128,.08) !important}
+/* ════ Mejoras responsive para móvil en orientación horizontal ════ */
+@media(max-width:768px){
+  body{font-size:13px}
+  .data-table{font-size:12px}
+  .data-table thead th{padding:8px 4px}
+  .data-table tbody td{padding:8px 4px}
+}
+@media(max-height:500px){
+  header{padding:8px 12px;gap:6px}
+  .header-row{gap:4px}
+  .modal{max-height:90vh;overflow-y:auto}
+  .fm{margin:6px 0;padding:8px}
+}
 </style>
 </head>
 <body>
@@ -1805,8 +1822,9 @@ function renderTable(searchOverride){
   if(!CS||!CM)return;
   const rows=S.get(CS.id,CM.id);
   const fields=CM.fields;
-  // canEdit: SOLO admins pueden editar/borrar. Cargadores (incluso encargados) solo agregan.
-  const canEdit = CU.permiso==='admin';
+  // ════ CORRECCIÓN 4: Permisos de edición según rol ════
+  // Admins pueden editar/borrar todo. Otros users solo pueden editar sus propios registros
+  const canEditAll = CU.permiso==='admin';
   const area=document.getElementById('dataArea');
 
   // ─── Pestaña custom: ALMUERZO ───
@@ -1859,9 +1877,13 @@ function renderTable(searchOverride){
   const showRows = filteredRows;
   // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos
   const hasAnyAtt = rows.some(r => r._attachments && r._attachments.length);
-  const showActions = canEdit || hasAnyAtt;
+  const showActions = canEditAll || hasAnyAtt;
   // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
   const colSpan = cols.length + 2 + (showActions ? 1 : 0);
+
+  // ════ CORRECCIÓN 2: Calcular si un registro es "nuevo" (dentro de 5 minutos) ════
+  const ahora = Date.now();
+  const TIMEOUT_NUEVO = 5 * 60 * 1000; // 5 minutos
 
   area.innerHTML=`${orgToggleBar}${searchBar}
     <div class="data-wrap fade-in">
@@ -1874,22 +1896,28 @@ function renderTable(searchOverride){
       <tbody>
         ${showRows.map(r=>{
           const nAtt = (r._attachments && r._attachments.length) || 0;
+          // ════ CORRECCIÓN 2: Detectar si el registro es nuevo ════
+          const esNuevo = r._ts_new && (ahora - r._ts_new < TIMEOUT_NUEVO);
+          const rowClass = esNuevo ? 'row-new' : '';
+          // ════ CORRECCIÓN 4: Determinar si el usuario puede editar este registro ════
+          const puedeEditarEste = canEditAll || (r._por === CU.nombre && r._por !== undefined);
+          
           // Armamos el detalle (textareas con contenido) que va debajo del registro
           const detail = textAreas
             .filter(f => r[f.key] && String(r[f.key]).trim())
             .map(f => `<div style="margin:4px 0;padding:8px 10px;background:rgba(122,175,212,.08);border-left:3px solid ${CS.color||'#7aafd4'};border-radius:6px;font-size:12px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word"><strong style="color:#7aafd4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">${f.label}</strong>${String(r[f.key]).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`)
             .join('');
-          return `<tr class="clickable-row" onclick="viewDetail('${r._id}')" style="cursor:pointer" title="Tocá para ver el detalle completo">
+          return `<tr class="clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer" title="Tocá para ver el detalle completo">
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
           <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
           <td style="font-size:11px;color:#4a6a88;white-space:nowrap">${r._ts||'—'}</td>
           ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
             ${nAtt?`<button class="att-badge" onclick="viewAttachments('${r._id}')" title="Ver ${nAtt} archivo${nAtt>1?'s':''} adjunto${nAtt>1?'s':''}">📎 ${nAtt}</button>`:''}
-            ${canEdit?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
+            ${puedeEditarEste?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
             <button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
           </div></td>`:''}
         </tr>
-        ${detail?`<tr class="detail-row clickable-row" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
+        ${detail?`<tr class="detail-row clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
         }).join('')}
       </tbody>
     </table></div>`;
@@ -2596,9 +2624,34 @@ function saveRecord(){
   if(tempAttachments.length) data._attachments = tempAttachments;
   else if(editId) data._attachments = []; // permitir borrar todos los adjuntos al editar
 
+  // ════ CORRECCIÓN 3: Detectar si ya existe un registro igual (cuando NO estamos editando) ════
+  if(!editId){
+    const existentes = S.get(CS.id,CM.id);
+    // Construir una "firma" del registro: concatenar todos los valores de campos no-adjuntos
+    const nuevoFirma = CM.fields
+      .filter(f => f.type !== 'image')
+      .map(f => String(data[f.key]||'').trim().toLowerCase())
+      .join('|');
+    const esDuplicado = existentes.some(rec => {
+      const recFirma = CM.fields
+        .filter(f => f.type !== 'image')
+        .map(f => String(rec[f.key]||'').trim().toLowerCase())
+        .join('|');
+      return recFirma === nuevoFirma;
+    });
+    if(esDuplicado){
+      alert('⚠️ Este registro ya existe.\n\nNo se puede cargar un registro duplicado. Si es una actualización, usá "Editar".'); return;
+    }
+  }
+
   try {
-    if(editId) S.upd(CS.id,CM.id,editId,data);
-    else S.add(CS.id,CM.id,data);
+    if(editId) {
+      S.upd(CS.id,CM.id,editId,data);
+    } else {
+      // ════ CORRECCIÓN 2: Marcar registros como nuevos con timestamp especial ════
+      data._ts_new = Date.now(); // Timestamp para identificar registros nuevos
+      S.add(CS.id,CM.id,data);
+    }
     closeModal(); renderTable();
   } catch(err){
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
