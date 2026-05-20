@@ -109,7 +109,8 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 @media(max-width:768px){.menu-btn{display:flex;align-items:center}}
 .h-shield{width:32px;height:32px;flex-shrink:0}
 .h-titles{flex:1;min-width:0}
-.h-titles h1{font-size:17px;font-weight:900;letter-spacing:3px;color:#fff;line-height:1}
+.h-titles h1{font-size:17px;font-weight:900;letter-spacing:3px;color:#fff;line-height:1;white-space:nowrap}
+@media(max-width:480px){.h-titles h1{font-size:15px;letter-spacing:1.5px}}
 .h-titles h1 span{color:#7aafd4}
 .h-titles p{font-size:9px;color:rgba(255,255,255,.38);letter-spacing:1px;text-transform:uppercase}
 .h-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
@@ -1675,6 +1676,8 @@ function doLogin(){
       });
       localStorage.setItem('suep_accesos', JSON.stringify(accesos));
       localStorage.setItem('suep_acceso_actual', accId);
+      // ✅ FIX: sincronizar registro de accesos a Supabase
+      if(typeof syncToSupabase === 'function') syncToSupabase('suep_accesos', accesos);
       migratePanol();
       seedOrganigrama();
       buildSidebar(); refreshBadge();
@@ -2293,30 +2296,50 @@ function loadImg(input, key){
     return;
   }
   const sizeOrigKB = (file.size/1024).toFixed(0);
-  // Comprimimos siempre, no importa el tamaño original
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onerror = () => alert('No se pudo leer la imagen. Probá con otra.');
-    img.onload = () => {
+    img.onload = async () => {
       const canvas = document.createElement('canvas');
-      // Tamaño máximo más chico: 1024px de ancho/alto. Más que suficiente para horarios y diagramas
       const maxW = 1024, maxH = 1024;
       let w = img.width, h = img.height;
       if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
       if(h > maxH){ w = Math.round(w * maxH / h); h = maxH; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      // Calidad 75% — visualmente prácticamente igual pero archivo mucho más liviano
       const compressed = canvas.toDataURL('image/jpeg', 0.75);
+
+      // ✅ FIX: intentar subir a Supabase Storage en lugar de guardar base64 en el registro
+      if(typeof clienteS !== 'undefined'){
+        try{
+          const base64Data = compressed.split(',')[1];
+          const byteChars = atob(base64Data);
+          const byteArr = new Uint8Array(byteChars.length);
+          for(let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([byteArr], {type:'image/jpeg'});
+          const path = `images/${Date.now()}_${key}.jpg`;
+          const { error: upErr } = await clienteS.storage.from('suep-files').upload(path, blob, {contentType:'image/jpeg', upsert:true});
+          if(!upErr){
+            const { data: urlData } = clienteS.storage.from('suep-files').getPublicUrl(path);
+            tempImgs[key] = urlData.publicUrl;
+            const prev = document.getElementById(`prev_${key}`);
+            if(prev){ prev.src = urlData.publicUrl; prev.style.display = 'block'; }
+            const info = document.getElementById(`info_${key}`);
+            if(info){ info.textContent = `✓ Imagen subida a la nube: ${sizeOrigKB} KB → ${Math.round(blob.size/1024)} KB`; info.style.display = 'block'; }
+            return; // ← subida exitosa, no necesitamos el fallback base64
+          }
+        }catch(e){ console.warn('Storage no disponible, guardando base64', e); }
+      }
+
+      // Fallback: base64 (si Storage falla o no está disponible)
       tempImgs[key] = compressed;
       const prev = document.getElementById(`prev_${key}`);
       if(prev){ prev.src = compressed; prev.style.display = 'block'; }
-      // Mostrar info de compresión al lado de la previsualización
-      const sizeFinalKB = Math.round((compressed.length * 0.75) / 1024); // aprox tras decodear base64
+      const sizeFinalKB = Math.round((compressed.length * 0.75) / 1024);
       const info = document.getElementById(`info_${key}`);
       if(info){
-        info.textContent = `✓ Imagen optimizada: ${sizeOrigKB} KB → ${sizeFinalKB} KB`;
+        info.textContent = `✓ Imagen optimizada (local): ${sizeOrigKB} KB → ${sizeFinalKB} KB`;
         info.style.display = 'block';
       }
     };
@@ -2363,40 +2386,69 @@ function processAttachment(file){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
-    reader.onload = e => {
-      // Comprimir imágenes para ahorrar espacio y datos móviles
+    reader.onload = async e => {
+      let blob, fileName;
+
+      // Comprimir imágenes
       if(file.type.startsWith('image/')){
-        const img = new Image();
-        img.onerror = () => reject(new Error('Imagen inválida'));
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          // Tope más bajo: 1024px máximo y calidad 75% — visualmente igual, archivo mucho más liviano
-          const maxW = 1024, maxH = 1024;
-          let w = img.width, h = img.height;
-          if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
-          if(h > maxH){ w = Math.round(w * maxH / h); h = maxH; }
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const compressed = canvas.toDataURL('image/jpeg', 0.75);
-          // Tamaño aprox del archivo: el base64 ocupa ~33% más que el binario real
-          const realSize = Math.round(compressed.length * 0.75);
-          resolve({
-            name: file.name.replace(/\.[a-z]+$/i, '') + '.jpg',
-            type: 'image/jpeg',
-            size: realSize,
-            data: compressed
+        try{
+          blob = await new Promise((res2, rej2) => {
+            const img = new Image();
+            img.onerror = () => rej2(new Error('Imagen inválida'));
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const maxW = 1024, maxH = 1024;
+              let w = img.width, h = img.height;
+              if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+              if(h > maxH){ w = Math.round(w * maxH / h); h = maxH; }
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              canvas.toBlob(b => res2(b), 'image/jpeg', 0.75);
+            };
+            img.src = e.target.result;
           });
-        };
-        img.src = e.target.result;
+          fileName = file.name.replace(/\.[a-z]+$/i,'') + '.jpg';
+        }catch(err){ reject(err); return; }
       } else {
-        // PDF, Excel y otros se guardan tal cual (ya están comprimidos por su formato)
-        resolve({
-          name: file.name,
-          type: file.type || 'application/octet-stream',
-          size: file.size,
-          data: e.target.result
-        });
+        // PDF, Excel: usar el blob original
+        blob = file;
+        fileName = file.name;
       }
+
+      // ✅ FIX: intentar subir a Supabase Storage
+      if(typeof clienteS !== 'undefined'){
+        try{
+          const path = `attachments/${Date.now()}_${fileName}`;
+          const { error: upErr } = await clienteS.storage.from('suep-files').upload(path, blob, {
+            contentType: blob.type || file.type || 'application/octet-stream',
+            upsert: true
+          });
+          if(!upErr){
+            const { data: urlData } = clienteS.storage.from('suep-files').getPublicUrl(path);
+            resolve({
+              name: fileName,
+              type: blob.type || file.type || 'application/octet-stream',
+              size: blob.size,
+              url: urlData.publicUrl,  // URL pública en lugar de base64
+              _storage: true
+            });
+            return;
+          }
+        }catch(err){ console.warn('Storage no disponible para adjunto, usando base64', err); }
+      }
+
+      // Fallback: base64
+      const reader2 = new FileReader();
+      reader2.onerror = () => reject(reader2.error);
+      reader2.onload = ev => {
+        resolve({
+          name: fileName,
+          type: file.type || 'application/octet-stream',
+          size: blob instanceof Blob ? blob.size : file.size,
+          data: ev.target.result
+        });
+      };
+      reader2.readAsDataURL(blob instanceof Blob ? new File([blob], fileName, {type: blob.type}) : file);
     };
     reader.readAsDataURL(file);
   });
@@ -2443,19 +2495,26 @@ function previewAttachment(idx){
 }
 
 function openAttachment(a){
-  if(!a || !a.data) return;
+  if(!a) return;
+  // ✅ FIX: soporte para URLs de Supabase Storage (campo .url) y base64 (campo .data)
+  const src = a.url || a.data;
+  if(!src) return;
   if(a.type.startsWith('image/')){
-    viewImg(a.data);
+    viewImg(src);
+    return;
+  }
+  if(a.url){
+    // Archivos en Storage: abrir URL directamente
+    window.open(a.url, '_blank');
     return;
   }
   if(a.type === 'application/pdf' || /\.pdf$/i.test(a.name)){
     // Abrir PDF en una pestaña nueva con iframe
     const win = window.open('', '_blank');
     if(win){
-      win.document.write(`<!DOCTYPE html><html><head><title>${a.name}</title><meta charset="UTF-8"><style>body{margin:0;background:#1a1a1a}iframe{width:100vw;height:100vh;border:none}</style></head><body><iframe src="${a.data}"></iframe></body></html>`);
+      win.document.write(`<!DOCTYPE html><html><head><title>${a.name}</title><meta charset="UTF-8"><style>body{margin:0;background:#1a1a1a}iframe{width:100vw;height:100vh;border:none}</style></head><body><iframe src="${src}"></iframe></body></html>`);
       win.document.close();
     } else {
-      // Si el navegador bloquea pop-ups, descargar
       downloadAttachment(a);
     }
     return;
@@ -2465,9 +2524,11 @@ function openAttachment(a){
 }
 
 function downloadAttachment(a){
+  // ✅ FIX: soporte para URLs de Storage y base64
   const link = document.createElement('a');
-  link.href = a.data;
+  link.href = a.url || a.data;
   link.download = a.name;
+  if(a.url) link.target = '_blank';
   document.body.appendChild(link);
   link.click();
   setTimeout(() => link.remove(), 100);
@@ -2844,6 +2905,8 @@ function getPwdOverrides(){
 }
 function setPwdOverrides(o){
   localStorage.setItem('suep_pwd_overrides', JSON.stringify(o));
+  // ✅ FIX: sincronizar contraseñas a Supabase para que funcionen en todos los dispositivos
+  if(typeof syncToSupabase === 'function') syncToSupabase('suep_pwd_overrides', o);
 }
 function getUserPassword(usuario){
   const ov = getPwdOverrides();
@@ -3428,8 +3491,10 @@ async function flushWrites(){
     }));
     const { error } = await clienteS.from('app_data').upsert(rows, { onConflict: 'key' });
     if(error){
-      console.error('Error subiendo a Supabase:', error);
-      syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+      // ✅ FIX: mostrar el error real en consola para facilitar el diagnóstico
+      console.error('Error subiendo a Supabase:', error.message || error);
+      console.error('Claves que fallaron:', keys);
+      syncStatus(`⚠️ Error sync: ${error.message||'ver consola'}`, '#f87171');
     } else {
       syncStatus('✓ Sincronizado', '#34d399');
     }
