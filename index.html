@@ -938,7 +938,8 @@ const SECTORS = [
 
   ]},
   { id:'MOVILES', name:'Móviles', icon:'🚔', color:'#0369a1', bg:'#e0f2fe', modules:[
-    { id:'MOVILES', name:'Móviles', fields:[
+    { id:'MOVILES', name:'JP', fields:[
+      {key:'numero',label:'N°',type:'text'},
       {key:'patente',label:'Patente',type:'text',req:true},
       {key:'modelo',label:'Modelo',type:'text'},
       {key:'estado',label:'Estado',type:'select',opts:['Operativo','En taller','Baja','Reserva']},
