@@ -1932,9 +1932,10 @@ function renderTable(searchOverride){
   // Detectamos los campos textarea para mostrarlos como detalle expandible debajo del título
   const textAreas = fields.filter(f=>f.type==='textarea');
   const showRows = filteredRows;
-  // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos
+  // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos O si puede cargar (para editar sus propios)
   const hasAnyAtt = rows.some(r => r._attachments && r._attachments.length);
-  const showActions = canEditAll || hasAnyAtt;
+  const canCargar = CU.permiso==='cargar' || CU.permiso==='cargar-global';
+  const showActions = canEditAll || hasAnyAtt || canCargar;
   // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
   const colSpan = cols.length + 2 + (showActions ? 1 : 0);
 
@@ -1971,7 +1972,7 @@ function renderTable(searchOverride){
           ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
             ${nAtt?`<button class="att-badge" onclick="viewAttachments('${r._id}')" title="Ver ${nAtt} archivo${nAtt>1?'s':''} adjunto${nAtt>1?'s':''}">📎 ${nAtt}</button>`:''}
             ${puedeEditarEste?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
-            <button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
+            ${canEditAll?`<button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}`:''}
           </div></td>`:''}
         </tr>
         ${detail?`<tr class="detail-row clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
@@ -2635,10 +2636,11 @@ function viewDetail(recordId){
 
   // Botones de acción (si tiene permisos)
   const canEdit = CU.permiso === 'admin';
-  const actionBtns = canEdit ? `
+  const esPropio = r._por === CU.nombre && r._por !== undefined;
+  const actionBtns = (canEdit || esPropio) ? `
     <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,175,212,.15)">
       <button type="button" onclick="document.querySelector('[data-detail-ov]').remove();openEdit('${r._id}')" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,${accent},${dk(accent)});color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">✏️ Editar</button>
-      <button type="button" onclick="document.querySelector('[data-detail-ov]').remove();delRec('${r._id}')" style="padding:11px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">🗑️</button>
+      ${canEdit ? `<button type="button" onclick="document.querySelector('[data-detail-ov]').remove();delRec('${r._id}')" style="padding:11px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">🗑️</button>` : ''}
     </div>` : '';
 
   // Crear overlay
