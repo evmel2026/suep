@@ -1127,7 +1127,55 @@ const SECTORS = [
   ]},
   { id:'RECLUTAMIENTO', name:'Reclutamiento', icon:'🪖', color:'#6b21a8', bg:'#f3e8ff', modules:[
 
-    { id:'POSTULANTES', name:'Postulantes', fields:[
+    { id:'POST_SEGURIDAD', name:'Postulantes Seguridad', fields:[
+      {key:'apellidoNombre',  label:'Apellido y Nombre',         type:'text',   req:true},
+      {key:'dni',             label:'DNI',                       type:'text',   req:true},
+      {key:'lugarOrigen',     label:'Lugar de origen',           type:'text'},
+      {key:'fechaInscripcion',label:'Fecha de inscripción',      type:'date',   req:true},
+      {key:'examPsicologico', label:'Examen Psicológico',        type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examMedico',      label:'Examen Médico',             type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examSocioambiental', label:'Examen Socioambiental',  type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'estado',          label:'Estado general',            type:'select',
+        opts:['En proceso','Aprobado','Rechazado','Lista de espera','Baja']},
+      {key:'obs',             label:'Observaciones',             type:'textarea'},
+    ]},
+
+    { id:'POST_PENITENCIARIO', name:'Postulantes Penitenciario', fields:[
+      {key:'apellidoNombre',  label:'Apellido y Nombre',         type:'text',   req:true},
+      {key:'dni',             label:'DNI',                       type:'text',   req:true},
+      {key:'lugarOrigen',     label:'Lugar de origen',           type:'text'},
+      {key:'fechaInscripcion',label:'Fecha de inscripción',      type:'date',   req:true},
+      {key:'examPsicologico', label:'Examen Psicológico',        type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examMedico',      label:'Examen Médico',             type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examSocioambiental', label:'Examen Socioambiental',  type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'estado',          label:'Estado general',            type:'select',
+        opts:['En proceso','Aprobado','Rechazado','Lista de espera','Baja']},
+      {key:'obs',             label:'Observaciones',             type:'textarea'},
+    ]},
+
+    { id:'POST_CADETES', name:'Postulantes Cadetes', fields:[
+      {key:'apellidoNombre',  label:'Apellido y Nombre',         type:'text',   req:true},
+      {key:'dni',             label:'DNI',                       type:'text',   req:true},
+      {key:'lugarOrigen',     label:'Lugar de origen',           type:'text'},
+      {key:'fechaInscripcion',label:'Fecha de inscripción',      type:'date',   req:true},
+      {key:'examPsicologico', label:'Examen Psicológico',        type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examMedico',      label:'Examen Médico',             type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'examSocioambiental', label:'Examen Socioambiental',  type:'select',
+        opts:['Pendiente','Apto','No Apto']},
+      {key:'estado',          label:'Estado general',            type:'select',
+        opts:['En proceso','Aprobado','Rechazado','Lista de espera','Baja']},
+      {key:'obs',             label:'Observaciones',             type:'textarea'},
+    ]},
+
+    { id:'CURRICULUM', name:'Curriculum', fields:[
       {key:'apellidoNombre',  label:'Apellido y Nombre',         type:'text',   req:true},
       {key:'dni',             label:'DNI',                       type:'text',   req:true},
       {key:'lugarOrigen',     label:'Lugar de origen',           type:'text'},
