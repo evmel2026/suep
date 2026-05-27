@@ -3623,21 +3623,38 @@ function subscribeRealtime(){
 }
 
 // ─── Engancharse al login para sincronizar al entrar ───
+// ✅ FIX CONTRASEÑAS: Primero descargamos Supabase (contraseñas, usuarios dinámicos)
+// y DESPUÉS verificamos credenciales. Así, un cambio de contraseña hecho en otro
+// dispositivo ya está en localStorage cuando doLogin lo consulta.
 var _origDoLogin = doLogin;
-window.doLogin = function(){
+window.doLogin = async function(){
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  // 1. Mostrar estado de conexión y bloquear el botón
+  if(err) err.classList.remove('show');
+  if(btn){ btn.disabled = true; btn.textContent = '☁️ CONECTANDO...'; }
+
+  // 2. Bajar datos actualizados de Supabase ANTES de verificar credenciales
+  try {
+    await pullAllFromSupabase();
+  } catch(e) {
+    console.warn('Sin conexión a Supabase, usando datos locales:', e);
+  }
+
+  // 3. Re-mergear usuarios dinámicos con los datos recién bajados de la nube
+  if(typeof _mergeAllDynUsers === 'function') _mergeAllDynUsers();
+
+  // 4. Restaurar botón para que la función original lo maneje con normalidad
+  if(btn){ btn.disabled = false; btn.textContent = 'INGRESAR AL SISTEMA'; }
+
+  // 5. Ahora sí verificar credenciales (con los datos ya actualizados)
   _origDoLogin();
-  // Esperamos un poco a que doLogin (que tiene un setTimeout interno) termine
-  setTimeout(async ()=>{
-    if(!CU) return; // login falló
-    const ok = await pullAllFromSupabase();
-    if(ok){
-      // Refrescar la pantalla con los datos recién bajados
-      if(typeof buildSidebar==='function') buildSidebar();
-      if(typeof refreshBadge==='function') refreshBadge();
-      if(CS && CM && typeof renderTable==='function') renderTable();
-    }
+
+  // 6. Una vez logueado, suscribirse a cambios realtime
+  setTimeout(()=>{
+    if(!CU) return; // login falló, no suscribir
     subscribeRealtime();
-  }, 600);
+  }, 700);
 };
 
 // ─── Función para refrescar manualmente desde Supabase ───
