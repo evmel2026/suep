@@ -616,6 +616,9 @@ textarea.fi{resize:vertical;min-height:72px}
             <button class="export-btn" id="exportBtn" onclick="exportExcel()" title="Exportar a Excel">
               📥 <span>Excel</span>
             </button>
+            <button class="export-btn" id="exportPdfBtn" onclick="exportPDF()" title="Exportar a PDF">
+              📄 <span>PDF</span>
+            </button>
             <button class="add-btn" id="addBtn" onclick="openAddModal()">
               ＋ <span>Agregar</span>
             </button>
@@ -1583,12 +1586,28 @@ function newNotif(sId,mId,rec){
     txt:`<strong>${rec._por}</strong> cargó un nuevo registro en <strong>${mod?.name||mId}</strong>`,
     sec:sec?.name||sId, icon:sec?.icon||'📌',
     time:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
-    leida:false});
-  if(notifs.length>60)notifs.pop();
+    // ✅ Estado de "leída" INDIVIDUAL por usuario. leidaPor = { usuario: true }.
+    // Cada usuario ve la notificación como nueva hasta que ÉL la marque/abra,
+    // sin importar que otro usuario ya la haya visto. Las notificaciones viejas
+    // (con el campo "leida") se tratan como no leídas para todos.
+    leidaPor:{}});
+  if(notifs.length>200)notifs.pop();
   S.sn(notifs); refreshBadge();
 }
+// ¿La notificación n está leída por el usuario actual?
+function _notifLeida(n){
+  if(!CU) return false;
+  return !!(n.leidaPor && n.leidaPor[CU.usuario]);
+}
+// Marca una notificación como leída SOLO para el usuario actual (sin pisar a los demás)
+function _marcarLeidaUsuario(n){
+  if(!CU) return n;
+  const leidaPor = {...(n.leidaPor||{})};
+  leidaPor[CU.usuario] = true;
+  return {...n, leidaPor};
+}
 function refreshBadge(){
-  const n=S.gn().filter(x=>!x.leida).length;
+  const n=S.gn().filter(x=>!_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
   if(n>0){el.textContent=n>9?'9+':n;el.classList.add('show')}
   else el.classList.remove('show');
@@ -1597,24 +1616,26 @@ function renderNotifs(){
   const notifs=S.gn();
   const el=document.getElementById('notifList');
   if(!notifs.length){el.innerHTML='<div class="notif-empty">Sin notificaciones aún</div>';return;}
-  el.innerHTML=notifs.map(n=>`
-    <div class="notif-item ${n.leida?'':'unread'}" onclick="notifGo('${n.id}')">
-      <div class="n-dot ${n.leida?'read':''}"></div>
+  el.innerHTML=notifs.map(n=>{
+    const leida=_notifLeida(n);
+    return `
+    <div class="notif-item ${leida?'':'unread'}" onclick="notifGo('${n.id}')">
+      <div class="n-dot ${leida?'read':''}"></div>
       <div><div class="n-text">${n.icon} ${n.txt} <span style="color:#4a6a88;font-size:10px">[${n.sec}]</span></div>
       <div class="n-time">${n.time}</div></div>
-    </div>`).join('');
+    </div>`;}).join('');
 }
 function readN(id){
-  S.sn(S.gn().map(n=>n.id===id?{...n,leida:true}:n));
+  S.sn(S.gn().map(n=>n.id===id?_marcarLeidaUsuario(n):n));
   refreshBadge(); renderNotifs();
 }
-// Al clickear una notificación: marca como leída, cierra el panel y navega al sector/módulo
+// Al clickear una notificación: marca como leída (solo para mí), cierra el panel y navega al sector/módulo
 function notifGo(id){
   const notifs = S.gn();
   const n = notifs.find(x=>x.id===id);
   if(!n){ return; }
-  // Marcar como leída
-  S.sn(notifs.map(x=>x.id===id?{...x,leida:true}:x));
+  // Marcar como leída solo para el usuario actual
+  S.sn(notifs.map(x=>x.id===id?_marcarLeidaUsuario(x):x));
   refreshBadge();
   // Cerrar el panel de notificaciones
   ntOpen=false;
@@ -1659,7 +1680,8 @@ function notifGo(id){
   }
 }
 function markAllRead(){
-  S.sn(S.gn().map(n=>({...n,leida:true})));
+  // Marca todas como leídas SOLO para el usuario actual
+  S.sn(S.gn().map(n=>_marcarLeidaUsuario(n)));
   refreshBadge(); renderNotifs();
 }
 function toggleNotif(){
@@ -1906,9 +1928,19 @@ function renderTable(searchOverride){
 
   // Campos de texto por los que filtrar (excluye image)
   const searchableFields = fields.filter(f => f.type !== 'image');
-  const filteredRows = searchVal
-    ? rows.filter(r => searchableFields.some(f => String(r[f.key]||'').toLowerCase().includes(searchVal))
-        || String(r._por||'').toLowerCase().includes(searchVal))
+  // ✅ Buscador funcional: separa lo escrito en palabras y cada palabra puede
+  // coincidir en CUALQUIER campo (incluido quién lo cargó y la fecha). Ignora
+  // acentos y mayúsculas, así "jose" encuentra "José".
+  const _norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const palabras = _norm(searchVal).split(/\s+/).filter(Boolean);
+  const filteredRows = palabras.length
+    ? rows.filter(r => {
+        const textoFila = _norm([
+          ...searchableFields.map(f => r[f.key]),
+          r._por, r._ts
+        ].join(' '));
+        return palabras.every(p => textoFila.includes(p));
+      })
     : rows;
 
   // Buscador HTML — se muestra siempre, aunque el módulo esté vacío
@@ -2308,10 +2340,17 @@ function buildForm(data){
         ?`<textarea class="fi" id="f_${f.key}" placeholder="${f.label}">${data[f.key]||''}</textarea>`
         :f.type==='image'
         ?`<div>
+            <input type="file" accept="image/*" capture="environment" class="fi" id="f_${f.key}_cam"
+              onchange="loadImg(this,'${f.key}')" style="display:none">
             <input type="file" accept="image/*" class="fi" id="f_${f.key}"
-              onchange="loadImg(this,'${f.key}')"
-              style="padding:8px;cursor:pointer">
-            <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">📸 La imagen se optimiza automáticamente para ahorrar espacio</small>
+              onchange="loadImg(this,'${f.key}')" style="display:none">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="export-btn" style="flex:1;justify-content:center"
+                onclick="document.getElementById('f_${f.key}_cam').click()">📷 Tomar foto</button>
+              <button type="button" class="export-btn" style="flex:1;justify-content:center"
+                onclick="document.getElementById('f_${f.key}').click()">🖼️ Elegir imagen</button>
+            </div>
+            <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">📸 En el celular "Tomar foto" abre la cámara. La imagen se optimiza automáticamente.</small>
             <div id="info_${f.key}" style="display:none;margin-top:6px;font-size:11px;color:#34d399;font-weight:500"></div>
             ${data[f.key]
               ?`<div style="margin-top:10px;position:relative;display:inline-block">
@@ -2334,6 +2373,10 @@ function buildForm(data){
       <input type="file" class="fi att-input" id="f_attach"
         accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg,.webp,image/*,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         multiple onchange="addAttachments(this)">
+      <input type="file" id="f_attach_cam" accept="image/*" capture="environment"
+        style="display:none" onchange="addAttachments(this)">
+      <button type="button" class="export-btn" style="margin-top:8px;width:100%;justify-content:center"
+        onclick="document.getElementById('f_attach_cam').click()">📷 Tomar foto con la cámara</button>
       <div id="attList" class="att-list"></div>
     </div>`;
 
@@ -2721,7 +2764,7 @@ function viewAttachments(recordId){
   });
 }
 
-function saveRecord(){
+async function saveRecord(){
   const missing=CM.fields.filter(f=>{
     if(!f.req)return false;
     return!(document.getElementById(`f_${f.key}`)?.value?.trim());
@@ -2761,16 +2804,25 @@ function saveRecord(){
     }
   }
 
+  // Bloquear el botón mientras se guarda (evita doble carga por doble clic)
+  const btnSave = document.getElementById('btnSave');
+  const txtPrev = btnSave ? btnSave.textContent : '';
+  if(btnSave){ btnSave.disabled = true; btnSave.textContent = '☁️ GUARDANDO...'; }
+
   try {
     if(editId) {
-      S.upd(CS.id,CM.id,editId,data);
+      // Usa la versión segura si está disponible (fusiona con la nube antes de guardar)
+      if(typeof S.updSafe === 'function') await S.updSafe(CS.id,CM.id,editId,data);
+      else S.upd(CS.id,CM.id,editId,data);
     } else {
       // ════ CORRECCIÓN 2: Marcar registros como nuevos con timestamp especial ════
       data._ts_new = Date.now(); // Timestamp para identificar registros nuevos
-      S.add(CS.id,CM.id,data);
+      if(typeof S.addSafe === 'function') await S.addSafe(CS.id,CM.id,data);
+      else S.add(CS.id,CM.id,data);
     }
     closeModal(); renderTable();
   } catch(err){
+    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
       alert('⚠️ No hay más espacio para guardar.\n\nLos archivos adjuntos están ocupando demasiado lugar. Eliminá algunos archivos viejos o quitá adjuntos pesados de este registro.');
     } else {
@@ -2779,9 +2831,11 @@ function saveRecord(){
     }
   }
 }
-function delRec(id){
+async function delRec(id){
   if(!confirm('¿Eliminar este registro?'))return;
-  S.del(CS.id,CM.id,id); renderTable();
+  if(typeof S.delSafe === 'function') await S.delSafe(CS.id,CM.id,id);
+  else S.del(CS.id,CM.id,id);
+  renderTable();
 }
 function closeModal(){document.getElementById('modalOverlay').style.display='none';editId=null;tempAttachments=[];}
 function checkOverlayClick(e){if(e.target.id==='modalOverlay')closeModal();}
@@ -2837,6 +2891,58 @@ function exportExcel(){
   const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   const filename = `SUEP_${limpiar(CS.name)}_${limpiar(CM.name)}_${fecha}.xlsx`;
   XLSX.writeFile(wb, filename);
+}
+
+// ══════════════════════════════════════════════
+// EXPORTAR PDF
+// ══════════════════════════════════════════════
+function exportPDF(){
+  if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
+  const rows = S.get(CS.id, CM.id);
+  if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
+  if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
+    alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
+    return;
+  }
+
+  // Excluimos imágenes (no se muestran como texto en la tabla)
+  const fields = CM.fields.filter(f => f.type !== 'image');
+  const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Adjuntos'];
+
+  const body = rows.map(r=>{
+    const atts = r._attachments || [];
+    const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}` : '';
+    return [
+      ...fields.map(f=>String(r[f.key]||'')),
+      r._por||'', r._ts||'', attDesc
+    ];
+  });
+
+  const { jsPDF } = window.jspdf;
+  const orientation = headers.length > 6 ? 'landscape' : 'portrait';
+  const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
+
+  const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  doc.setFontSize(14);
+  doc.setTextColor(8, 17, 31);
+  doc.text(`${CS.name} · ${CM.name}`, 40, 36);
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
+
+  doc.autoTable({
+    head: [headers],
+    body: body,
+    startY: 62,
+    styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak', valign: 'top' },
+    headStyles: { fillColor: [13, 25, 40], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [240, 245, 250] },
+    margin: { left: 40, right: 40 }
+  });
+
+  const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
+  const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_${fechaArch}.pdf`);
 }
 
 
@@ -3060,11 +3166,13 @@ function closeResetPwd(){
   document.getElementById('pwdResetOv').classList.remove('show');
 }
 function renderUserList(){
-  const q = (document.getElementById('pwdSearch').value||'').toLowerCase().trim();
+  const _normU = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const palabras = _normU(document.getElementById('pwdSearch').value).split(/\s+/).filter(Boolean);
   const list = document.getElementById('pwdUserList');
   const filtered = USERS.filter(u=>{
-    if(!q) return true;
-    return u.nombre.toLowerCase().includes(q) || u.usuario.toLowerCase().includes(q) || (u.rol||'').toLowerCase().includes(q);
+    if(!palabras.length) return true;
+    const texto = _normU([u.nombre, u.usuario, u.rol].join(' '));
+    return palabras.every(p => texto.includes(p));
   });
   if(filtered.length===0){
     list.innerHTML='<div style="padding:20px;text-align:center;color:#7aafd4;font-size:12px">Sin resultados</div>';
@@ -3215,13 +3323,12 @@ function switchPadmTab(tab){
 function renderPadmUsuarios(filtro){
   const body = document.getElementById('padmBody');
   const todos = getAllUsers();
-  const q = (filtro||'').toLowerCase().trim();
-  const lista = q ? todos.filter(u =>
-    u.nombre.toLowerCase().includes(q) ||
-    u.usuario.toLowerCase().includes(q) ||
-    (u.rol||'').toLowerCase().includes(q) ||
-    (PERMISOS_LABELS[u.permiso]||'').toLowerCase().includes(q)
-  ) : todos;
+  const _normP = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const palabras = _normP(filtro).split(/\s+/).filter(Boolean);
+  const lista = palabras.length ? todos.filter(u => {
+    const texto = _normP([u.nombre, u.usuario, u.rol, PERMISOS_LABELS[u.permiso]].join(' '));
+    return palabras.every(p => texto.includes(p));
+  }) : todos;
 
   body.innerHTML = `
     <div style="position:relative;margin-bottom:14px">
@@ -3466,6 +3573,8 @@ if(_origPullAll) window.pullAllFromSupabase = async function(){
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -3521,6 +3630,103 @@ S.set = function(s, m, d){
 S.sn = function(n){
   _S_sn_local(n);
   syncToSupabase('suep_notifs', n);
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// PROTECCIÓN CONTRA CARGAS SIMULTÁNEAS (anti "el último gana")
+// ═══════════════════════════════════════════════════════════════════
+// Cada módulo se guarda como una sola fila en Supabase. Si dos personas cargan
+// al mismo tiempo, sin protección el segundo pisaría al primero. Para evitarlo,
+// antes de guardar bajamos la versión MÁS FRESCA del módulo desde la nube y la
+// FUSIONAMOS con la local por _id, de modo que no se pierde el registro de nadie.
+
+// Baja la versión actual de un módulo puntual desde la nube (o null si no hay/sin conexión)
+async function _fetchModuloFresco(s, m){
+  if(typeof clienteS === 'undefined') return null;
+  try{
+    const key = S.key(s, m);
+    const { data, error } = await clienteS.from('app_data').select('value').eq('key', key).maybeSingle();
+    if(error){ console.warn('No se pudo traer versión fresca de', key, error.message); return null; }
+    return (data && Array.isArray(data.value)) ? data.value : (data ? [] : null);
+  }catch(e){ console.warn('Sin conexión al traer versión fresca:', e); return null; }
+}
+
+// Fusiona dos listas de registros por _id. Ante conflicto del mismo _id, gana el
+// que tenga edición más reciente (_editTs) o, si no, se conserva el remoto salvo
+// que el local sea el que estamos modificando ahora.
+function _mergeRegistros(remoto, local, idPrioritario){
+  const map = new Map();
+  (remoto||[]).forEach(r=>{ if(r && r._id) map.set(r._id, r); });
+  (local||[]).forEach(r=>{
+    if(!r || !r._id){ return; }
+    if(!map.has(r._id)){ map.set(r._id, r); return; }
+    // Conflicto: mismo _id en ambos lados
+    if(r._id === idPrioritario){ map.set(r._id, r); return; } // mi cambio actual manda
+    const ex = map.get(r._id);
+    const tLocal  = Date.parse(r._editTs||'')  || 0;
+    const tRemoto = Date.parse(ex._editTs||'') || 0;
+    if(tLocal >= tRemoto) map.set(r._id, r);
+  });
+  return Array.from(map.values());
+}
+
+// Guarda una lista de registros de un módulo de forma segura: baja lo fresco,
+// fusiona, aplica y sube SIN debounce (escritura inmediata y directa a la nube).
+async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
+  const remoto = await _fetchModuloFresco(s, m);
+  // Si no hay conexión/nube, guardamos solo local (se sincroniza después)
+  const fusionada = (remoto === null)
+    ? listaLocal
+    : _mergeRegistros(remoto, listaLocal, idPrioritario);
+  _S_set_local(s, m, fusionada);
+  // Subir inmediatamente la versión fusionada (sin esperar el debounce)
+  if(typeof clienteS !== 'undefined'){
+    try{
+      await clienteS.from('app_data').upsert([{
+        key: S.key(s, m), value: fusionada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+      }], { onConflict: 'key' });
+      syncStatus('✓ Guardado y sincronizado', '#34d399');
+    }catch(e){
+      console.warn('No se pudo subir inmediatamente, queda en cola local:', e);
+      syncToSupabase(S.key(s, m), fusionada); // reintento por la vía normal
+      syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+    }
+  }
+  return fusionada;
+}
+
+// ─── Versiones seguras de add / upd / del (fusionan con la nube antes de guardar) ───
+S.addSafe = async function(s, m, data){
+  const r = {...data, _id: Date.now().toString(36)+Math.random().toString(36).slice(2),
+    _por: CU?.nombre||'—', _sector: s, _mod: m,
+    _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})};
+  const local = S.get(s, m);
+  local.push(r);
+  await _guardarModuloSeguro(s, m, local, r._id);
+  newNotif(s, m, r);
+  return r;
+};
+S.updSafe = async function(s, m, id, data){
+  const local = S.get(s, m).map(r => r._id===id ? {...r, ...data, _editPor: CU?.nombre, _editTs: new Date().toISOString()} : r);
+  await _guardarModuloSeguro(s, m, local, id);
+};
+S.delSafe = async function(s, m, id){
+  // Para borrar con seguridad: traemos lo fresco, le quitamos SOLO este id y subimos
+  const remoto = await _fetchModuloFresco(s, m);
+  const base = (remoto === null) ? S.get(s, m) : _mergeRegistros(remoto, S.get(s, m), null);
+  const filtrada = base.filter(r => r._id !== id);
+  _S_set_local(s, m, filtrada);
+  if(typeof clienteS !== 'undefined'){
+    try{
+      await clienteS.from('app_data').upsert([{
+        key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+      }], { onConflict: 'key' });
+      syncStatus('✓ Eliminado y sincronizado', '#34d399');
+    }catch(e){
+      console.warn('No se pudo subir el borrado, queda en cola local:', e);
+      syncToSupabase(S.key(s, m), filtrada);
+    }
+  }
 };
 
 // ─── Escribir una clave a Supabase ───
@@ -3650,12 +3856,72 @@ window.doLogin = async function(){
   // 5. Ahora sí verificar credenciales (con los datos ya actualizados)
   _origDoLogin();
 
-  // 6. Una vez logueado, suscribirse a cambios realtime
+  // 6. Una vez logueado, reconstruir notificaciones faltantes y suscribirse a realtime
   setTimeout(()=>{
     if(!CU) return; // login falló, no suscribir
+    try{ reconstruirNotifsFaltantes(); }catch(e){ console.warn('No se pudieron reconstruir notificaciones:', e); }
     subscribeRealtime();
   }, 700);
 };
+
+// ─────────────────────────────────────────────────────────────
+// RECONSTRUIR NOTIFICACIONES FALTANTES
+// ─────────────────────────────────────────────────────────────
+// Las notificaciones solo se creaban en el momento exacto de cargar un registro.
+// Si una notificación se perdió (por el tope de 60, o por no haberse sincronizado),
+// la regeneramos a partir de los registros que YA existen, usando su fecha (_ts) y
+// autor (_por) reales. Cada notificación se vincula al registro por su rId, así que
+// nunca generamos duplicados: solo creamos las que faltan.
+function reconstruirNotifsFaltantes(){
+  const notifs = S.gn();
+  const idsConNotif = new Set(notifs.map(n=>n.rId).filter(Boolean));
+
+  // Convierte "dd/mm/aaaa hh:mm[:ss]" (es-AR) a timestamp para poder ordenar
+  const parseTs = (ts)=>{
+    if(!ts) return 0;
+    const m = String(ts).match(/(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if(!m) return 0;
+    return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +(m[6]||0)).getTime();
+  };
+
+  // Recolectar TODOS los registros de todos los sectores/módulos/subTabs
+  const nuevos = [];
+  SECTORS.forEach(sec=>{
+    (sec.modules||[]).forEach(mod=>{
+      const targets = mod.subTabs ? mod.subTabs : [mod];
+      targets.forEach(t=>{
+        const rows = S.get(sec.id, t.id);
+        rows.forEach(r=>{
+          if(!r._id || idsConNotif.has(r._id)) return; // ya tiene notificación
+          const tsMs = parseTs(r._ts);
+          nuevos.push({
+            id: (tsMs||Date.now()) + '_' + r._id,   // id estable por registro
+            secId: sec.id, modId: t.id, rId: r._id,
+            txt: `<strong>${r._por||'Alguien'}</strong> cargó un registro en <strong>${t.name||t.id}</strong>`,
+            sec: sec.name||sec.id, icon: sec.icon||'📌',
+            time: r._ts || '',
+            _tsMs: tsMs,
+            leidaPor: {}   // sin leer para todos: cada usuario la verá como nueva
+          });
+        });
+      });
+    });
+  });
+
+  if(!nuevos.length) return; // no falta ninguna
+
+  // Unir con las existentes, ordenar por fecha (más nuevas primero) y recortar
+  const _ms = n => (typeof n._tsMs === 'number' ? n._tsMs : parseTs(n.time));
+  const combinadas = [...notifs, ...nuevos]
+    .sort((a,b)=> _ms(b) - _ms(a))
+    .slice(0, 200);   // ampliamos el tope para que entren las de días anteriores
+
+  S.sn(combinadas);
+  refreshBadge();
+  if(typeof ntOpen !== 'undefined' && ntOpen) renderNotifs();
+  console.log(`Notificaciones reconstruidas: ${nuevos.length} agregadas.`);
+}
+window.reconstruirNotifsFaltantes = reconstruirNotifsFaltantes;
 
 // ─── Función para refrescar manualmente desde Supabase ───
 window.recargarDesdeNube = async function(){
