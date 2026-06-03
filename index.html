@@ -170,7 +170,7 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 .pwd-btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,130,246,.3)}
 .pwd-btn-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .pwd-btn-cancel{padding:12px 18px;border-radius:10px;border:1.5px solid rgba(122,175,212,.25);background:transparent;font-size:12px;font-weight:600;color:#8ab4d0;cursor:pointer;font-family:inherit}
-.notif-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;width:17px;height:17px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid #08111f}
+.notif-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:9px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid #08111f}
 .notif-badge.show{display:flex}
 
 .h-user{text-align:right;display:flex;flex-direction:column;gap:2px}
@@ -817,17 +817,17 @@ const USERS = [
 
   // ─── Instructores + Supervisor Operacional + Jefes de Guardia ───
   { usuario:'ariel.cumillan', password:'cumillan2026', permiso:'cargar-global', sectores:[], nombre:'Ariel Osvaldo Cumillan', rol:'Supervisor Operacional' },
-  { usuario:'nahuel.calderon', password:'calderon2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Nahuel Calderón', rol:'Instructor' },
-  { usuario:'micaela.castillo', password:'castillo2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Micaela Florencia Castillo', rol:'Instructor' },
-  { usuario:'daniela.euliarte', password:'euliarte2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Daniela Euliarte', rol:'Instructor' },
-  { usuario:'juan.yanez', password:'yanez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Juan Lucas Yáñez', rol:'Instructor' },
-  { usuario:'yoseli.romero', password:'romero2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Yoseli Estefanía Romero', rol:'Instructor' },
-  { usuario:'pablo.quevedo', password:'quevedo2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Pablo Ezequiel Quevedo', rol:'Instructor' },
-  { usuario:'noelia.oses', password:'oses2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Noelia Belén Oses', rol:'Instructor' },
-  { usuario:'juan.ramirez', password:'ramirez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Juan José Ramírez', rol:'Instructor' },
-  { usuario:'martin.sanhueza', password:'sanhueza2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Martín Alejandro Sanhueza', rol:'Instructor' },
-  { usuario:'mariela.lopez', password:'lopez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Mariela López', rol:'Instructor' },
-  { usuario:'mauricio.vazquez', password:'vazquez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Mauricio Eduardo Vázquez', rol:'Instructor' },
+  { usuario:'nahuel.calderon', password:'calderon2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Nahuel Calderón', rol:'Instructor' },
+  { usuario:'micaela.castillo', password:'castillo2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Micaela Florencia Castillo', rol:'Instructor' },
+  { usuario:'daniela.euliarte', password:'euliarte2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Daniela Euliarte', rol:'Instructor' },
+  { usuario:'juan.yanez', password:'yanez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Juan Lucas Yáñez', rol:'Instructor' },
+  { usuario:'yoseli.romero', password:'romero2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Yoseli Estefanía Romero', rol:'Instructor' },
+  { usuario:'pablo.quevedo', password:'quevedo2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Pablo Ezequiel Quevedo', rol:'Instructor' },
+  { usuario:'noelia.oses', password:'oses2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Noelia Belén Oses', rol:'Instructor' },
+  { usuario:'juan.ramirez', password:'ramirez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Juan José Ramírez', rol:'Instructor' },
+  { usuario:'martin.sanhueza', password:'sanhueza2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Martín Alejandro Sanhueza', rol:'Instructor' },
+  { usuario:'mariela.lopez', password:'lopez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Mariela López', rol:'Instructor' },
+  { usuario:'mauricio.vazquez', password:'vazquez2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES','ENFERMERIA'], nombre:'Mauricio Eduardo Vázquez', rol:'Instructor' },
   { usuario:'victor.merino', password:'merino2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Víctor Jesús Merino', rol:'Jefe de Guardia' },
   { usuario:'david.seguel', password:'seguel2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'David Ernesto Seguel', rol:'Jefe de Guardia' },
   { usuario:'guillermo.badagnani', password:'badagnani2026', permiso:'cargar', sectores:['OPERACIONAL','MOVILES'], nombre:'Guillermo Ariel Badagnani', rol:'Jefe de Guardia' },
@@ -864,52 +864,33 @@ const USERS = [
 const SECTORS = [
   { id:'ACADEMICA', name:'Académica', icon:'🎓', color:'#1d4ed8', bg:'#dbeafe', modules:[
 
-    { id:'DOCENTES', name:'Docentes', fields:[
-      {key:'apellidoNombre', label:'Apellido y Nombre',      type:'text',   req:true},
-      {key:'dni',            label:'DNI',                    type:'text',   req:true},
-      {key:'fechaNac',       label:'Fecha de Nacimiento',    type:'date'},
-      {key:'domicilio',      label:'Domicilio',              type:'text'},
-      {key:'telefono',       label:'Teléfono / Celular',     type:'text'},
-      {key:'grado',          label:'Grado / Cargo',          type:'text'},
-      {key:'materia',        label:'Materia que dicta',      type:'text',   req:true},
-      {key:'estado',         label:'Estado',                 type:'select', opts:['Activo','Licencia','Comisión','Baja']},
-      {key:'obs',            label:'Observaciones',          type:'textarea'},
-    ]},
-
-    { id:'SECCIONES', name:'Secciones / Aspirantes', fields:[
-      {key:'seccion',        label:'Sección',                type:'select', req:true,
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
-      {key:'apellidoNombre', label:'Apellido y Nombre',      type:'text',   req:true},
-      {key:'dni',            label:'DNI',                    type:'text',   req:true},
-      {key:'estado',         label:'Estado',                 type:'select',
-        opts:['Activo','Baja médica','Baja disciplinaria','Egresado','Ausente']},
-      {key:'obs',            label:'Observaciones',          type:'textarea'},
-    ]},
-
-    { id:'LIBROTEMAS', name:'Libro de Temas', fields:[
+    { id:'ASISTENCIA_DOCENTE', name:'Asistencia Docente', fields:[
       {key:'fecha',          label:'Fecha',                  type:'date',   req:true},
-      {key:'seccion',        label:'Sección',                type:'select', req:true,
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
+      {key:'apellidoNombre', label:'Apellido y Nombre',      type:'text',   req:true},
+      {key:'materia',        label:'Materia que dicta',      type:'text'},
+      {key:'estado',         label:'¿Asistió?',              type:'select', req:true,
+        opts:['Asistió','No asistió','Falta justificada','Licencia','Comisión']},
+      {key:'motivo',         label:'Motivo (si no asistió)', type:'text'},
+      {key:'obs',            label:'Observaciones',          type:'textarea'},
+    ]},
+
+    { id:'CLASES', name:'Clases', fields:[
+      {key:'fecha',          label:'Fecha',                  type:'date',   req:true},
+      {key:'tipo',           label:'Tipo',                   type:'select', req:true,
+        opts:['Recupero','Adelanto','Clase normal']},
       {key:'docente',        label:'Docente',                type:'text',   req:true},
       {key:'materia',        label:'Materia',                type:'text',   req:true},
-      {key:'tema',           label:'Tema dictado',           type:'textarea',req:true},
-      {key:'obs',            label:'Observaciones',          type:'textarea'},
-    ]},
-
-    { id:'ASISTENCIA', name:'Asistencia', fields:[
-      {key:'fecha',          label:'Fecha',                  type:'date',   req:true},
-      {key:'seccion',        label:'Sección',                type:'select', req:true,
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
-      {key:'apellidoNombre', label:'Apellido y Nombre',      type:'text',   req:true},
-      {key:'estado',         label:'Estado',                 type:'select',
-        opts:['Presente','Ausente','Tarde','Justificado']},
+      {key:'seccion',        label:'Sección',                type:'select',
+        opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5','Todas las secciones']},
+      {key:'horario',        label:'Horario',                type:'text'},
+      {key:'tema',           label:'Tema / Contenido',       type:'textarea'},
       {key:'obs',            label:'Observaciones',          type:'textarea'},
     ]},
 
     { id:'EDUFISICA', name:'Educación Física', fields:[
       {key:'fecha',          label:'Fecha',                  type:'date',   req:true},
       {key:'seccion',        label:'Sección',                type:'select', req:true,
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
+        opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5']},
       {key:'apellidoNombre', label:'Apellido y Nombre',      type:'text',   req:true},
       {key:'actividad',      label:'Actividad / Prueba',     type:'text',   req:true},
       {key:'resultado',      label:'Resultado / Marca',      type:'text'},
@@ -922,15 +903,13 @@ const SECTORS = [
   { id:'OPERACIONAL', name:'Operacional', icon:'⚙️', color:'#b45309', bg:'#fef3c7', modules:[
 
     { id:'INSTRUCTORES', name:'Instructores', fields:[
-      {key:'apellidoNombre',   label:'Apellido y Nombre',        type:'text',    req:true},
+      {key:'apellidoNombre',   label:'Instructor (Apellido y Nombre)', type:'text',  req:true},
       {key:'grado',            label:'Grado / Cargo',            type:'text'},
-      {key:'seccion',          label:'Sección',                  type:'select',
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección']},
-      {key:'notaConducta',     label:'Nota de Conducta',         type:'number'},
-      {key:'notaOrdenCerrado', label:'Nota de Orden Cerrado',    type:'number'},
-      {key:'estado',           label:'Estado',                   type:'select',
-        opts:['Activo','Licencia','Comisión','Baja']},
-      {key:'obs',              label:'Observaciones',            type:'textarea'},
+      {key:'seccion',          label:'Sección a cargo',          type:'select', req:true,
+        opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5']},
+      {key:'aspirante',        label:'Aspirante (si corresponde)', type:'text'},
+      {key:'obsAspirante',     label:'Observación del aspirante', type:'textarea'},
+      {key:'obs',              label:'Observaciones generales',   type:'textarea'},
     ]},
 
     { id:'DIAGRAMA_MES', name:'Diagrama del Mes', fields:[
@@ -950,17 +929,9 @@ const SECTORS = [
       {key:'obs',            label:'Observaciones',        type:'textarea'},
     ]},
 
-    { id:'NOVEDADES_GUARDIA', name:'Cargar Novedades', fields:[
-      {key:'fecha',          label:'Fecha',                type:'date',   req:true},
-      {key:'hora',           label:'Hora',                 type:'time',   req:true},
-      {key:'informante',     label:'Quién informa',        type:'text',   req:true},
-      {key:'grado',          label:'Grado del informante', type:'text'},
-      {key:'tipo',           label:'Tipo de novedad',      type:'select',
-        opts:['Parte médico','Accidente','Incidente','Disciplinaria','Administrativa','Urgencia','Otra']},
-      {key:'novedad',        label:'Descripción de la novedad', type:'textarea', req:true},
-      {key:'estado',         label:'Estado',               type:'select',
-        opts:['Pendiente','En trámite','Resuelta']},
-    ]},
+    { id:'RECARGO_ASPIRANTES', name:'Recargo Operacional Aspirantes', custom:'recargo' },
+
+    { id:'IMAGINARIAS', name:'Imaginarias', custom:'imaginarias' },
 
   ]},
   { id:'MOVILES', name:'Móviles', icon:'🚔', color:'#0369a1', bg:'#e0f2fe', modules:[
@@ -970,6 +941,8 @@ const SECTORS = [
       {key:'modelo',label:'Modelo',type:'text'},
       {key:'estado',label:'Estado',type:'select',opts:['Operativo','En taller','Baja','Reserva']},
       {key:'km',label:'Kilometraje',type:'number'},
+      {key:'nafta',label:'Carga de nafta (litros / $)',type:'text'},
+      {key:'fajina',label:'¿Se hizo fajina?',type:'select',opts:['Sí','No']},
       {key:'novedad',label:'Novedad',type:'textarea'},
       {key:'fecha',label:'Fecha',type:'date'},
     ]},
@@ -1095,7 +1068,7 @@ const SECTORS = [
       {key:'hora',            label:'Hora de atención',       type:'time'},
       {key:'apellidoNombre',  label:'Apellido y Nombre',      type:'text',   req:true},
       {key:'seccion',         label:'Sección',                type:'select',
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección','Personal']},
+        opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5','Personal']},
       {key:'motivo',          label:'Motivo de consulta',     type:'text',   req:true},
       {key:'diagnostico',     label:'Diagnóstico',            type:'textarea'},
       {key:'reposo',          label:'Tipo de reposo',         type:'select',
@@ -1229,6 +1202,21 @@ const SECTORS = [
       {key:'obs',            label:'Observaciones',       type:'textarea'},
     ]},
 
+    { id:'EXPEDIENTES', name:'N° de Expediente', fields:[
+      {key:'numero',         label:'N° de Expediente',    type:'text',   req:true},
+      {key:'dia',            label:'Día',                 type:'text'},
+      {key:'fecha',          label:'Fecha',               type:'date',   req:true},
+      {key:'entrada',        label:'Entrada',             type:'text'},
+      {key:'salida',         label:'Salida',              type:'text'},
+      {key:'obs',            label:'Observación',         type:'textarea'},
+    ]},
+
+    { id:'DISPOSICIONES', name:'N° de Disposición', fields:[
+      {key:'numero',         label:'N° de Disposición',   type:'text',   req:true},
+      {key:'fecha',          label:'Fecha',               type:'date',   req:true},
+      {key:'motivo',         label:'Motivo',              type:'textarea', req:true},
+    ]},
+
     { id:'CORRESPONDENCIA', name:'Correspondencia', fields:[
       {key:'fecha',   label:'Fecha',              type:'date',   req:true},
       {key:'tipo',    label:'Tipo',               type:'select',
@@ -1323,7 +1311,7 @@ const SECTORS = [
       {key:'hora',        label:'Hora',               type:'time'},
       {key:'actividad',   label:'Actividad / Evento / Lugar', type:'text', req:true},
       {key:'seccion',     label:'Sección',            type:'select',
-        opts:['1ra Sección','2da Sección','3ra Sección','4ta Sección','5ta Sección','Todas las secciones','—']},
+        opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5','Todas las secciones','—']},
       {key:'descripcion', label:'Descripción',        type:'textarea'},
       {key:'obs',         label:'Observaciones',      type:'textarea'},
     ]},
@@ -1609,7 +1597,7 @@ function _marcarLeidaUsuario(n){
 function refreshBadge(){
   const n=S.gn().filter(x=>!_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
-  if(n>0){el.textContent=n>9?'9+':n;el.classList.add('show')}
+  if(n>0){el.textContent=n; el.classList.add('show')}
   else el.classList.remove('show');
 }
 function renderNotifs(){
@@ -1846,13 +1834,13 @@ function selectSector(id){
   document.getElementById('shCount').textContent=`${sec.modules.length} módulo${sec.modules.length>1?'s':''}`;
   const isCustom = !!sec.custom;
   // canAdd: admin (todo) | cargar-global (todo) | cargar (si el sector está en sus sectores asignados O es universal)
-  const canAdd = !isCustom && (
+  const canAdd = !isCustom && !(CM && CM.custom) && (
     CU.permiso==='admin' ||
     CU.permiso==='cargar-global' ||
     (CU.permiso==='cargar' && ((CU.sectores||[]).includes(sec.id) || !!sec.universal))
   );
   document.getElementById('addBtn').style.display=canAdd?'flex':'none';
-  document.getElementById('exportBtn').style.display=isCustom?'none':'flex';
+  document.getElementById('exportBtn').style.display=(isCustom || (CM && CM.custom))?'none':'flex';
   if(canAdd) document.getElementById('addBtn').style.background=`linear-gradient(135deg,${sec.color},${dk(sec.color)})`;
   buildModTabs(); buildSubTabs(); renderTable(); closeSidebar();
 }
@@ -1883,8 +1871,23 @@ function selectMod(id){
   document.querySelectorAll('.mod-tab').forEach(t=>{t.classList.remove('active');t.style.background='';t.style.color='';});
   const at=document.getElementById(`mt_${id}`);
   if(at){at.classList.add('active');at.style.background=CS.color;at.style.color='#fff';}
+  // Las pestañas custom (recargo/imaginarias) no usan el botón genérico Agregar ni Exportar
+  refreshAddExportButtons();
   buildSubTabs();
   renderTable();
+}
+// Recalcula visibilidad de los botones Agregar/Exportar según el módulo actual
+function refreshAddExportButtons(){
+  const modCustom = !!(CM && CM.custom);
+  const isCustom = !!CS.custom || modCustom;
+  const canAdd = !isCustom && (
+    CU.permiso==='admin' ||
+    CU.permiso==='cargar-global' ||
+    (CU.permiso==='cargar' && ((CU.sectores||[]).includes(CS.id) || !!CS.universal))
+  );
+  document.getElementById('addBtn').style.display=canAdd?'flex':'none';
+  document.getElementById('exportBtn').style.display=isCustom?'none':'flex';
+  if(canAdd) document.getElementById('addBtn').style.background=`linear-gradient(135deg,${CS.color},${dk(CS.color)})`;
 }
 function selectSubMod(parentId, subId){
   const parent=CS.modules.find(m=>m.id===parentId); if(!parent||!parent.subTabs)return;
@@ -1892,6 +1895,35 @@ function selectSubMod(parentId, subId){
   CM = sub;
   buildSubTabs();
   renderTable();
+}
+
+// ══════════════════════════════════════════════
+// PERMISOS DE EDICIÓN / BORRADO POR CONTEXTO
+// ══════════════════════════════════════════════
+// ¿El usuario actual es un chofer ya cargado en la pestaña "Choferes Habilitados"?
+// Si es así, puede editar en Móviles → JP (además de las administradoras).
+function _esChoferCargado(){
+  const choferes = S.get('MOVILES','CHOFERES');
+  const yo = (CU.nombre||'').toLowerCase().trim();
+  return choferes.some(c => (c.apellidoNombre||'').toLowerCase().trim() === yo);
+}
+// Permiso de EDICIÓN sobre un registro concreto
+function puedeEditarRec(r){
+  if(CU.permiso==='admin') return true;
+  const sId = r._sector || (CS && CS.id);
+  const mId = r._mod || (CM && CM.id);
+  // Móviles → JP: las 2 administradoras (admin, ya cubierto) + choferes cargados en la otra pestaña
+  if(sId==='MOVILES' && mId==='MOVILES' && _esChoferCargado()) return true;
+  // Aspirantes: los instructores pueden EDITAR (no borrar) aunque no sea su registro
+  if(sId==='ASPIRANTES' && CU.rol==='Instructor') return true;
+  // Regla general: cada uno puede editar lo que cargó él mismo
+  return (r._por === CU.nombre && r._por !== undefined);
+}
+// Permiso de BORRADO sobre un registro concreto (más restrictivo)
+function puedeBorrarRec(r){
+  if(CU.permiso==='admin') return true;
+  // Choferes pueden editar JP pero NO borrar; instructores en Aspirantes tampoco borran.
+  return false;
 }
 
 // ══════════════════════════════════════════════
@@ -1909,6 +1941,12 @@ function renderTable(searchOverride){
   // ─── Pestaña custom: ALMUERZO ───
   if(CS.custom==='almuerzo'){
     area.innerHTML = renderAlmuerzo();
+    return;
+  }
+
+  // ─── Pestañas custom a nivel módulo: Recargo / Imaginarias (selección de aspirantes) ───
+  if(CM.custom==='recargo' || CM.custom==='imaginarias'){
+    area.innerHTML = renderSeleccionAspirantes(CM.custom);
     return;
   }
 
@@ -1989,8 +2027,9 @@ function renderTable(searchOverride){
           // ════ CORRECCIÓN 2: Detectar si el registro es nuevo ════
           const esNuevo = r._ts_new && (ahora - r._ts_new < TIMEOUT_NUEVO);
           const rowClass = esNuevo ? 'row-new' : '';
-          // ════ CORRECCIÓN 4: Determinar si el usuario puede editar este registro ════
-          const puedeEditarEste = canEditAll || (r._por === CU.nombre && r._por !== undefined);
+          // ════ Permisos por contexto (editar / borrar) ════
+          const puedeEditarEste = puedeEditarRec(r);
+          const puedeBorrarEste = puedeBorrarRec(r);
           
           // Armamos el detalle (textareas con contenido) que va debajo del registro
           const detail = textAreas
@@ -2003,8 +2042,8 @@ function renderTable(searchOverride){
           <td style="font-size:11px;color:#4a6a88;white-space:nowrap">${r._ts||'—'}</td>
           ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
             ${nAtt?`<button class="att-badge" onclick="viewAttachments('${r._id}')" title="Ver ${nAtt} archivo${nAtt>1?'s':''} adjunto${nAtt>1?'s':''}">📎 ${nAtt}</button>`:''}
-            ${puedeEditarEste?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>
-            ${canEditAll?`<button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}`:''}
+            ${puedeEditarEste?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>`:''}
+            ${puedeBorrarEste?`<button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
           </div></td>`:''}
         </tr>
         ${detail?`<tr class="detail-row clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
@@ -2177,6 +2216,163 @@ function renderAlmuerzo(){
                 </div>`).join('')}
             </div>`
           : `<div class="alm-empty">Nadie marcó "Sí" todavía hoy</div>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// SELECCIÓN DE ASPIRANTES (Recargo Operacional / Imaginarias)
+// ══════════════════════════════════════════════
+// Estado de UI: filtro de sección y orden, por tipo
+const _selAspState = {
+  recargo:     { filtro:'TODAS', orden:'alfabetico' },
+  imaginarias: { filtro:'TODAS', orden:'alfabetico' }
+};
+const _SECC_TABS = [
+  {id:'SECC_1', sec:'Sección 1'},
+  {id:'SECC_2', sec:'Sección 2'},
+  {id:'SECC_3', sec:'Sección 3'},
+  {id:'SECC_4', sec:'Sección 4'},
+  {id:'SECC_5', sec:'Sección 5'},
+];
+// Junta todos los aspirantes cargados en las 5 secciones (módulo SECCIONES_GEN)
+function _getAspirantes(){
+  const out=[];
+  _SECC_TABS.forEach(t=>{
+    S.get('SECCIONES_GEN', t.id).forEach(r=>{
+      if(r.apellidoNombre){
+        out.push({nombre:r.apellidoNombre, dni:r.dni||'', seccion:t.sec, seccionId:t.id});
+      }
+    });
+  });
+  return out;
+}
+// Storage de la selección del día (una lista por fecha)
+function _selKey(tipo){ return tipo==='recargo' ? 'RECARGO_ASPIRANTES' : 'IMAGINARIAS'; }
+function _getSeleccionHoy(tipo){
+  const today=todayISO();
+  const recs=S.get('OPERACIONAL', _selKey(tipo));
+  const r=recs.find(x=>x.fecha===today);
+  return r ? (r.marcados||[]) : [];
+}
+function toggleAspirante(tipo, nombre, seccion){
+  const today=todayISO();
+  const key=_selKey(tipo);
+  const recs=S.get('OPERACIONAL', key);
+  let r=recs.find(x=>x.fecha===today);
+  const now=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(!r){
+    r={_id:Date.now().toString(36)+Math.random().toString(36).slice(2),
+       fecha:today, marcados:[], _por:CU.nombre, _ts:now,
+       _sector:'OPERACIONAL', _mod:key};
+    recs.push(r);
+  }
+  const i=r.marcados.findIndex(m=>m.nombre===nombre);
+  if(i>=0){ r.marcados.splice(i,1); }
+  else { r.marcados.push({nombre, seccion, hora:now.slice(11), por:CU.nombre}); }
+  r._ts=now; r._por=CU.nombre;
+  S.set('OPERACIONAL', key, recs);
+  renderTable();
+}
+function setSelFiltro(tipo, val){ _selAspState[tipo].filtro=val; renderTable(); }
+function setSelOrden(tipo, val){ _selAspState[tipo].orden=val; renderTable(); }
+
+function renderSeleccionAspirantes(tipo){
+  const titulo = tipo==='recargo' ? 'Recargo Operacional Aspirantes' : 'Imaginarias';
+  const icono  = tipo==='recargo' ? '🛡️' : '🌙';
+  const color  = CS.color || '#b45309';
+  const st = _selAspState[tipo];
+  const marcados = _getSeleccionHoy(tipo);
+  const marcadoSet = new Set(marcados.map(m=>m.nombre));
+  let aspirantes = _getAspirantes();
+
+  // Filtro por sección
+  if(st.filtro!=='TODAS'){
+    aspirantes = aspirantes.filter(a=>a.seccionId===st.filtro);
+  }
+  // Orden
+  if(st.orden==='alfabetico'){
+    aspirantes.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  } else {
+    aspirantes.sort((a,b)=> a.seccionId.localeCompare(b.seccionId) || a.nombre.localeCompare(b.nombre,'es'));
+  }
+
+  // ¿Hay aspirantes cargados?
+  if(!_getAspirantes().length){
+    return `<div class="data-wrap"><div class="empty-state">
+      <div class="empty-icon">🎽</div>
+      <p>No hay aspirantes cargados todavía</p>
+      <small>Cargá aspirantes en el sector "Secciones" (Sección 1 a 5) y aparecerán acá automáticamente</small>
+    </div></div>`;
+  }
+
+  const btnFiltro = (val,label)=>`<button class="sub-tab ${st.filtro===val?'active':''}" style="${st.filtro===val?`background:${color};color:#fff`:''}" onclick="setSelFiltro('${tipo}','${val}')">${label}</button>`;
+
+  // Lista agrupada visualmente si el orden es por sección y filtro es TODAS
+  let listaHTML='';
+  const fila = (a)=>{
+    const on = marcadoSet.has(a.nombre);
+    return `<div class="alm-row" style="cursor:pointer;${on?`background:rgba(34,197,94,.12)`:''}" onclick="toggleAspirante('${tipo}','${a.nombre.replace(/'/g,"\\'")}','${a.seccion}')">
+      <span class="alm-check" style="${on?'':'opacity:.25'}">${on?'✅':'⬜'}</span>
+      <span class="alm-row-name">${a.nombre} <span style="color:#5a7a9a;font-size:11px">· ${a.seccion}${a.dni?' · DNI '+a.dni:''}</span></span>
+    </div>`;
+  };
+  if(st.orden==='seccion' && st.filtro==='TODAS'){
+    _SECC_TABS.forEach(t=>{
+      const grupo = aspirantes.filter(a=>a.seccionId===t.id);
+      if(grupo.length){
+        listaHTML += `<div style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px">${t.sec}</div>`;
+        listaHTML += grupo.map(fila).join('');
+      }
+    });
+  } else {
+    listaHTML = aspirantes.map(fila).join('');
+  }
+
+  return `
+    <div class="alm-wrap fade-in">
+      <div class="alm-today">
+        <div class="alm-today-label">${icono} ${titulo} · Hoy</div>
+        <div class="alm-today-date">${todayLabel()}</div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px 10px;align-items:center">
+        <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:4px">Sección:</span>
+        ${btnFiltro('TODAS','Todas')}
+        ${_SECC_TABS.map(t=>btnFiltro(t.id, t.sec.replace('Sección ',''))).join('')}
+        <span style="width:1px;height:18px;background:rgba(122,175,212,.2);margin:0 4px"></span>
+        <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:4px">Orden:</span>
+        <button class="sub-tab ${st.orden==='alfabetico'?'active':''}" style="${st.orden==='alfabetico'?`background:${color};color:#fff`:''}" onclick="setSelOrden('${tipo}','alfabetico')">A-Z</button>
+        <button class="sub-tab ${st.orden==='seccion'?'active':''}" style="${st.orden==='seccion'?`background:${color};color:#fff`:''}" onclick="setSelOrden('${tipo}','seccion')">Por sección</button>
+      </div>
+
+      <div class="alm-toggle-section" style="padding-bottom:6px">
+        <div class="alm-toggle-q">Marcá los aspirantes que quedan ${tipo==='recargo'?'de recargo':'de imaginaria'} hoy</div>
+        <div class="alm-list" style="margin-top:8px;max-height:none">
+          ${listaHTML || '<div class="alm-empty">No hay aspirantes para este filtro</div>'}
+        </div>
+      </div>
+
+      <div class="alm-summary">
+        <div class="alm-summary-head">
+          <div class="alm-summary-title">${icono} Quedan hoy (${marcados.length})</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="alm-counter">${marcados.length} aspirante${marcados.length!==1?'s':''}</div>
+            ${marcados.length ? `<button onclick="exportSeleccionExcel('${tipo}')" title="Exportar a Excel" style="display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.15);color:#34d399;border:1px solid rgba(34,197,94,.35);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📊 Excel</button>` : ''}
+          </div>
+        </div>
+        ${marcados.length
+          ? `<div class="alm-list">
+              ${marcados.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(m=>`
+                <div class="alm-row">
+                  <span class="alm-check">✓</span>
+                  <span class="alm-row-name">${m.nombre} <span style="color:#5a7a9a;font-size:11px">· ${m.seccion}</span></span>
+                  <span class="alm-row-time">${m.hora||''}</span>
+                </div>`).join('')}
+            </div>`
+          : `<div class="alm-empty">Nadie marcado todavía hoy</div>`
         }
       </div>
     </div>
@@ -2678,12 +2874,12 @@ function viewDetail(recordId){
     </div>`;
 
   // Botones de acción (si tiene permisos)
-  const canEdit = CU.permiso === 'admin';
-  const esPropio = r._por === CU.nombre && r._por !== undefined;
-  const actionBtns = (canEdit || esPropio) ? `
+  const canEdit = puedeEditarRec(r);
+  const canDel  = puedeBorrarRec(r);
+  const actionBtns = (canEdit || canDel) ? `
     <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,175,212,.15)">
-      <button type="button" onclick="document.querySelector('[data-detail-ov]').remove();openEdit('${r._id}')" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,${accent},${dk(accent)});color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">✏️ Editar</button>
-      ${canEdit ? `<button type="button" onclick="document.querySelector('[data-detail-ov]').remove();delRec('${r._id}')" style="padding:11px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">🗑️</button>` : ''}
+      ${canEdit ? `<button type="button" onclick="document.querySelector('[data-detail-ov]').remove();openEdit('${r._id}')" style="flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,${accent},${dk(accent)});color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">✏️ Editar</button>` : ''}
+      ${canDel ? `<button type="button" onclick="document.querySelector('[data-detail-ov]').remove();delRec('${r._id}')" style="padding:11px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit">🗑️</button>` : ''}
     </div>` : '';
 
   // Crear overlay
@@ -2891,6 +3087,33 @@ function exportExcel(){
   const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   const filename = `SUEP_${limpiar(CS.name)}_${limpiar(CM.name)}_${fecha}.xlsx`;
   XLSX.writeFile(wb, filename);
+}
+
+// ══════════════════════════════════════════════
+// EXPORTAR EXCEL — Selección de Aspirantes (Imaginarias / Recargo)
+// ══════════════════════════════════════════════
+function exportSeleccionExcel(tipo){
+  const titulo = tipo==='recargo' ? 'Recargo Operacional Aspirantes' : 'Imaginarias';
+  const marcados = _getSeleccionHoy(tipo);
+  if(!marcados.length){ alert('No hay aspirantes marcados hoy para exportar.'); return; }
+
+  // Ordenar por sección y luego por nombre
+  const ordenados = marcados.slice().sort((a,b)=>
+    (a.seccion||'').localeCompare(b.seccion||'','es') || a.nombre.localeCompare(b.nombre,'es'));
+
+  const headers = ['#','Aspirante','Sección','Hora'];
+  const data = [headers, ...ordenados.map((m,i)=>[
+    i+1, m.nombre||'', m.seccion||'', m.hora||''
+  ])];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:5},{wch:35},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, titulo.slice(0,31));
+
+  const limpiar = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
+  const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  XLSX.writeFile(wb, `SUEP_${limpiar(titulo)}_${fecha}.xlsx`);
 }
 
 // ══════════════════════════════════════════════
@@ -3597,6 +3820,38 @@ if(!localStorage.getItem('suep_device_id')){
 }
 var DEVICE_ID = localStorage.getItem('suep_device_id');
 
+// ─── Diagnóstico de conexión: verifica que la nube ACEPTE lecturas y escrituras ───
+// Llamá testSupabase() desde la consola del navegador para ver exactamente qué falla.
+window.testSupabase = async function(){
+  console.log('🔎 Probando conexión con Supabase...');
+  try{
+    const { error: errLectura } = await clienteS.from('app_data').select('key').limit(1);
+    if(errLectura){ console.error('❌ LECTURA falló:', errLectura.message||errLectura, errLectura); }
+    else { console.log('✅ LECTURA OK'); }
+
+    const claveTest = 'suep_diagnostico_' + DEVICE_ID;
+    const { error: errEscritura } = await clienteS.from('app_data').upsert([{
+      key: claveTest, value: [{ok:true, ts:new Date().toISOString()}], device_id: DEVICE_ID, updated_at: new Date().toISOString()
+    }], { onConflict: 'key' });
+    if(errEscritura){
+      console.error('❌ ESCRITURA falló (esto es lo que impide guardar registros):', errEscritura.message||errEscritura, errEscritura);
+      console.error('💡 Causa más probable: las políticas RLS de la tabla app_data no permiten insert/update con esta clave, o la clave/tabla no son correctas.');
+      alert('⚠️ La nube NO está aceptando guardados.\n\nMotivo: ' + (errEscritura.message||'ver consola (F12)') + '\n\nRevisá las políticas RLS de la tabla app_data en Supabase.');
+    } else {
+      console.log('✅ ESCRITURA OK — la nube acepta guardados correctamente.');
+      // Limpiar el registro de prueba
+      await clienteS.from('app_data').delete().eq('key', claveTest);
+      alert('✅ Conexión con la nube OK.\n\nLas lecturas y escrituras funcionan. Si igual no ves registros, avisame.');
+    }
+  }catch(e){
+    console.error('❌ Error de red al probar Supabase:', e);
+    alert('⚠️ No se pudo conectar con la nube (error de red): ' + (e.message||e));
+  }
+};
+// Ejecutar el test automáticamente una vez al cargar (solo informa en consola)
+setTimeout(()=>{ if(typeof clienteS!=='undefined'){ clienteS.from('app_data').select('key').limit(1).then(({error})=>{ if(error) console.error('⚠️ SUEP: la conexión con Supabase tiene un problema de LECTURA:', error.message||error); else console.log('✅ SUEP: conexión con Supabase establecida. Para una prueba completa de escritura, ejecutá testSupabase() en la consola.'); }); } }, 2000);
+
+
 // ─── Indicador de sincronización en pantalla ───
 function syncStatus(msg, color){
   let el = document.getElementById('syncStatus');
@@ -3682,10 +3937,18 @@ async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
   // Subir inmediatamente la versión fusionada (sin esperar el debounce)
   if(typeof clienteS !== 'undefined'){
     try{
-      await clienteS.from('app_data').upsert([{
+      const { error } = await clienteS.from('app_data').upsert([{
         key: S.key(s, m), value: fusionada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
       }], { onConflict: 'key' });
-      syncStatus('✓ Guardado y sincronizado', '#34d399');
+      if(error){
+        // ✅ FIX: el cliente de Supabase NO lanza excepción ante errores de la base
+        // (permisos/RLS), los devuelve en .error. Antes esto pasaba desapercibido
+        // y mostraba "guardado" aunque la nube rechazara la escritura.
+        console.error('❌ Supabase RECHAZÓ la escritura de', S.key(s,m), '→', error.message||error, error);
+        syncStatus(`⚠️ La nube rechazó el guardado: ${error.message||'ver consola'}`, '#f87171');
+      } else {
+        syncStatus('✓ Guardado y sincronizado', '#34d399');
+      }
     }catch(e){
       console.warn('No se pudo subir inmediatamente, queda en cola local:', e);
       syncToSupabase(S.key(s, m), fusionada); // reintento por la vía normal
@@ -3718,10 +3981,15 @@ S.delSafe = async function(s, m, id){
   _S_set_local(s, m, filtrada);
   if(typeof clienteS !== 'undefined'){
     try{
-      await clienteS.from('app_data').upsert([{
+      const { error } = await clienteS.from('app_data').upsert([{
         key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
       }], { onConflict: 'key' });
-      syncStatus('✓ Eliminado y sincronizado', '#34d399');
+      if(error){
+        console.error('❌ Supabase RECHAZÓ el borrado de', S.key(s,m), '→', error.message||error, error);
+        syncStatus(`⚠️ La nube rechazó el borrado: ${error.message||'ver consola'}`, '#f87171');
+      } else {
+        syncStatus('✓ Eliminado y sincronizado', '#34d399');
+      }
     }catch(e){
       console.warn('No se pudo subir el borrado, queda en cola local:', e);
       syncToSupabase(S.key(s, m), filtrada);
