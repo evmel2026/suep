@@ -902,14 +902,22 @@ const SECTORS = [
   ]},
   { id:'OPERACIONAL', name:'Operacional', icon:'⚙️', color:'#b45309', bg:'#fef3c7', modules:[
 
-    { id:'INSTRUCTORES', name:'Instructores', fields:[
-      {key:'apellidoNombre',   label:'Instructor (Apellido y Nombre)', type:'text',  req:true},
-      {key:'grado',            label:'Grado / Cargo',            type:'text'},
-      {key:'seccion',          label:'Sección a cargo',          type:'select', req:true,
+    { id:'INSTRUCTORES', name:'Instructores', evalForm:true, fields:[
+      {key:'seccion',          label:'Sección',                  type:'select', req:true,
         opts:['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5']},
-      {key:'aspirante',        label:'Aspirante (si corresponde)', type:'text'},
-      {key:'obsAspirante',     label:'Observación del aspirante', type:'textarea'},
-      {key:'obs',              label:'Observaciones generales',   type:'textarea'},
+      {key:'instructores',     label:'Instructores a cargo',     type:'text'},
+      {key:'aspirante',        label:'Aspirante evaluado',       type:'text', req:true},
+      {key:'dni',              label:'D.N.I',                    type:'text'},
+      {key:'item1',            label:'Postura de firme / descanso', type:'select', opts:['Ó','MB','B','R']},
+      {key:'item2',            label:'Saludos a pie firme (uno y dos)', type:'select', opts:['Ó','MB','B','R']},
+      {key:'item3',            label:'Ruptura de marcha',        type:'select', opts:['Ó','MB','B','R']},
+      {key:'item4',            label:'Solicitud de permiso',     type:'select', opts:['Ó','MB','B','R']},
+      {key:'item5',            label:'Giros (izq / der / media vuelta)', type:'select', opts:['Ó','MB','B','R']},
+      {key:'item6',            label:'Conocimientos generales',  type:'select', opts:['Ó','MB','B','R']},
+      {key:'notaOrdenCerrado', label:'Nota de Orden Cerrado (1 a 10)', type:'number'},
+      {key:'notaConducta',     label:'Nota de Conducta (1 a 10)',      type:'number'},
+      {key:'aptitud',          label:'Aptitud',                  type:'select', opts:['Aprobado','Desaprobado']},
+      {key:'obs',              label:'Observación',              type:'textarea'},
     ]},
 
     { id:'DIAGRAMA_MES', name:'Diagrama del Mes', fields:[
@@ -984,7 +992,7 @@ const SECTORS = [
     ]},
 
     { id:'INVENTARIO', name:'Inventario', fields:[
-      {key:'item',       label:'Artículo',      type:'text',   req:true},
+      {key:'item',       label:'Número de matrícula',      type:'text',   req:true},
       {key:'categoria',  label:'Categoría',     type:'text'},
       {key:'cantidad',   label:'Cantidad',      type:'number', req:true},
       {key:'estado',     label:'Estado',        type:'select',
@@ -1302,6 +1310,18 @@ const SECTORS = [
     ]},
   ]},
 
+  { id:'EVENTOS', name:'Eventos a Futuro', icon:'🔔', color:'#0d9488', bg:'#ccfbf1', universal:true, modules:[
+    { id:'EVENTOS', name:'Eventos a Futuro', fields:[
+      {key:'titulo',      label:'Nombre del evento',  type:'text',  req:true},
+      {key:'fecha',       label:'Fecha del evento',   type:'date',  req:true},
+      {key:'hora',        label:'Hora',               type:'time'},
+      {key:'lugar',       label:'Lugar',              type:'text'},
+      {key:'aviso',       label:'Avisar desde (días antes)', type:'select', req:true,
+        opts:['3','5','7','10','15','30']},
+      {key:'descripcion', label:'Descripción / Detalle', type:'textarea'},
+    ]},
+  ]},
+
   { id:'CRONOGRAMA', name:'Cronograma del Cursado', icon:'📅', color:'#a21caf', bg:'#fae8ff', universal:true, modules:[
     { id:'CRONOGRAMA', name:'Cronograma del Cursado', fields:[
       {key:'tipo',        label:'Tipo',               type:'select', req:true,
@@ -1508,6 +1528,8 @@ const S = {
   upd(s,m,id,data){
     const rows=S.get(s,m).map(r=>r._id===id?{...r,...data,_editPor:CU?.nombre,_editTs:new Date().toLocaleString('es-AR')}:r);
     S.set(s,m,rows);
+    const recEditado = rows.find(r=>r._id===id);
+    if(recEditado) newNotif(s,m,recEditado,'edito');
   },
   del:(s,m,id)=>S.set(s,m,S.get(s,m).filter(r=>r._id!==id)),
   gn:()=>JSON.parse(localStorage.getItem('suep_notifs')||'[]'),
@@ -1557,7 +1579,9 @@ function seedOrganigrama(){
 // ══════════════════════════════════════════════
 // NOTIFICACIONES
 // ══════════════════════════════════════════════
-function newNotif(sId,mId,rec){
+// accion: 'cargo' (registro nuevo) | 'edito' (modificación de un registro existente)
+function newNotif(sId,mId,rec,accion){
+  accion = accion || 'cargo';
   const sec=SECTORS.find(s=>s.id===sId);
   let mod = sec?.modules.find(m=>m.id===mId);
   if(!mod && sec){
@@ -1568,12 +1592,23 @@ function newNotif(sId,mId,rec){
       }
     }
   }
+  // Quién hizo la acción: en edición usamos _editPor (o el usuario actual); en carga, _por.
+  const quien = (accion==='edito')
+    ? (rec._editPor || CU?.nombre || '—')
+    : (rec._por || CU?.nombre || '—');
+  const verbo = (accion==='edito')
+    ? 'editó un registro en'
+    : 'cargó un nuevo registro en';
   const notifs=S.gn();
-  notifs.unshift({id:Date.now().toString(),
+  // id único aunque dos personas creen notif en el mismo milisegundo (evita que se pisen al fusionar)
+  const ahora = Date.now();
+  const nid = ahora.toString(36) + Math.random().toString(36).slice(2,7);
+  notifs.unshift({id:nid,
     secId:sId, modId:mId, rId:rec._id,
-    txt:`<strong>${rec._por}</strong> cargó un nuevo registro en <strong>${mod?.name||mId}</strong>`,
+    txt:`<strong>${quien}</strong> ${verbo} <strong>${mod?.name||mId}</strong>`,
     sec:sec?.name||sId, icon:sec?.icon||'📌',
     time:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    _tsMs: ahora,   // ⏱️ timestamp numérico real para ordenar de forma confiable
     // ✅ Estado de "leída" INDIVIDUAL por usuario. leidaPor = { usuario: true }.
     // Cada usuario ve la notificación como nueva hasta que ÉL la marque/abra,
     // sin importar que otro usuario ya la haya visto. Las notificaciones viejas
@@ -1594,6 +1629,29 @@ function _marcarLeidaUsuario(n){
   leidaPor[CU.usuario] = true;
   return {...n, leidaPor};
 }
+// Devuelve el timestamp en milisegundos de una notificación, sin importar su origen.
+// Funciona con notifs nuevas (_tsMs), reconstruidas (_tsMs o id "ms_rId"),
+// y viejas (parsea el texto de fecha "dd/mm[/aaaa] hh:mm").
+function _notifMs(n){
+  if(!n) return 0;
+  if(typeof n._tsMs === 'number' && n._tsMs > 0) return n._tsMs;
+  // id con forma "1717...123_rId" (reconstruidas viejas)
+  if(typeof n.id === 'string' && n.id.includes('_')){
+    const num = parseInt(n.id.split('_')[0], 10);
+    if(!isNaN(num) && num > 1e10) return num;
+  }
+  // Parsear el campo time "dd/mm[/aaaa], hh:mm[:ss]"
+  const m = String(n.time||'').match(/(\d{2})\/(\d{2})(?:\/(\d{4}))?[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m){
+    const anio = m[3] ? +m[3] : new Date().getFullYear();
+    return new Date(anio, +m[2]-1, +m[1], +m[4], +m[5], +(m[6]||0)).getTime();
+  }
+  return 0;
+}
+// Devuelve las notificaciones SIEMPRE ordenadas: más reciente primero
+function _notifsOrdenadas(){
+  return S.gn().slice().sort((a,b)=> _notifMs(b) - _notifMs(a));
+}
 function refreshBadge(){
   const n=S.gn().filter(x=>!_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
@@ -1601,7 +1659,7 @@ function refreshBadge(){
   else el.classList.remove('show');
 }
 function renderNotifs(){
-  const notifs=S.gn();
+  const notifs=_notifsOrdenadas();
   const el=document.getElementById('notifList');
   if(!notifs.length){el.innerHTML='<div class="notif-empty">Sin notificaciones aún</div>';return;}
   el.innerHTML=notifs.map(n=>{
@@ -1912,8 +1970,14 @@ function puedeEditarRec(r){
   if(CU.permiso==='admin') return true;
   const sId = r._sector || (CS && CS.id);
   const mId = r._mod || (CM && CM.id);
-  // Móviles → JP: las 2 administradoras (admin, ya cubierto) + choferes cargados en la otra pestaña
-  if(sId==='MOVILES' && mId==='MOVILES' && _esChoferCargado()) return true;
+  // Móviles → JP: además de las 2 administradoras, pueden editar quienes cargan
+  // novedades a diario: instructores, jefes de guardia y choferes habilitados.
+  if(sId==='MOVILES' && mId==='MOVILES'){
+    const rol = (CU.rol||'').toLowerCase();
+    if(rol.includes('instructor')) return true;
+    if(rol.includes('jefe de guardia')) return true;
+    if(_esChoferCargado()) return true;
+  }
   // Aspirantes: los instructores pueden EDITAR (no borrar) aunque no sea su registro
   if(sId==='ASPIRANTES' && CU.rol==='Instructor') return true;
   // Regla general: cada uno puede editar lo que cargó él mismo
@@ -2223,12 +2287,69 @@ function renderAlmuerzo(){
 }
 
 // ══════════════════════════════════════════════
+// EVALUACIÓN ORDEN CERRADO — Instructores fijos por sección
+// ══════════════════════════════════════════════
+// Instructores a cargo de cada sección (cargados fijos, como el Excel)
+const INSTRUCTORES_SECCION = {
+  'Sección 1':'Of. Insp. CALDERÓN NAHUEL · Sgto. 1° OSES NOELIA',
+  'Sección 2':'Of. Insp. EULIARTE DANIELA · Sgto. 1° RAMÍREZ JUAN',
+  'Sección 3':'Of. Insp. YÁÑEZ LUCAS · Sgto. LÓPEZ MARIELA',
+  'Sección 4':'Of. Subinsp. ROMERO YOSELI · Of. Subinsp. QUEVEDO PABLO · Sgto. SANHUEZA MARTÍN',
+  'Sección 5':'Of. Insp. CASTILLO MICAELA · Cabo 1° VÁZQUEZ MAURICIO',
+};
+// Mapea el nombre de sección ("Sección 1") al id del módulo de Secciones ("SECC_1")
+function _seccionAId(seccion){
+  const n = (seccion||'').replace(/[^0-9]/g,'');
+  return n ? 'SECC_'+n : '';
+}
+// Devuelve los aspirantes cargados en esa sección (desde el sector Secciones)
+function aspirantesDeSeccion(seccion){
+  const id = _seccionAId(seccion);
+  if(!id) return [];
+  return S.get('SECCIONES_GEN', id)
+    .filter(r=>r.apellidoNombre)
+    .map(r=>({nombre:r.apellidoNombre, dni:r.dni||''}))
+    .sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+}
+// Cuando cambia la sección en el formulario de evaluación:
+// 1) pre-carga los instructores  2) llena el desplegable de aspirantes de esa sección
+function onEvalSeccionChange(){
+  const sec = document.getElementById('f_seccion')?.value || '';
+  const instrEl = document.getElementById('f_instructores');
+  if(instrEl) instrEl.value = INSTRUCTORES_SECCION[sec] || '';
+  const wrap = document.getElementById('aspWrap');
+  if(!wrap) return;
+  if(!sec){
+    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="Elegí primero una sección" disabled style="opacity:.5">`;
+    const d=document.getElementById('f_dni'); if(d) d.value='';
+    return;
+  }
+  const asp = aspirantesDeSeccion(sec);
+  if(!asp.length){
+    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="No hay aspirantes cargados en ${sec}">
+      <small style="display:block;margin-top:4px;color:#fbbf24;font-size:11px">⚠️ Cargá los aspirantes de ${sec} en el sector "Secciones" y aparecerán acá automáticamente.</small>`;
+    return;
+  }
+  wrap.innerHTML = `<select class="fi" id="f_aspirante" onchange="onEvalAspiranteChange()">
+    <option value="">Seleccionar aspirante...</option>
+    ${asp.map(a=>`<option value="${a.nombre.replace(/"/g,'&quot;')}" data-dni="${a.dni}">${a.nombre}</option>`).join('')}
+  </select>`;
+}
+// Al elegir aspirante, completa el DNI automáticamente
+function onEvalAspiranteChange(){
+  const sel = document.getElementById('f_aspirante');
+  const dni = sel?.selectedOptions?.[0]?.getAttribute('data-dni') || '';
+  const d = document.getElementById('f_dni');
+  if(d) d.value = dni;
+}
+
+// ══════════════════════════════════════════════
 // SELECCIÓN DE ASPIRANTES (Recargo Operacional / Imaginarias)
 // ══════════════════════════════════════════════
 // Estado de UI: filtro de sección y orden, por tipo
 const _selAspState = {
-  recargo:     { filtro:'TODAS', orden:'alfabetico' },
-  imaginarias: { filtro:'TODAS', orden:'alfabetico' }
+  recargo:     { filtro:'TODAS', orden:'alfabetico', fechaVista:'' },
+  imaginarias: { filtro:'TODAS', orden:'alfabetico', fechaVista:'' }
 };
 const _SECC_TABS = [
   {id:'SECC_1', sec:'Sección 1'},
@@ -2257,15 +2378,51 @@ function _getSeleccionHoy(tipo){
   const r=recs.find(x=>x.fecha===today);
   return r ? (r.marcados||[]) : [];
 }
+// Selección de una fecha concreta (para ver días anteriores)
+function _getSeleccionFecha(tipo, fechaISO){
+  const recs=S.get('OPERACIONAL', _selKey(tipo));
+  const r=recs.find(x=>x.fecha===fechaISO);
+  return r ? (r.marcados||[]) : [];
+}
+// Lista de fechas que tienen al menos un aspirante marcado, más reciente primero
+function _fechasConDatos(tipo){
+  const recs=S.get('OPERACIONAL', _selKey(tipo));
+  return recs
+    .filter(r => r.fecha && (r.marcados||[]).length)
+    .map(r => r.fecha)
+    .sort((a,b)=> b.localeCompare(a));
+}
+// Pasa una fecha ISO (YYYY-MM-DD) a etiqueta legible dd/mm/aaaa
+function _fechaLabel(iso){
+  if(!iso) return '';
+  const p = iso.split('-');
+  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+}
+function setSelFecha(tipo, val){ _selAspState[tipo].fechaVista = val; renderTable(); }
+// Navegación con flechas ◄ ► por día de calendario (anterior / siguiente), libre
+function navSelFecha(tipo, dir){
+  const st = _selAspState[tipo];
+  const base = st.fechaVista || todayISO();
+  // Parseamos como fecha local y movemos +/- 1 día
+  const p = base.split('-');
+  const d = new Date(Number(p[0]), Number(p[1])-1, Number(p[2]));
+  d.setDate(d.getDate() + dir);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  st.fechaVista = `${yyyy}-${mm}-${dd}`;
+  renderTable();
+}
 function toggleAspirante(tipo, nombre, seccion){
-  const today=todayISO();
+  const st=_selAspState[tipo];
+  const fecha=st.fechaVista || todayISO();   // marca en la fecha que se está viendo
   const key=_selKey(tipo);
   const recs=S.get('OPERACIONAL', key);
-  let r=recs.find(x=>x.fecha===today);
+  let r=recs.find(x=>x.fecha===fecha);
   const now=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   if(!r){
     r={_id:Date.now().toString(36)+Math.random().toString(36).slice(2),
-       fecha:today, marcados:[], _por:CU.nombre, _ts:now,
+       fecha:fecha, marcados:[], _por:CU.nombre, _ts:now,
        _sector:'OPERACIONAL', _mod:key};
     recs.push(r);
   }
@@ -2284,7 +2441,11 @@ function renderSeleccionAspirantes(tipo){
   const icono  = tipo==='recargo' ? '🛡️' : '🌙';
   const color  = CS.color || '#b45309';
   const st = _selAspState[tipo];
-  const marcados = _getSeleccionHoy(tipo);
+  const today = todayISO();
+  // Fecha que se está viendo/editando (por defecto hoy). Cualquier fecha es editable.
+  const fechaVista = st.fechaVista || today;
+  const esHoy = (fechaVista === today);
+  const marcados = _getSeleccionFecha(tipo, fechaVista);
   const marcadoSet = new Set(marcados.map(m=>m.nombre));
   let aspirantes = _getAspirantes();
 
@@ -2314,7 +2475,8 @@ function renderSeleccionAspirantes(tipo){
   let listaHTML='';
   const fila = (a)=>{
     const on = marcadoSet.has(a.nombre);
-    return `<div class="alm-row" style="cursor:pointer;${on?`background:rgba(34,197,94,.12)`:''}" onclick="toggleAspirante('${tipo}','${a.nombre.replace(/'/g,"\\'")}','${a.seccion}')">
+    const click = `onclick="toggleAspirante('${tipo}','${a.nombre.replace(/'/g,"\\'")}','${a.seccion}')"`;
+    return `<div class="alm-row" style="cursor:pointer;${on?`background:rgba(34,197,94,.12)`:''}" ${click}>
       <span class="alm-check" style="${on?'':'opacity:.25'}">${on?'✅':'⬜'}</span>
       <span class="alm-row-name">${a.nombre} <span style="color:#5a7a9a;font-size:11px">· ${a.seccion}${a.dni?' · DNI '+a.dni:''}</span></span>
     </div>`;
@@ -2331,12 +2493,31 @@ function renderSeleccionAspirantes(tipo){
     listaHTML = aspirantes.map(fila).join('');
   }
 
+  // Selector de fecha LIBRE: input de calendario + flechas ◄ ► (siempre visible)
+  const selectorFechas = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 2px 10px;align-items:center">
+      <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:2px">📅 Día:</span>
+      <button class="sub-tab" title="Día anterior" style="font-weight:700;min-width:38px;font-size:15px" onclick="navSelFecha('${tipo}',-1)">◄</button>
+      <input type="date" id="selDate_${tipo}" value="${fechaVista}" onchange="setSelFecha('${tipo}', this.value)"
+        style="background:rgba(122,175,212,.1);border:1px solid rgba(122,175,212,.3);color:#e8f0f8;border-radius:9px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+      <button class="sub-tab" title="Día siguiente" style="font-weight:700;min-width:38px;font-size:15px" onclick="navSelFecha('${tipo}',1)">►</button>
+      <button class="sub-tab ${esHoy?'active':''}" style="${esHoy?`background:${color};color:#fff`:''}" onclick="setSelFecha('${tipo}','${today}')">Hoy</button>
+    </div>`;
+
+  const avisoDiaPasado = !esHoy ? `
+    <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:8px;padding:8px 12px;font-size:12px;margin:0 2px 10px">
+      📆 Estás cargando el día <b>${_fechaLabel(fechaVista)}</b> (no es hoy). Podés marcar y desmarcar normalmente. Tocá "Hoy" para volver.
+    </div>` : '';
+
   return `
     <div class="alm-wrap fade-in">
       <div class="alm-today">
-        <div class="alm-today-label">${icono} ${titulo} · Hoy</div>
-        <div class="alm-today-date">${todayLabel()}</div>
+        <div class="alm-today-label">${icono} ${titulo} · ${esHoy?'Hoy':'Día seleccionado'}</div>
+        <div class="alm-today-date">${esHoy ? todayLabel() : _fechaLabel(fechaVista)}</div>
       </div>
+
+      ${selectorFechas}
+      ${avisoDiaPasado}
 
       <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px 10px;align-items:center">
         <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:4px">Sección:</span>
@@ -2349,7 +2530,7 @@ function renderSeleccionAspirantes(tipo){
       </div>
 
       <div class="alm-toggle-section" style="padding-bottom:6px">
-        <div class="alm-toggle-q">Marcá los aspirantes que quedan ${tipo==='recargo'?'de recargo':'de imaginaria'} hoy</div>
+        <div class="alm-toggle-q">Marcá los aspirantes que quedan ${tipo==='recargo'?'de recargo':'de imaginaria'} el ${esHoy?'día de hoy':_fechaLabel(fechaVista)}</div>
         <div class="alm-list" style="margin-top:8px;max-height:none">
           ${listaHTML || '<div class="alm-empty">No hay aspirantes para este filtro</div>'}
         </div>
@@ -2357,10 +2538,10 @@ function renderSeleccionAspirantes(tipo){
 
       <div class="alm-summary">
         <div class="alm-summary-head">
-          <div class="alm-summary-title">${icono} Quedan hoy (${marcados.length})</div>
+          <div class="alm-summary-title">${icono} ${esHoy?'Quedan hoy':'Quedaron el '+_fechaLabel(fechaVista)} (${marcados.length})</div>
           <div style="display:flex;align-items:center;gap:8px">
             <div class="alm-counter">${marcados.length} aspirante${marcados.length!==1?'s':''}</div>
-            ${marcados.length ? `<button onclick="exportSeleccionExcel('${tipo}')" title="Exportar a Excel" style="display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.15);color:#34d399;border:1px solid rgba(34,197,94,.35);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📊 Excel</button>` : ''}
+            ${marcados.length ? `<button onclick="exportSeleccionExcel('${tipo}','${fechaVista}')" title="Exportar a Excel" style="display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.15);color:#34d399;border:1px solid rgba(34,197,94,.35);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">📊 Excel</button>` : ''}
           </div>
         </div>
         ${marcados.length
@@ -2372,7 +2553,7 @@ function renderSeleccionAspirantes(tipo){
                   <span class="alm-row-time">${m.hora||''}</span>
                 </div>`).join('')}
             </div>`
-          : `<div class="alm-empty">Nadie marcado todavía hoy</div>`
+          : `<div class="alm-empty">Nadie marcado ${esHoy?'todavía hoy':'ese día'}</div>`
         }
       </div>
     </div>
@@ -2498,10 +2679,132 @@ function getNextAutoValue(field){
   return '';
 }
 
+// Construye el formulario de Evaluación de Orden Cerrado con secciones encadenadas
+function buildEvalForm(data){
+  data = data || {};
+  const sec = data.seccion || '';
+  const instr = data.instructores || INSTRUCTORES_SECCION[sec] || '';
+  const SCALE = ['Ó','MB','B','R'];
+  const items = [
+    {key:'item1', label:'Postura de firme / descanso'},
+    {key:'item2', label:'Saludos a pie firme (uno y dos)'},
+    {key:'item3', label:'Ruptura de marcha'},
+    {key:'item4', label:'Solicitud de permiso'},
+    {key:'item5', label:'Giros (izq / der / media vuelta)'},
+    {key:'item6', label:'Conocimientos generales'},
+  ];
+  const color = (CS && CS.color) || '#b45309';
+
+  // Desplegable de aspirantes (si ya hay sección elegida, al editar)
+  let aspInner;
+  if(sec){
+    const asp = aspirantesDeSeccion(sec);
+    if(asp.length){
+      aspInner = `<select class="fi" id="f_aspirante" onchange="onEvalAspiranteChange()">
+        <option value="">Seleccionar aspirante...</option>
+        ${asp.map(a=>`<option value="${a.nombre.replace(/"/g,'&quot;')}" data-dni="${a.dni}" ${data.aspirante===a.nombre?'selected':''}>${a.nombre}</option>`).join('')}
+      </select>`;
+    } else {
+      aspInner = `<input class="fi" type="text" id="f_aspirante" value="${(data.aspirante||'').replace(/"/g,'&quot;')}" placeholder="No hay aspirantes cargados en ${sec}">
+        <small style="display:block;margin-top:4px;color:#fbbf24;font-size:11px">⚠️ Cargá los aspirantes de ${sec} en el sector "Secciones" y aparecerán acá automáticamente.</small>`;
+    }
+  } else {
+    aspInner = `<input class="fi" type="text" id="f_aspirante" placeholder="Elegí primero una sección" disabled style="opacity:.5">`;
+  }
+
+  const itemsHTML = items.map(it=>`
+    <div class="form-field">
+      <label>${it.label}</label>
+      <select class="fi" id="f_${it.key}">
+        <option value="">—</option>
+        ${SCALE.map(o=>`<option ${data[it.key]===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>`).join('');
+
+  const formHTML = `
+    <div class="form-field">
+      <label>Sección *</label>
+      <select class="fi" id="f_seccion" onchange="onEvalSeccionChange()">
+        <option value="">Seleccionar sección...</option>
+        ${['Sección 1','Sección 2','Sección 3','Sección 4','Sección 5'].map(s=>`<option ${sec===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="form-field">
+      <label>Instructores a cargo</label>
+      <input class="fi" type="text" id="f_instructores" value="${instr.replace(/"/g,'&quot;')}" readonly
+        style="background:rgba(122,175,212,.08);color:#9ab4d0;cursor:not-allowed">
+      <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">Se completa solo al elegir la sección.</small>
+    </div>
+
+    <div class="form-field">
+      <label>Aspirante evaluado *</label>
+      <div id="aspWrap">${aspInner}</div>
+    </div>
+
+    <div class="form-field">
+      <label>D.N.I</label>
+      <input class="fi" type="text" id="f_dni" value="${data.dni||''}" placeholder="Se completa al elegir el aspirante" readonly
+        style="background:rgba(122,175,212,.08);color:#9ab4d0">
+    </div>
+
+    <div style="margin:6px 0 2px;padding:8px 12px;border-radius:10px;background:${color}1a;border:1px solid ${color}40">
+      <div style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px">📋 Ítems evaluados</div>
+      <div style="font-size:11px;color:#7aafd4;margin-top:2px">Ó = Óptimo · MB = Muy Bueno · B = Bueno · R = Regular</div>
+    </div>
+    ${itemsHTML}
+
+    <div class="form-field">
+      <label>Nota de Orden Cerrado (1 a 10)</label>
+      <input class="fi" type="number" min="1" max="10" step="0.01" id="f_notaOrdenCerrado" value="${data.notaOrdenCerrado||''}" placeholder="Ej: 8.50">
+    </div>
+    <div class="form-field">
+      <label>Nota de Conducta (1 a 10)</label>
+      <input class="fi" type="number" min="1" max="10" step="0.01" id="f_notaConducta" value="${data.notaConducta||''}" placeholder="Ej: 9.00">
+    </div>
+    <div class="form-field">
+      <label>Aptitud</label>
+      <select class="fi" id="f_aptitud">
+        <option value="">Seleccionar...</option>
+        <option ${data.aptitud==='Aprobado'?'selected':''}>Aprobado</option>
+        <option ${data.aptitud==='Desaprobado'?'selected':''}>Desaprobado</option>
+      </select>
+      <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">Escala: 10-9 Excelente · 8-7 Muy Bueno · 6-5 Bueno · 4 Regular · 3-1 Malo (Desaprobado)</small>
+    </div>
+    <div class="form-field">
+      <label>Observación</label>
+      <textarea class="fi" id="f_obs" placeholder="Observación">${data.obs||''}</textarea>
+    </div>`;
+
+  const attHTML = `
+    <div class="form-field att-section">
+      <label>📎 Archivos adjuntos <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#7aafd4">(opcional)</span></label>
+      <small>PDF y Excel hasta 2 MB. Las imágenes se comprimen automáticamente.</small>
+      <input type="file" class="fi att-input" id="f_attach"
+        accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg,.webp,image/*,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        multiple onchange="addAttachments(this)">
+      <input type="file" id="f_attach_cam" accept="image/*" capture="environment"
+        style="display:none" onchange="addAttachments(this)">
+      <button type="button" class="export-btn" style="margin-top:8px;width:100%;justify-content:center"
+        onclick="document.getElementById('f_attach_cam').click()">📷 Tomar foto con la cámara</button>
+      <div id="attList" class="att-list"></div>
+    </div>`;
+
+  document.getElementById('modalBody').innerHTML = formHTML + attHTML;
+  renderAttList();
+}
+
 function buildForm(data){
   tempImgs = {};
   // Inicializar adjuntos desde el registro (si está editando) o vacío
   tempAttachments = (data && data._attachments) ? [...data._attachments] : [];
+
+  // ─── Formulario especial: Evaluación de Orden Cerrado (Instructores) ───
+  if(CM.evalForm){
+    buildEvalForm(data);
+    return;
+  }
+
   const formHTML = CM.fields.map(f=>{
     // Campo auto-correlativo: readonly con próximo número (con lápiz para editar manualmente)
     if(f.auto){
@@ -3092,10 +3395,12 @@ function exportExcel(){
 // ══════════════════════════════════════════════
 // EXPORTAR EXCEL — Selección de Aspirantes (Imaginarias / Recargo)
 // ══════════════════════════════════════════════
-function exportSeleccionExcel(tipo){
+function exportSeleccionExcel(tipo, fechaISO){
   const titulo = tipo==='recargo' ? 'Recargo Operacional Aspirantes' : 'Imaginarias';
-  const marcados = _getSeleccionHoy(tipo);
-  if(!marcados.length){ alert('No hay aspirantes marcados hoy para exportar.'); return; }
+  const today = todayISO();
+  const fecha = fechaISO || today;
+  const marcados = (fecha===today) ? _getSeleccionHoy(tipo) : _getSeleccionFecha(tipo, fecha);
+  if(!marcados.length){ alert('No hay aspirantes marcados ese día para exportar.'); return; }
 
   // Ordenar por sección y luego por nombre
   const ordenados = marcados.slice().sort((a,b)=>
@@ -3112,8 +3417,8 @@ function exportSeleccionExcel(tipo){
   XLSX.utils.book_append_sheet(wb, ws, titulo.slice(0,31));
 
   const limpiar = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
-  const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
-  XLSX.writeFile(wb, `SUEP_${limpiar(titulo)}_${fecha}.xlsx`);
+  const fechaArchivo = fecha.split('-').reverse().join('-');
+  XLSX.writeFile(wb, `SUEP_${limpiar(titulo)}_${fechaArchivo}.xlsx`);
 }
 
 // ══════════════════════════════════════════════
@@ -3972,6 +4277,9 @@ S.addSafe = async function(s, m, data){
 S.updSafe = async function(s, m, id, data){
   const local = S.get(s, m).map(r => r._id===id ? {...r, ...data, _editPor: CU?.nombre, _editTs: new Date().toISOString()} : r);
   await _guardarModuloSeguro(s, m, local, id);
+  // ✅ Notificar también las ediciones (todos deben ver lo que se modificó)
+  const recEditado = local.find(r => r._id===id);
+  if(recEditado) newNotif(s, m, recEditado, 'edito');
 };
 S.delSafe = async function(s, m, id){
   // Para borrar con seguridad: traemos lo fresco, le quitamos SOLO este id y subimos
@@ -4013,6 +4321,30 @@ async function flushWrites(){
   if(!keys.length) return;
   syncStatus('☁️ Sincronizando...', '#fbbf24');
   try{
+    // ✅ Para 'suep_notifs' fusionamos con lo que haya en la nube antes de subir,
+    // así dos cargas simultáneas no se pisan las notificaciones entre sí.
+    if(keys.includes('suep_notifs')){
+      try{
+        const { data: remoto } = await clienteS.from('app_data')
+          .select('value').eq('key','suep_notifs').maybeSingle();
+        const remotas = (remoto && Array.isArray(remoto.value)) ? remoto.value : [];
+        const locales = Array.isArray(writes['suep_notifs']) ? writes['suep_notifs'] : [];
+        const porId = new Map();
+        remotas.forEach(n => { if(n && n.id) porId.set(n.id, n); });
+        locales.forEach(n => {
+          if(!n || !n.id) return;
+          if(!porId.has(n.id)){ porId.set(n.id, n); return; }
+          const ex = porId.get(n.id);
+          porId.set(n.id, {...ex, ...n, leidaPor: {...(ex.leidaPor||{}), ...(n.leidaPor||{})}});
+        });
+        const fusionadas = Array.from(porId.values())
+          .sort((a,b)=> String(b.id).localeCompare(String(a.id)))
+          .slice(0,200);
+        writes['suep_notifs'] = fusionadas;
+        // Actualizamos también el local con la versión fusionada
+        try{ localStorage.setItem('suep_notifs', JSON.stringify(fusionadas)); refreshBadge(); }catch(_){}
+      }catch(e){ console.warn('No se pudo fusionar notifs antes de subir', e); }
+    }
     const rows = keys.map(k => ({
       key: k,
       value: writes[k],
@@ -4075,6 +4407,33 @@ function subscribeRealtime(){
           if(payload.new && payload.new.device_id === DEVICE_ID) return;
           if(payload.eventType === 'DELETE'){
             localStorage.removeItem(row.key);
+          } else if(row.key === 'suep_notifs'){
+            // ✅ FUSIÓN de notificaciones por id: si dos personas cargan a la vez,
+            // ninguna notificación se pierde. Combinamos las locales con las remotas,
+            // sin duplicar (por id) y conservando el estado "leída" de cada usuario.
+            try{
+              const remotas = Array.isArray(row.value) ? row.value : [];
+              const locales = S.gn();
+              const porId = new Map();
+              // Primero las remotas, después las locales (las locales pueden tener
+              // marcas de "leída" más nuevas que conviene conservar al fusionar).
+              remotas.forEach(n => { if(n && n.id) porId.set(n.id, n); });
+              locales.forEach(n => {
+                if(!n || !n.id) return;
+                if(!porId.has(n.id)){ porId.set(n.id, n); return; }
+                // misma notif en ambos lados: fusionar el estado leidaPor
+                const ex = porId.get(n.id);
+                porId.set(n.id, {...ex, ...n, leidaPor: {...(ex.leidaPor||{}), ...(n.leidaPor||{})}});
+              });
+              // Ordenar por timestamp real (más nuevo primero), no por id
+              const fusionadas = Array.from(porId.values())
+                .sort((a,b)=> _notifMs(b) - _notifMs(a))
+                .slice(0,200);
+              localStorage.setItem('suep_notifs', JSON.stringify(fusionadas));
+            }catch(e){
+              console.warn('No se pudo fusionar notificaciones remotas', e);
+              try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
+            }
           } else {
             try{
               localStorage.setItem(row.key, JSON.stringify(row.value));
@@ -4216,6 +4575,119 @@ async function descargarExcel(){
         alert("No hay datos para exportar");
     }
 }
+
+// ══════════════════════════════════════════════════════════════
+// RECORDATORIOS DE EVENTOS A FUTURO (popup al abrir la app)
+// ══════════════════════════════════════════════════════════════
+// Mira los eventos cargados en el sector EVENTOS y arma la lista de los que
+// están dentro de su ventana de aviso (días configurados al cargar el evento).
+function _diasHasta(fechaISO){
+  if(!fechaISO) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const p = fechaISO.split('-');
+  if(p.length!==3) return null;
+  const f = new Date(+p[0], +p[1]-1, +p[2]); f.setHours(0,0,0,0);
+  return Math.round((f - hoy) / 86400000);
+}
+function _eventosProximos(){
+  const eventos = S.get('EVENTOS','EVENTOS');
+  const out = [];
+  eventos.forEach(e=>{
+    const dias = _diasHasta(e.fecha);
+    if(dias === null) return;
+    const ventana = parseInt(e.aviso, 10) || 7;
+    // Mostrar si el evento es hoy o futuro y ya entró en su ventana de aviso
+    if(dias >= 0 && dias <= ventana){
+      out.push({...e, _dias: dias});
+    }
+  });
+  // Más cercanos primero
+  return out.sort((a,b)=> a._dias - b._dias);
+}
+function _textoCuando(dias){
+  if(dias === 0) return '¡HOY!';
+  if(dias === 1) return 'Mañana';
+  return `En ${dias} días`;
+}
+// Muestra el popup solo una vez por día por usuario (para no molestar en cada pantalla)
+function mostrarRecordatoriosEventos(forzar){
+  if(!CU) return;
+  const proximos = _eventosProximos();
+  if(!proximos.length){ if(forzar) alert('No hay eventos próximos en este momento. 🎉'); return; }
+
+  const marca = `suep_recordatorio_visto_${CU.usuario}_${todayISO()}`;
+  if(!forzar && localStorage.getItem(marca)) return; // ya lo vio hoy
+
+  const color = '#0d9488';
+  const filas = proximos.map(e=>{
+    const cuando = _textoCuando(e._dias);
+    const urgente = e._dias <= 1;
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid rgba(13,148,136,.25);border-radius:12px;margin-bottom:10px;background:${urgente?'rgba(239,68,68,.08)':'rgba(13,148,136,.06)'}">
+      <div style="flex-shrink:0;text-align:center;min-width:60px">
+        <div style="font-size:11px;font-weight:800;color:${urgente?'#ef4444':color};text-transform:uppercase;letter-spacing:.5px">${cuando}</div>
+        <div style="font-size:11px;color:#5a7a9a;margin-top:2px">${_fechaLabel(e.fecha)}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#1a2b40;font-size:14px">${e.titulo||''}</div>
+        ${e.hora?`<div style="font-size:12px;color:#5a7a9a;margin-top:2px">🕐 ${e.hora}</div>`:''}
+        ${e.lugar?`<div style="font-size:12px;color:#5a7a9a;margin-top:2px">📍 ${e.lugar}</div>`:''}
+        ${e.descripcion?`<div style="font-size:12px;color:#3a5a78;margin-top:4px;white-space:pre-wrap">${e.descripcion.replace(/</g,'&lt;')}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Quitar popup anterior si existe
+  const prev = document.getElementById('eventoRecordatorioOverlay');
+  if(prev) prev.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'eventoRecordatorioOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,18,30,.6);backdrop-filter:blur(3px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Inter,system-ui,sans-serif';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:18px;max-width:460px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="background:linear-gradient(135deg,${color},#0f766e);padding:18px 20px;border-radius:18px 18px 0 0;display:flex;align-items:center;gap:10px">
+        <span style="font-size:24px">🔔</span>
+        <div>
+          <div style="color:#fff;font-weight:800;font-size:16px">Recordatorio de eventos</div>
+          <div style="color:rgba(255,255,255,.85);font-size:12px">Tenés ${proximos.length} evento${proximos.length!==1?'s':''} próximo${proximos.length!==1?'s':''}</div>
+        </div>
+      </div>
+      <div style="padding:18px 16px">
+        ${filas}
+      </div>
+      <div style="padding:0 16px 18px;display:flex;gap:8px">
+        <button onclick="cerrarRecordatorioEventos()" style="flex:1;background:${color};color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Entendido</button>
+        <button onclick="cerrarRecordatorioEventos();verSectorEventos()" style="flex:1;background:rgba(13,148,136,.12);color:${color};border:1px solid rgba(13,148,136,.3);border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Ver eventos</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) cerrarRecordatorioEventos(); });
+
+  localStorage.setItem(marca, '1');
+}
+function cerrarRecordatorioEventos(){
+  const o = document.getElementById('eventoRecordatorioOverlay');
+  if(o) o.remove();
+}
+function verSectorEventos(){
+  if(typeof selectSector === 'function'){
+    try{ if(typeof closeSidebar==='function') closeSidebar(); selectSector('EVENTOS'); }catch(e){}
+  }
+}
+window.mostrarRecordatoriosEventos = mostrarRecordatoriosEventos;
+window.cerrarRecordatorioEventos = cerrarRecordatorioEventos;
+window.verSectorEventos = verSectorEventos;
+
+// Engancharse al login para mostrar el recordatorio al entrar
+(function(){
+  const _prevDoLogin = window.doLogin;
+  window.doLogin = async function(){
+    await _prevDoLogin.apply(this, arguments);
+    setTimeout(()=>{
+      if(CU){ try{ mostrarRecordatoriosEventos(false); }catch(e){ console.warn('Recordatorio eventos:', e); } }
+    }, 1400);
+  };
+})();
 </script>
 </body>
 </html>
