@@ -3489,16 +3489,20 @@ async function saveRecord(){
       if(typeof S.addSafe === 'function') await S.addSafe(CS.id,CM.id,data);
       else S.add(CS.id,CM.id,data);
     }
-    closeModal(); renderTable();
     clearTimeout(timeoutId);
+    closeModal(); renderTable();
   } catch(err){
-    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
       alert('⚠️ No hay más espacio para guardar.\n\nLos archivos adjuntos están ocupando demasiado lugar. Eliminá algunos archivos viejos o quitá adjuntos pesados de este registro.');
     } else {
       alert('Error al guardar: ' + (err?.message || 'desconocido'));
       console.error(err);
     }
+  } finally {
+    // El botón SIEMPRE vuelve a quedar usable (tanto si salió bien como si falló).
+    // Antes solo se rehabilitaba en el catch, y tras un guardado exitoso quedaba
+    // bloqueado en "GUARDANDO...", lo que dejaba la sensación de "no carga".
+    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
   }
 }
 async function delRec(id){
@@ -3519,17 +3523,116 @@ function closeSidebar(){sbOpen=false;document.getElementById('sidebar').classLis
 
 
 // ══════════════════════════════════════════════
+// FILTRO DE FECHAS PARA EXPORTACIONES
+// ══════════════════════════════════════════════
+
+// Convierte el _ts guardado (formato es-AR "dd/mm/aaaa, hh:mm") a un objeto Date.
+// Si no puede interpretarlo, devuelve null.
+function _parseTs(ts){
+  if(!ts) return null;
+  const fechaParte = String(ts).split(',')[0].trim();
+  const m = fechaParte.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(!m) return null;
+  let [, d, mes, a] = m;
+  if(a.length===2) a = '20'+a;
+  const dt = new Date(Number(a), Number(mes)-1, Number(d));
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+// Clave donde guardamos la última fecha exportada por módulo (para "solo lo nuevo")
+function _lastExportKey(){
+  return `suep_lastexport_${CS?.id||'?'}_${CM?.id||'?'}`;
+}
+
+// Pregunta al usuario qué rango quiere exportar.
+// Devuelve null si cancela, o un objeto { rows, etiqueta, marcarNuevo, hasta }.
+function _pedirFiltroFechas(rows){
+  const opt = prompt(
+    'EXPORTAR — ¿Qué registros querés incluir?\n\n' +
+    '1 = Todos los registros\n' +
+    '2 = Por rango de fechas (desde/hasta)\n' +
+    '3 = Solo lo nuevo (desde la última exportación)\n\n' +
+    'Escribí 1, 2 o 3:',
+    '1'
+  );
+  if(opt===null) return null;
+
+  const sel = opt.trim();
+
+  if(sel==='1' || sel===''){
+    return { rows, etiqueta:'Todos los registros', marcarNuevo:false, hasta:new Date() };
+  }
+
+  if(sel==='2'){
+    const desdeStr = prompt('Fecha DESDE (dd/mm/aaaa).\nDejá vacío para no poner límite inicial:', '');
+    if(desdeStr===null) return null;
+    const hastaStr = prompt('Fecha HASTA (dd/mm/aaaa).\nDejá vacío para incluir hasta hoy:', '');
+    if(hastaStr===null) return null;
+
+    const parseInput = (str)=>{
+      const m = String(str).trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+      if(!m) return null;
+      let [, d, mes, a] = m;
+      if(a.length===2) a = '20'+a;
+      return new Date(Number(a), Number(mes)-1, Number(d));
+    };
+
+    let desde = desdeStr.trim() ? parseInput(desdeStr) : null;
+    let hasta = hastaStr.trim() ? parseInput(hastaStr) : new Date();
+    if(desdeStr.trim() && !desde){ alert('La fecha DESDE no es válida. Usá el formato dd/mm/aaaa.'); return null; }
+    if(hastaStr.trim() && !hasta){ alert('La fecha HASTA no es válida. Usá el formato dd/mm/aaaa.'); return null; }
+    if(hasta){ hasta = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate(), 23, 59, 59); }
+
+    const filtradas = rows.filter(r=>{
+      const dt = _parseTs(r._ts);
+      if(!dt) return true;
+      if(desde && dt < desde) return false;
+      if(hasta && dt > hasta) return false;
+      return true;
+    });
+
+    const fmt = d => d ? d.toLocaleDateString('es-AR') : '—';
+    const etiqueta = `Rango: ${desde?fmt(desde):'inicio'} a ${fmt(hasta)}`;
+    return { rows:filtradas, etiqueta, marcarNuevo:false, hasta };
+  }
+
+  if(sel==='3'){
+    const lastStr = localStorage.getItem(_lastExportKey());
+    const last = lastStr ? new Date(lastStr) : null;
+    const filtradas = last ? rows.filter(r=>{
+      const dt = _parseTs(r._ts);
+      if(!dt) return true;
+      return dt > last;
+    }) : rows;
+
+    const etiqueta = last
+      ? `Novedades desde el ${last.toLocaleDateString('es-AR')}`
+      : 'Todos (primera exportación de este módulo)';
+    return { rows:filtradas, etiqueta, marcarNuevo:true, hasta:new Date() };
+  }
+
+  alert('Opción no reconocida. Cancelo la exportación.');
+  return null;
+}
+
+// ══════════════════════════════════════════════
 // EXPORTAR EXCEL
 // ══════════════════════════════════════════════
 function exportExcel(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
-  const rows = S.get(CS.id, CM.id);
-  if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
+  const todas = S.get(CS.id, CM.id);
+  if(!todas.length){alert('No hay datos para exportar en este módulo.');return;}
+
+  // Preguntar qué rango de fechas exportar
+  const filtro = _pedirFiltroFechas(todas);
+  if(!filtro) return; // canceló
+  const rows = filtro.rows;
+  if(!rows.length){ alert('No hay registros en ese rango de fechas.'); return; }
 
   // Armar encabezados con los labels del módulo
   const fields = CM.fields;
   const headers = fields.map(f=>f.label);
-  headers.push('Cargado por','Fecha de carga','Archivos adjuntos');
+  headers.push('Cargado por','Fecha de carga','Editado por','Fecha de edición','Archivos adjuntos');
 
   // Armar filas de datos (excluyendo el contenido base64 de adjuntos, solo la cantidad y nombres)
   const data = [headers, ...rows.map(r=>{
@@ -3537,7 +3640,7 @@ function exportExcel(){
     const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}: ${atts.map(a=>a.name).join(', ')}` : '';
     return [
       ...fields.map(f=>r[f.key]||''),
-      r._por||'', r._ts||'', attDesc
+      r._por||'', r._ts||'', r._editPor||'', r._editTs||'', attDesc
     ];
   })];
 
@@ -3562,6 +3665,11 @@ function exportExcel(){
   const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   const filename = `SUEP_${limpiar(CS.name)}_${limpiar(CM.name)}_${fecha}.xlsx`;
   XLSX.writeFile(wb, filename);
+
+  // Si fue "solo lo nuevo", guardamos esta fecha como punto de corte
+  if(filtro.marcarNuevo){
+    localStorage.setItem(_lastExportKey(), (filtro.hasta||new Date()).toISOString());
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -3598,23 +3706,29 @@ function exportSeleccionExcel(tipo, fechaISO){
 // ══════════════════════════════════════════════
 function exportPDF(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
-  const rows = S.get(CS.id, CM.id);
-  if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
+  const todas = S.get(CS.id, CM.id);
+  if(!todas.length){alert('No hay datos para exportar en este módulo.');return;}
   if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
     alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
     return;
   }
 
+  // Preguntar qué rango de fechas exportar
+  const filtro = _pedirFiltroFechas(todas);
+  if(!filtro) return; // canceló
+  const rows = filtro.rows;
+  if(!rows.length){ alert('No hay registros en ese rango de fechas.'); return; }
+
   // Excluimos imágenes (no se muestran como texto en la tabla)
   const fields = CM.fields.filter(f => f.type !== 'image');
-  const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Adjuntos'];
+  const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Editado por', 'Fecha de edición', 'Adjuntos'];
 
   const body = rows.map(r=>{
     const atts = r._attachments || [];
     const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}` : '';
     return [
       ...fields.map(f=>String(r[f.key]||'')),
-      r._por||'', r._ts||'', attDesc
+      r._por||'', r._ts||'', r._editPor||'', r._editTs||'', attDesc
     ];
   });
 
@@ -3628,7 +3742,7 @@ function exportPDF(){
   doc.text(`${CS.name} · ${CM.name}`, 40, 36);
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
+  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''} · ${filtro.etiqueta}`, 40, 50);
 
   doc.autoTable({
     head: [headers],
@@ -3643,6 +3757,11 @@ function exportPDF(){
   const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
   const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_${fechaArch}.pdf`);
+
+  // Si fue "solo lo nuevo", guardamos esta fecha como punto de corte
+  if(filtro.marcarNuevo){
+    localStorage.setItem(_lastExportKey(), (filtro.hasta||new Date()).toISOString());
+  }
 }
 
 
@@ -4430,37 +4549,83 @@ function _mergeRegistros(remoto, local, idPrioritario){
   return Array.from(map.values());
 }
 
-// Guarda una lista de registros de un módulo de forma segura: baja lo fresco,
-// fusiona, aplica y sube SIN debounce (escritura inmediata y directa a la nube).
-async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
-  const remoto = await _fetchModuloFresco(s, m);
-  // Si no hay conexión/nube, guardamos solo local (se sincroniza después)
-  const fusionada = (remoto === null)
-    ? listaLocal
-    : _mergeRegistros(remoto, listaLocal, idPrioritario);
-  _S_set_local(s, m, fusionada);
-  // Subir inmediatamente la versión fusionada (sin esperar el debounce)
-  if(typeof clienteS !== 'undefined'){
+// ─── Cola de guardado POR MÓDULO (mutex) ───
+// Garantiza que dos guardados del MISMO módulo en este dispositivo no corran a la
+// vez: se ejecutan uno tras otro. Cada módulo tiene su propia cola, así que cargar
+// en sectores distintos sigue siendo simultáneo y rápido.
+var _colasModulo = {};
+function _enColaModulo(s, m, tarea){
+  const k = S.key(s, m);
+  const previa = _colasModulo[k] || Promise.resolve();
+  // Encadenamos la nueva tarea después de la anterior (pase lo que pase con la anterior)
+  const actual = previa.catch(()=>{}).then(()=>tarea());
+  _colasModulo[k] = actual;
+  // Limpiamos la referencia cuando esta tarea es la última de la cola
+  actual.catch(()=>{}).finally(()=>{ if(_colasModulo[k] === actual) delete _colasModulo[k]; });
+  return actual;
+}
+
+// Sube la lista a la nube reintentando ante choques. Antes de cada intento baja la
+// versión MÁS fresca y re-fusiona, de modo que si otra persona escribió en el medio
+// no se pierde su registro (y el nuestro tampoco). Devuelve la lista final fusionada.
+async function _subirConReintento(s, m, listaLocal, idPrioritario, intentos){
+  intentos = intentos || 4;
+  let fusionada = listaLocal;
+  for(let i = 0; i < intentos; i++){
+    // 1) Bajar lo más fresco y fusionar (en el primer intento puede venir de saveRecord,
+    //    pero re-bajar acá garantiza que tomamos lo último justo antes de subir)
+    const remoto = await _fetchModuloFresco(s, m);
+    fusionada = (remoto === null) ? listaLocal : _mergeRegistros(remoto, fusionada, idPrioritario);
+    _S_set_local(s, m, fusionada);
+
+    // Sin nube: guardamos local y dejamos que la cola normal lo reintente
+    if(typeof clienteS === 'undefined'){
+      syncToSupabase(S.key(s, m), fusionada);
+      return fusionada;
+    }
+
+    // 2) Intentar subir
+    let huboError = false, errMsg = '';
     try{
       const { error } = await clienteS.from('app_data').upsert([{
         key: S.key(s, m), value: fusionada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
       }], { onConflict: 'key' });
-      if(error){
-        // ✅ FIX: el cliente de Supabase NO lanza excepción ante errores de la base
-        // (permisos/RLS), los devuelve en .error. Antes esto pasaba desapercibido
-        // y mostraba "guardado" aunque la nube rechazara la escritura.
-        console.error('❌ Supabase RECHAZÓ la escritura de', S.key(s,m), '→', error.message||error, error);
-        syncStatus(`⚠️ La nube rechazó el guardado: ${error.message||'ver consola'}`, '#f87171');
-      } else {
-        syncStatus('✓ Guardado y sincronizado', '#34d399');
+      if(error){ huboError = true; errMsg = error.message||'error'; }
+    }catch(e){ huboError = true; errMsg = (e && e.message) || 'sin conexión'; }
+
+    if(!huboError){
+      // 3) Verificar que NUESTRO registro quedó realmente en la nube (detecta pisadas)
+      if(idPrioritario){
+        const verif = await _fetchModuloFresco(s, m);
+        const quedo = (verif === null) || verif.some(r => r && r._id === idPrioritario);
+        if(!quedo){
+          // Alguien pisó nuestra escritura: re-fusionamos con lo que haya y reintentamos
+          await _esperar(150 + Math.random()*250);
+          continue;
+        }
       }
-    }catch(e){
-      console.warn('No se pudo subir inmediatamente, queda en cola local:', e);
-      syncToSupabase(S.key(s, m), fusionada); // reintento por la vía normal
-      syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+      syncStatus('✓ Guardado y sincronizado', '#34d399');
+      return fusionada;
     }
+
+    // Hubo error: esperamos un poco (con algo de azar para no chocar de nuevo) y reintentamos
+    console.warn(`Intento ${i+1}/${intentos} falló al guardar ${S.key(s,m)}: ${errMsg}`);
+    await _esperar(200 + i*200 + Math.random()*200);
   }
+
+  // Agotamos los reintentos: dejamos guardado local + cola normal para que insista solo
+  console.error('⚠️ No se pudo confirmar el guardado en la nube tras varios intentos:', S.key(s,m));
+  syncToSupabase(S.key(s, m), fusionada);
+  syncStatus('⚠️ Guardado local (se reintenta solo)', '#f87171');
   return fusionada;
+}
+
+function _esperar(ms){ return new Promise(res=>setTimeout(res, ms)); }
+
+// Guarda una lista de registros de un módulo de forma segura. Encola por módulo para
+// que dos cargas simultáneas en el MISMO sector no choquen, y reintenta ante conflictos.
+async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
+  return _enColaModulo(s, m, ()=> _subirConReintento(s, m, listaLocal, idPrioritario));
 }
 
 // ─── Versiones seguras de add / upd / del (fusionan con la nube antes de guardar) ───
@@ -4482,27 +4647,31 @@ S.updSafe = async function(s, m, id, data){
   if(recEditado) newNotif(s, m, recEditado, 'edito');
 };
 S.delSafe = async function(s, m, id){
-  // Para borrar con seguridad: traemos lo fresco, le quitamos SOLO este id y subimos
-  const remoto = await _fetchModuloFresco(s, m);
-  const base = (remoto === null) ? S.get(s, m) : _mergeRegistros(remoto, S.get(s, m), null);
-  const filtrada = base.filter(r => r._id !== id);
-  _S_set_local(s, m, filtrada);
-  if(typeof clienteS !== 'undefined'){
-    try{
-      const { error } = await clienteS.from('app_data').upsert([{
-        key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
-      }], { onConflict: 'key' });
-      if(error){
-        console.error('❌ Supabase RECHAZÓ el borrado de', S.key(s,m), '→', error.message||error, error);
-        syncStatus(`⚠️ La nube rechazó el borrado: ${error.message||'ver consola'}`, '#f87171');
-      } else {
-        syncStatus('✓ Eliminado y sincronizado', '#34d399');
+  // Para borrar con seguridad encolamos por módulo (igual que el guardado) y, dentro,
+  // traemos lo fresco, le quitamos SOLO este id y subimos. Así un borrado y una carga
+  // simultáneos en el mismo sector no se pisan.
+  return _enColaModulo(s, m, async ()=>{
+    const remoto = await _fetchModuloFresco(s, m);
+    const base = (remoto === null) ? S.get(s, m) : _mergeRegistros(remoto, S.get(s, m), null);
+    const filtrada = base.filter(r => r._id !== id);
+    _S_set_local(s, m, filtrada);
+    if(typeof clienteS !== 'undefined'){
+      try{
+        const { error } = await clienteS.from('app_data').upsert([{
+          key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+        }], { onConflict: 'key' });
+        if(error){
+          console.error('❌ Supabase RECHAZÓ el borrado de', S.key(s,m), '→', error.message||error, error);
+          syncStatus(`⚠️ La nube rechazó el borrado: ${error.message||'ver consola'}`, '#f87171');
+        } else {
+          syncStatus('✓ Eliminado y sincronizado', '#34d399');
+        }
+      }catch(e){
+        console.warn('No se pudo subir el borrado, queda en cola local:', e);
+        syncToSupabase(S.key(s, m), filtrada);
       }
-    }catch(e){
-      console.warn('No se pudo subir el borrado, queda en cola local:', e);
-      syncToSupabase(S.key(s, m), filtrada);
     }
-  }
+  });
 };
 
 // ─── Escribir una clave a Supabase ───
