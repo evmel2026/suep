@@ -1467,6 +1467,20 @@ const SECTORS = [
     ]},
   ]},
 
+  { id:'PERTENENCIAS', name:'Pertenencias / Bienes Materiales DCFyCCCO', icon:'📦', color:'#92400e', bg:'#fef3c7', universal:true, modules:[
+    { id:'PERTENENCIAS', name:'Pertenencias / Bienes Materiales', fields:[
+      {key:'articulo',       label:'Nombre del artículo',     type:'text',     req:true},
+      {key:'fechaPrestado',  label:'Fecha de prestado',       type:'date',     req:true},
+      {key:'hora',           label:'Hora',                    type:'time'},
+      {key:'fechaDevolucion',label:'Fecha de devolución',     type:'date'},
+      {key:'persona',        label:'Persona que retira',      type:'text',     req:true},
+      {key:'sector',         label:'Sector de la pertenencia',type:'text'},
+      {key:'estado',         label:'Estado',                  type:'select',   req:true,
+        opts:['Prestado','Devuelto','Pendiente de devolución','Dañado','Extraviado']},
+      {key:'obs',            label:'Observación',             type:'textarea'},
+    ]},
+  ]},
+
   // ─── Pestaña especial: ¿Quién se queda a almorzar? ───
   { id:'ALMUERZO', name:'¿Quién se queda a almorzar?', icon:'🍽️', color:'#ea580c', bg:'#ffedd5', universal:true, custom:'almuerzo', modules:[
     { id:'ALMUERZO', name:'Almuerzo de hoy', fields:[
@@ -2086,6 +2100,10 @@ function puedeEditarRec(r){
   }
   // Aspirantes: los instructores pueden EDITAR (no borrar) aunque no sea su registro
   if(sId==='ASPIRANTES' && CU.rol==='Instructor') return true;
+  // Pertenencias / Bienes Materiales: todos pueden EDITAR cualquier registro
+  // (excepto visores de solo lectura; el borrado sigue siendo solo para
+  // administradoras, ver puedeBorrarRec)
+  if(sId==='PERTENENCIAS' && CU.permiso!=='visor') return true;
   // Regla general: cada uno puede editar lo que cargó él mismo
   return (r._por === CU.nombre && r._por !== undefined);
 }
