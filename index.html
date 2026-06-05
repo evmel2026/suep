@@ -3507,10 +3507,14 @@ async function saveRecord(){
 }
 async function delRec(id){
   if(!confirm('¿Eliminar este registro?'))return;
-    clearTimeout(timeoutId);
-  if(typeof S.delSafe === 'function') await S.delSafe(CS.id,CM.id,id);
-  else S.del(CS.id,CM.id,id);
-  renderTable();
+  try{
+    if(typeof S.delSafe === 'function') await S.delSafe(CS.id,CM.id,id);
+    else S.del(CS.id,CM.id,id);
+    renderTable();
+  }catch(err){
+    console.error('Error al eliminar:', err);
+    alert('No se pudo eliminar el registro: ' + (err?.message || 'error desconocido'));
+  }
 }
 function closeModal(){document.getElementById('modalOverlay').style.display='none';editId=null;tempAttachments=[];}
 function checkOverlayClick(e){if(e.target.id==='modalOverlay')closeModal();}
