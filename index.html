@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
+<meta name="app-version" content="1.1.0">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -832,31 +834,75 @@ textarea.fi{resize:vertical;min-height:72px}
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// VERSIÓN DE LA APP — Cambiá este número cada vez que modifiques el archivo
-// para que los usuarios vean la notificación de actualización.
-// Ejemplo: '1.0.0' → '1.0.1' → '1.1.0'
-// ══════════════════════════════════════════════
-const APP_VERSION = '1.0.0';
+// ══════════════════════════════════════════════════════════════════
+// VERSIÓN DE LA APP + ACTUALIZACIÓN AUTOMÁTICA
+// ══════════════════════════════════════════════════════════════════
+// La versión se lee del <meta name="app-version"> del <head>. Para publicar
+// una actualización SOLO tenés que cambiar ese número y subir el archivo a
+// GitHub. La app revisa GitHub cada vez que arranca (y cada 5 minutos) y, si
+// hay una versión más nueva, avisa al usuario para recargar — en celular y PC.
+// ══════════════════════════════════════════════════════════════════
+const APP_VERSION = (document.querySelector('meta[name="app-version"]')?.content || '1.0.0').trim();
 
-(function checkAppVersion(){
-  const stored = localStorage.getItem('suep_app_version');
-  if(stored && stored !== APP_VERSION){
-    document.addEventListener('DOMContentLoaded', ()=>{
-      setTimeout(()=> document.getElementById('updateBanner').classList.add('show'), 1500);
-    });
-  } else if(!stored){
-    localStorage.setItem('suep_app_version', APP_VERSION);
+// ─── URL "cruda" de tu archivo en GitHub (la usa el chequeo automático) ───
+// 👉 EDITÁ ESTA LÍNEA UNA SOLA VEZ con la ruta real de tu repo:
+//    https://raw.githubusercontent.com/USUARIO/REPO/RAMA/ARCHIVO.html
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/evmel2026/suep/main/index.html';
+
+// Compara versiones tipo "1.2.10" correctamente (no como texto)
+function _verMayor(a, b){
+  const pa = String(a).split('.').map(n=>parseInt(n,10)||0);
+  const pb = String(b).split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const x=pa[i]||0, y=pb[i]||0;
+    if(x>y) return 1; if(x<y) return -1;
   }
-})();
+  return 0;
+}
+
+let _versionRemotaPendiente = null;
+
+// Consulta GitHub y, si hay una versión más nueva publicada, muestra el banner.
+async function checkForUpdates(){
+  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return; // sin configurar aún
+  try{
+    // cache:'no-store' + parámetro anti-caché → siempre trae lo último de GitHub
+    const resp = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) return;
+    const html = await resp.text();
+    const m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
+    if(!m) return;
+    const remota = m[1].trim();
+    if(_verMayor(remota, APP_VERSION) === 1){
+      _versionRemotaPendiente = remota;
+      const banner = document.getElementById('updateBanner');
+      if(banner){
+        const msg = banner.querySelector('.upd-msg');
+        if(msg) msg.innerHTML = '<strong>¡Nueva actualización disponible!</strong> Versión ' + remota + ' lista. Recargá para obtener las últimas mejoras.';
+        banner.classList.add('show');
+      }
+    }
+  }catch(e){ /* sin conexión: reintenta en el próximo ciclo */ }
+}
+
+// Revisar al arrancar y cada 5 minutos mientras la app está abierta
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(checkForUpdates, 2500); });
+setInterval(checkForUpdates, 5 * 60 * 1000);
+// Revisar también cuando el usuario vuelve a la app (clave en celular)
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdates(); });
 
 function applyUpdate(){
-  localStorage.setItem('suep_app_version', APP_VERSION);
+  localStorage.setItem('suep_app_version', _versionRemotaPendiente || APP_VERSION);
   document.getElementById('updateBanner').classList.remove('show');
-  location.reload(true);
+  // Vaciar todas las cachés del navegador/PWA antes de recargar (sino el celu sigue viejo)
+  if('caches' in window){
+    caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k))))
+      .finally(()=> location.reload(true));
+  } else {
+    location.reload(true);
+  }
 }
 function dismissUpdate(){
-  localStorage.setItem('suep_app_version', APP_VERSION);
   document.getElementById('updateBanner').classList.remove('show');
 }
 
@@ -4784,6 +4830,51 @@ window.doLogin = async function(){
     subscribeRealtime();
   }, 700);
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN AL ARRANCAR Y AL VOLVER A LA APP  (clave para el celular)
+// ═══════════════════════════════════════════════════════════════════
+// PROBLEMA QUE RESUELVE: en el celular se veía la app vacía aunque en la PC
+// estuvieran los registros. Pasaba porque los datos SOLO se bajaban de la nube
+// dentro de doLogin; si el celu no rehacía el login, o la red fallaba justo en
+// ese instante, su localStorage quedaba viejo/vacío para siempre.
+//
+// SOLUCIÓN: bajamos TODO desde Supabase apenas arranca la app (durante el
+// splash, antes del login) y cada vez que el usuario vuelve a la app. Así el
+// celular siempre ve lo mismo que la PC.
+// ═══════════════════════════════════════════════════════════════════
+(function bajarAlArrancar(){
+  const run = ()=>{
+    if(typeof clienteS === 'undefined' || typeof pullAllFromSupabase !== 'function') return;
+    pullAllFromSupabase().then(ok=>{
+      if(ok){
+        // Si ya hay un usuario en pantalla (sesión activa), refrescar la tabla visible
+        if(typeof CU !== 'undefined' && CU){
+          try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function') renderTable(); }catch(_){}
+          try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
+        }
+      }
+    }).catch(e=>console.warn('No se pudo bajar al arrancar:', e));
+  };
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=> setTimeout(run, 300));
+  } else {
+    setTimeout(run, 300);
+  }
+})();
+
+// Al volver a la app (cambiar de pestaña, desbloquear el celu, reabrir la PWA)
+// volvemos a bajar lo último para no quedar desfasados.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) return;
+  if(typeof clienteS === 'undefined' || typeof pullAllFromSupabase !== 'function') return;
+  pullAllFromSupabase().then(ok=>{
+    if(ok && typeof CU !== 'undefined' && CU){
+      try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function') renderTable(); }catch(_){}
+      try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
+    }
+  }).catch(()=>{});
+});
 
 // ─────────────────────────────────────────────────────────────
 // RECONSTRUIR NOTIFICACIONES FALTANTES
