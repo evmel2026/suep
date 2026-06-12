@@ -893,29 +893,6 @@ textarea.fi{resize:vertical;min-height:72px}
 </div>
 <div id="printArea"></div>
 
-<!-- ████ EXPORTAR PDF POR RANGO (semana / mes) ████ -->
-<div class="print-overlay" id="pdfOv" onclick="if(event.target.id==='pdfOv')closePdfRango()">
-  <div class="print-modal">
-    <h3>📄 Descargar PDF</h3>
-    <p>Elegí el rango de fechas a incluir. Ideal para la impresión semanal de los viernes, o un reporte mensual.</p>
-    <label>Desde</label>
-    <input class="fi" type="date" id="pdfDesde">
-    <label>Hasta</label>
-    <input class="fi" type="date" id="pdfHasta">
-    <div class="print-atajos">
-      <button onclick="setPdfRango('semana')">📅 Esta semana (lun a hoy)</button>
-      <button onclick="setPdfRango('mes')">🗓️ Este mes</button>
-      <button onclick="setPdfRango('mesAnterior')">⏮️ Mes anterior</button>
-      <button onclick="setPdfRango(7)">Últimos 7 días</button>
-    </div>
-    <div class="print-actions">
-      <button class="pa-cancel" onclick="closePdfRango()">Cancelar</button>
-      <button class="pa-cancel" onclick="exportPDFGenerar(true)" title="Exportar todos los registros sin filtrar por fecha">Todo</button>
-      <button class="pa-go" onclick="exportPDFGenerar(false)">📄 Descargar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ████ MODAL CAMBIO DE CONTRASEÑA ████ -->
 <div class="pwd-overlay" id="pwdChangeOv" onclick="if(event.target.id==='pwdChangeOv')closeChangePwd()">
   <div class="pwd-modal">
@@ -4102,55 +4079,10 @@ function exportPDF(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
   const rows = S.get(CS.id, CM.id);
   if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
-  // ✅ v1.5.1: antes de descargar, elegir rango (semana / mes / personalizado)
-  setPdfRango('semana'); // por defecto: la semana en curso (lunes a hoy) → impresión de los viernes
-  document.getElementById('pdfOv').classList.add('open');
-}
-function closePdfRango(){
-  document.getElementById('pdfOv').classList.remove('open');
-}
-function setPdfRango(modo){
-  const hoy = new Date();
-  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  let desde = new Date(hoy), hasta = new Date(hoy);
-  if(modo === 'semana'){
-    const dia = hoy.getDay(); // 0=domingo
-    desde.setDate(hoy.getDate() - ((dia + 6) % 7)); // lunes de esta semana
-  } else if(modo === 'mes'){
-    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  } else if(modo === 'mesAnterior'){
-    desde = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
-    hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0); // último día del mes anterior
-  } else {
-    desde.setDate(hoy.getDate() - Number(modo||0));
-  }
-  document.getElementById('pdfDesde').value = iso(desde);
-  document.getElementById('pdfHasta').value = iso(hasta);
-}
-function exportPDFGenerar(todo){
-  if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
-  let desde = '', hasta = '';
-  if(!todo){
-    desde = document.getElementById('pdfDesde').value;
-    hasta = document.getElementById('pdfHasta').value;
-    if(!desde || !hasta){ alert('Elegí las dos fechas del rango'); return; }
-    if(desde > hasta){ alert('La fecha "Desde" no puede ser posterior a "Hasta"'); return; }
-  }
-
-  let rows = S.get(CS.id, CM.id);
-  if(!todo){
-    const dateField = (CM.fields||[]).find(f=>f.type==='date');
-    rows = rows.filter(r=>{
-      const f = _fechaISORegistro(r, dateField);
-      return f && f >= desde && f <= hasta;
-    });
-  }
-  if(!rows.length){alert(todo ? 'No hay datos para exportar en este módulo.' : 'No hay registros en ese rango de fechas.');return;}
   if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
     alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
     return;
   }
-  closePdfRango();
 
   // Excluimos imágenes (no se muestran como texto en la tabla)
   const fields = CM.fields.filter(f => f.type !== 'image');
@@ -4170,13 +4102,12 @@ function exportPDFGenerar(todo){
   const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
 
   const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const rangoTxt = todo ? 'Todos los registros' : `Registros del ${desde.split('-').reverse().join('/')} al ${hasta.split('-').reverse().join('/')}`;
   doc.setFontSize(14);
   doc.setTextColor(8, 17, 31);
   doc.text(`${CS.name} · ${CM.name}`, 40, 36);
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`SUEP — ${rangoTxt} · Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
+  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
 
   doc.autoTable({
     head: [headers],
@@ -4189,9 +4120,7 @@ function exportPDFGenerar(todo){
   });
 
   const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
-  const fechaArch = todo
-    ? new Date().toLocaleDateString('es-AR').replace(/\//g,'-')
-    : `${desde.split('-').reverse().join('-')}_al_${hasta.split('-').reverse().join('-')}`;
+  const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
   doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_${fechaArch}.pdf`);
 }
 
@@ -5112,6 +5041,130 @@ async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
   return fusionada;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ✅ v1.5.1 — GUARDADO ATÓMICO POR REGISTRO (funciones RPC en Supabase)
+// ═══════════════════════════════════════════════════════════════════
+// EL PROBLEMA DEFINITIVO QUE RESUELVE: hasta ahora cada guardado bajaba el
+// módulo ENTERO, lo fusionaba en el dispositivo y subía el módulo ENTERO.
+// (1) Con internet flojo eso tardaba muchísimo → "GUARDANDO..." eterno.
+// (2) Si dos personas cargaban a la vez, las dos bajaban la misma versión y
+//     la segunda subida PISABA a la primera (la fusión en el cliente tiene
+//     una ventana de carrera imposible de cerrar desde el navegador).
+// AHORA: el agregado/edición/borrado de CADA registro lo hace la base de
+// datos misma (funciones suep_guardar_registro / suep_borrar_registro),
+// de forma atómica: Postgres pone en fila las escrituras simultáneas sobre
+// el mismo módulo y NINGUNA se pierde. Además solo viaja EL REGISTRO
+// (kilobytes), no el módulo completo con adjuntos (megas) → guardado casi
+// instantáneo incluso con mala señal.
+// PLAN B: si las funciones RPC no están instaladas en Supabase, se usa
+// automáticamente el método viejo (bajar-fusionar-subir). La app nunca rompe.
+
+var _rpcOk = null; // null = todavía no probado, true = instaladas, false = usar método viejo
+
+function _esErrorFuncionInexistente(err){
+  const msg = String(err?.message || '');
+  return err?.code === 'PGRST202' || err?.code === '42883'
+    || /could not find the function|function .* does not exist|schema cache/i.test(msg);
+}
+
+async function _rpcGuardarRegistro(key, registro){
+  const { error } = await _conTimeout(
+    clienteS.rpc('suep_guardar_registro', { p_key: key, p_registro: registro }), 12000);
+  return error || null;
+}
+async function _rpcBorrarRegistro(key, id){
+  const { error } = await _conTimeout(
+    clienteS.rpc('suep_borrar_registro', { p_key: key, p_id: id }), 12000);
+  return error || null;
+}
+
+// ─── Cola de OPERACIONES pendientes (offline) ───
+// A diferencia de la cola vieja (que anotaba módulos enteros), acá se anota
+// la operación puntual (guardar tal registro / borrar tal id). Al volver la
+// conexión se reproduce cada operación vía RPC: nada se pisa, nada se pierde.
+function _getOpsPendientes(){ try{ return JSON.parse(localStorage.getItem('suep_pending_ops')||'[]'); }catch(_){ return []; } }
+function _setOpsPendientes(l){ try{ localStorage.setItem('suep_pending_ops', JSON.stringify(l)); }catch(_){ } }
+function _marcarOpPendiente(op, key, dato){
+  const lista = _getOpsPendientes();
+  const idNuevo = (op === 'guardar') ? (dato && dato._id) : dato;
+  // Si ya había una operación igual sobre el mismo registro, queda solo la última versión
+  const filtrada = lista.filter(o => {
+    const idViejo = (o.op === 'guardar') ? (o.dato && o.dato._id) : o.dato;
+    return !(o.key === key && o.op === op && idViejo === idNuevo);
+  });
+  filtrada.push({ op, key, dato, ts: Date.now() });
+  _setOpsPendientes(filtrada);
+}
+function _hayOpsPendientesDe(key){ return _getOpsPendientes().some(o => o.key === key); }
+
+let _flushOpsEnCurso = false;
+async function _flushOpsPendientes(){
+  if(_flushOpsEnCurso) return;
+  if(typeof clienteS === 'undefined' || navigator.onLine === false) return;
+  let ops = _getOpsPendientes();
+  if(!ops.length) return;
+  _flushOpsEnCurso = true;
+  try{
+    if(_rpcOk === false){
+      // Sin RPC instaladas: pasamos las operaciones a la cola vieja (por módulo)
+      ops.forEach(o => _marcarPendiente(o.key));
+      _setOpsPendientes([]);
+      return;
+    }
+    syncStatus('☁️ Subiendo cargas pendientes ('+ops.length+')...', '#fbbf24');
+    const restantes = [];
+    for(const o of ops){
+      try{
+        const error = (o.op === 'guardar')
+          ? await _rpcGuardarRegistro(o.key, o.dato)
+          : await _rpcBorrarRegistro(o.key, o.dato);
+        if(error){
+          if(_esErrorFuncionInexistente(error)){ _rpcOk = false; _marcarPendiente(o.key); continue; }
+          console.warn('Operación pendiente sigue fallando:', o.key, error.message||error);
+          restantes.push(o);
+        } else { _rpcOk = true; }
+      }catch(e){ restantes.push(o); } // sin conexión todavía, se reintenta luego
+    }
+    _setOpsPendientes(restantes);
+    if(!restantes.length) syncStatus('✓ Todo sincronizado', '#34d399');
+    else syncStatus('📴 '+restantes.length+' carga'+(restantes.length>1?'s':'')+' esperando conexión', '#fbbf24');
+  }finally{ _flushOpsEnCurso = false; }
+}
+
+// Sincroniza UN registro (alta o edición) con la nube. Primero intenta la vía
+// atómica (RPC). Si las funciones no están instaladas, cae al método viejo.
+async function _sincronizarRegistro(s, m, registro){
+  const key = S.key(s, m);
+  if(!registro || !registro._id) return;
+  if(typeof clienteS === 'undefined'){ _marcarOpPendiente('guardar', key, registro); return; }
+  if(_rpcOk !== false){
+    try{
+      const error = await _rpcGuardarRegistro(key, registro);
+      if(!error){
+        _rpcOk = true;
+        syncStatus('✓ Guardado y sincronizado', '#34d399');
+        return;
+      }
+      if(_esErrorFuncionInexistente(error)){
+        _rpcOk = false;
+        console.warn('⚠️ SUEP: las funciones RPC no están instaladas en Supabase todavía. Se usa el método de fusión (menos robusto ante cargas simultáneas). Ejecutá suep_rpc.sql en el SQL Editor para activar el guardado atómico.');
+      } else {
+        console.error('❌ Supabase RECHAZÓ la escritura de', key, '→', error.message||error, error);
+        syncStatus(`⚠️ La nube rechazó el guardado: ${error.message||'ver consola'}`, '#f87171');
+        return;
+      }
+    }catch(e){
+      // Timeout o sin internet: queda anotada la operación puntual y se reintenta sola
+      console.warn('Sin conexión al guardar el registro, queda pendiente:', e);
+      _marcarOpPendiente('guardar', key, registro);
+      syncStatus('📴 Guardado en el dispositivo — se sincroniza al volver internet', '#fbbf24');
+      return;
+    }
+  }
+  // Plan B: método viejo (bajar módulo entero, fusionar, subir)
+  await _guardarModuloSeguro(s, m, S.get(s, m), registro._id);
+}
+
 // ─── Versiones seguras de add / upd / del (fusionan con la nube antes de guardar) ───
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5153,9 +5206,8 @@ S.addSafe = async function(s, m, data){
   local.push(r);
   _S_set_local(s, m, local);   // 1) guardado local INMEDIATO (si no hay espacio, lanza y lo avisa el formulario)
   newNotif(s, m, r);
-  const key = S.key(s, m);
-  // 2) nube en segundo plano: no traba la pantalla
-  _enColaModulo(s, m, async ()=>{ await _guardarModuloSeguro(s, m, S.get(s, m), r._id); _refrescarSiVisible(key); });
+  // 2) nube en segundo plano: viaja SOLO este registro (atómico, no traba la pantalla)
+  _enColaModulo(s, m, async ()=>{ await _sincronizarRegistro(s, m, r); _refrescarSiVisible(S.key(s, m)); });
   return r;
 };
 S.updSafe = async function(s, m, id, data){
@@ -5164,12 +5216,34 @@ S.updSafe = async function(s, m, id, data){
   // ✅ Notificar también las ediciones (todos deben ver lo que se modificó)
   const recEditado = local.find(r => r._id===id);
   if(recEditado) newNotif(s, m, recEditado, 'edito');
-  const key = S.key(s, m);
-  // 2) nube en segundo plano
-  _enColaModulo(s, m, async ()=>{ await _guardarModuloSeguro(s, m, S.get(s, m), id); _refrescarSiVisible(key); });
+  // 2) nube en segundo plano: viaja SOLO el registro editado (atómico)
+  _enColaModulo(s, m, async ()=>{ await _sincronizarRegistro(s, m, recEditado || S.get(s, m).find(r=>r._id===id)); _refrescarSiVisible(S.key(s, m)); });
 };
 S.delSafe = async function(s, m, id){
-  // Para borrar con seguridad: traemos lo fresco, le quitamos SOLO este id y subimos
+  const key = S.key(s, m);
+  // Vía atómica: la base de datos quita SOLO este id (nadie pierde sus cargas)
+  if(typeof clienteS !== 'undefined' && _rpcOk !== false){
+    try{
+      const error = await _rpcBorrarRegistro(key, id);
+      if(!error){ _rpcOk = true; syncStatus('✓ Eliminado y sincronizado', '#34d399'); return; }
+      if(_esErrorFuncionInexistente(error)){
+        _rpcOk = false; // cae al método viejo de acá abajo
+      } else {
+        console.error('❌ Supabase RECHAZÓ el borrado de', key, '→', error.message||error, error);
+        syncStatus(`⚠️ La nube rechazó el borrado: ${error.message||'ver consola'}`, '#f87171');
+        return;
+      }
+    }catch(e){
+      console.warn('Sin conexión al borrar, queda pendiente:', e);
+      _marcarOpPendiente('borrar', key, id);
+      syncStatus('📴 Eliminado en el dispositivo — se sincroniza al volver internet', '#fbbf24');
+      return;
+    }
+  } else if(typeof clienteS === 'undefined'){
+    _marcarOpPendiente('borrar', key, id);
+    return;
+  }
+  // Plan B (método viejo): traemos lo fresco, le quitamos SOLO este id y subimos
   const remoto = await _fetchModuloFresco(s, m);
   const base = (remoto === null) ? S.get(s, m) : _mergeRegistros(remoto, S.get(s, m), null);
   const filtrada = base.filter(r => r._id !== id);
@@ -5235,6 +5309,8 @@ async function flushPendingSync(){
   if(_flushEnCurso) return;
   if(typeof clienteS === 'undefined') return;
   if(navigator.onLine === false) return; // seguimos sin internet, probamos después
+  // ✅ v1.5.1: primero reproducimos las operaciones puntuales pendientes (vía RPC)
+  try{ await _flushOpsPendientes(); }catch(e){ console.warn('No se pudieron subir ops pendientes:', e); }
   const pendientes = _getPendientes();
   if(!pendientes.length) return;
   _flushEnCurso = true;
@@ -5370,7 +5446,8 @@ async function pullAllFromSupabase(){
       syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
       return false;
     }
-    const _protegidas = new Set([..._getPendientes(), ..._getReemplazos()]);
+    const _protegidas = new Set([..._getPendientes(), ..._getReemplazos(),
+      ...((typeof _getOpsPendientes === 'function') ? _getOpsPendientes().map(o=>o.key) : [])]);
     if(data && data.length){
       data.forEach(row => {
         if(_protegidas.has(row.key)){
@@ -5440,7 +5517,8 @@ function subscribeRealtime(){
           } else {
             // ✅ v1.5: si esta clave tiene cambios locales sin subir, no la pisamos
             // con la versión remota; al fusionar y subir los pendientes se reconcilia.
-            if(_getPendientes().includes(row.key) || _getReemplazos().includes(row.key)){
+            if(_getPendientes().includes(row.key) || _getReemplazos().includes(row.key)
+               || (typeof _hayOpsPendientesDe === 'function' && _hayOpsPendientesDe(row.key))){
               console.warn('⏭️ Realtime: se conserva la versión local de', row.key, '(cambios sin subir)');
               return;
             }
