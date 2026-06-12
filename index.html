@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.1.0">
+<meta name="app-version" content="1.5.1">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -93,41 +93,153 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 .splash-bar{height:100%;background:linear-gradient(90deg,#7aafd4,#a8cfe0);border-radius:2px;width:0;transition:width 2.5s ease}
 .splash-credit{font-size:10px;color:rgba(255,255,255,.2);letter-spacing:1px;position:absolute;bottom:18px}
 
-/* ═══ DARK MODE ═══ */
-:root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666;
-  --border-color: rgba(0, 0, 0, 0.1);
-}
+/* ═══ MODO CLARO (el modo oscuro azul institucional es el diseño base) ═══ */
+body.light-mode{background:#eef2f7;color:#243b53}
+.light-mode #appScreen{background:#eef2f7}
+.light-mode .sector-header{background:#eef2f7}
+.light-mode .sh-text h2{color:#15314f}
+.light-mode .sh-text p{color:#4a6a88}
+/* Sidebar */
+.light-mode .sidebar{background:#ffffff;border-right-color:#dbe4ee}
+.light-mode .sb-label{color:#6b87a3}
+.light-mode .sector-btn{color:#3d566e}
+.light-mode .sector-btn:hover{background:rgba(21,49,79,.06)}
+.light-mode .s-count{color:#33536f;background:rgba(21,49,79,.08)}
+/* Pestañas de módulos */
+.light-mode .mod-tab{background:rgba(21,49,79,.07);color:#33536f}
+.light-mode .mod-tab:hover{background:rgba(21,49,79,.14)}
+/* Tabla y tarjetas */
+.light-mode .data-wrap{background:#ffffff;border-color:#dbe4ee;box-shadow:0 2px 10px rgba(21,49,79,.06)}
+.light-mode .data-table thead tr{background:#f1f5f9;border-bottom-color:#dbe4ee}
+.light-mode .data-table th{color:#4a6a88}
+.light-mode .data-table td{color:#243b53;border-bottom-color:rgba(21,49,79,.08)}
+.light-mode .data-table tbody tr:hover{background:#f3f8fc}
+.light-mode .clickable-row:hover{background:#f3f8fc!important}
+.light-mode .empty-state{color:#5a7a9a}
+.light-mode .rec-count{color:#4a6a88}
+.light-mode .detail-row td{background:#f5f8fb!important}
+.light-mode .detail-row td div{background:rgba(21,49,79,.05)!important;color:#33506b!important}
+.light-mode .date-folder td{background:#e8eff6!important;border-top-color:#d4e0ec;color:#22405e}
+.light-mode .date-folder:hover td{background:#dde9f3!important}
+.light-mode .df-chev{color:#4a6a88}
+.light-mode .df-count{background:rgba(21,49,79,.07);border-color:rgba(21,49,79,.15);color:#33536f}
+.light-mode .exam-subrow td{background:#f5f8fb!important}
+.light-mode .exam-label{color:#4a6a88}
+.light-mode .exam-toggle{background:rgba(21,49,79,.06);border-color:rgba(21,49,79,.18);color:#33536f}
+.light-mode .exam-toggle:hover{background:rgba(21,49,79,.12)}
+/* Buscador e inputs */
+.light-mode .fi{background:#ffffff;border-color:#c9d6e2;color:#1c3550}
+.light-mode .fi::placeholder{color:#8aa3ba}
+.light-mode textarea.fi{background:#ffffff;color:#1c3550}
+.light-mode select.fi option{background:#ffffff;color:#1c3550}
+/* Botones de exportación y toggles */
+.light-mode .export-btn{background:rgba(21,49,79,.06);border-color:rgba(21,49,79,.25);color:#2a4a6b}
+.light-mode .export-btn:hover{background:rgba(21,49,79,.12);border-color:#33536f}
+.light-mode .org-toggle-btn{background:rgba(21,49,79,.06);border-color:rgba(21,49,79,.16);color:#3d566e}
+.light-mode .org-toggle-btn:hover{background:rgba(21,49,79,.12)}
+/* Modal de carga */
+.light-mode .modal{background:#ffffff}
+.light-mode .modal-head{background:#ffffff;border-bottom-color:#e3eaf2}
+.light-mode .modal-head h3{color:#15314f}
+.light-mode .modal-head p{color:#4a6a88}
+.light-mode .modal-x{background:rgba(21,49,79,.07);color:#3d566e}
+.light-mode .modal-body label{color:#33536f}
+.light-mode .form-field label{color:#33536f}
+.light-mode .att-section{border-top-color:rgba(21,49,79,.2)}
+.light-mode .att-section label{color:#4a6a88}
+.light-mode .att-section small{color:#7a93ab}
+.light-mode .att-item{background:rgba(21,49,79,.05);border-color:rgba(21,49,79,.12)}
+.light-mode .att-name{color:#2a4a6b}
+/* Paneles de configuración y notificaciones */
+.light-mode .cfg-panel,.light-mode .notif-panel{background:#ffffff;border-color:#dbe4ee;box-shadow:0 10px 40px rgba(21,49,79,.18)}
+.light-mode .cfg-head{color:#15314f;border-bottom-color:#e3eaf2}
+.light-mode .cfg-item{color:#33536f;border-bottom-color:#eef2f7}
+.light-mode .cfg-item:hover{background:#f3f8fc;color:#15314f}
+.light-mode .cfg-sub{color:#7a93ab}
+.light-mode .np-head h4{color:#15314f}
+.light-mode .np-head{border-bottom-color:#e3eaf2}
+.light-mode .notif-item{border-bottom-color:#eef2f7}
+.light-mode .notif-item:hover{background:#f3f8fc}
+.light-mode .notif-item.unread{background:#e3eef8;border-left-color:#2a5a8f}
+.light-mode .n-text{color:#33506b}
+.light-mode .n-dot{background:#2a5a8f}
+.light-mode .n-dot.read{background:#c9d6e2}
 
-body.dark-mode {
-  --bg-primary: #0f0f0f;
-  --bg-secondary: #1a1a1a;
-  --text-primary: #e8e8e8;
-  --text-secondary: #b0b0b0;
-  --border-color: rgba(255, 255, 255, 0.1);
-}
+/* ═══ Contraste reforzado en modo claro (con !important para ganar a estilos inline) ═══ */
+.light-mode .data-table td{color:#1c3550!important}
+.light-mode .search-count{color:#3a5a7d!important}
+.light-mode .modal small,.light-mode .modal-body small{color:#4a6a88!important}
+.light-mode .empty-state small{color:#6b87a3!important}
+.light-mode .sub-tab{color:#33536f;border-color:#b9cad9}
+.light-mode .sub-tab:hover{background:#e8f0f8;border-color:#7aa0c0}
+.light-mode input[type="date"]{background:#ffffff!important;color:#15314f!important;border-color:#c0cfdd!important}
+.light-mode .sel-lbl{color:#33536f!important}
+.light-mode .alm-today-date{color:#15314f}
+.light-mode .alm-toggle-section{background:#f4f8fc;border-color:#dbe4ee}
+.light-mode .alm-toggle-q{color:#15314f}
+.light-mode .alm-user{color:#4a6a88}
+.light-mode .alm-btn{background:#ffffff;color:#33536f}
+.light-mode .alm-confirmed{color:#5d7a96}
+.light-mode .alm-confirmed strong{color:#2a5a8f}
+.light-mode .alm-summary{background:#f7fafd;border-color:#dbe4ee}
+.light-mode .alm-summary-title{color:#15314f}
+.light-mode .alm-counter{color:#2a5a8f}
+.light-mode .alm-row-name{color:#1c3550!important}
+.light-mode .alm-row-name span{color:#5d7a96!important}
+.light-mode .alm-row-time{color:#5d7a96!important}
+.light-mode .alm-empty{color:#6b87a3!important}
+.light-mode .sel-acc-head{background:#eef4fa;color:#15314f;border-color:#d7e2ed}
+.light-mode .sel-acc-head:hover{background:#e1ecf7}
+.light-mode .sel-acc-count{color:#4a6a88}
+.light-mode .letter-divider td{background:#eef4fa!important;color:#2a5a8f!important;border-top-color:#d7e2ed}
 
-.dark-mode #appScreen { background: var(--bg-primary); color: var(--text-primary); }
-.dark-mode .sidebar { background: var(--bg-secondary); border-right-color: var(--border-color); }
-.dark-mode .main-content { background: var(--bg-primary); }
-.dark-mode .tb-row { color: var(--text-primary); border-bottom-color: var(--border-color); }
-.dark-mode .tb-row:hover { background: var(--bg-secondary); }
-.dark-mode input, .dark-mode select, .dark-mode textarea {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border-color: var(--border-color);
+/* ═══ Acordeones por sección (Recargo / Imaginarias) ═══ */
+.sel-acc-head{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:11px 14px;margin-top:8px;border-radius:10px;border:1px solid rgba(122,175,212,.18);background:rgba(122,175,212,.07);color:#dde9f3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.sel-acc-head:hover{background:rgba(122,175,212,.14)}
+.sel-acc-count{font-weight:600;font-size:11px;color:#7aafd4;margin-left:auto;white-space:nowrap}
+.sel-acc-chev{font-size:12px;opacity:.8}
+.sel-acc-body{padding:2px 0 4px}
+
+/* ═══ Separadores alfabéticos (sector Secciones) ═══ */
+.letter-divider td{background:rgba(122,175,212,.10)!important;color:#7aafd4!important;font-weight:800;font-size:12px;letter-spacing:1.5px;padding:6px 12px!important;border-top:1px solid rgba(122,175,212,.15)}
+
+/* ═══ Impresión de registros ═══ */
+#printArea{display:none}
+.print-overlay{position:fixed;inset:0;background:rgba(5,10,18,.7);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px}
+.print-overlay.open{display:flex}
+.print-modal{background:#0d1928;border:1px solid rgba(122,175,212,.2);border-radius:16px;padding:22px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.print-modal h3{color:#fff;font-size:16px;margin-bottom:4px}
+.print-modal p{color:#7aafd4;font-size:12px;margin-bottom:14px;line-height:1.5}
+.print-modal label{display:block;font-size:11px;font-weight:700;color:#7aafd4;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px}
+.print-atajos{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.print-atajos button{padding:6px 12px;border-radius:16px;border:1px solid rgba(122,175,212,.25);background:transparent;color:#9ab4d0;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.print-atajos button:hover{background:rgba(122,175,212,.12)}
+.print-actions{display:flex;gap:10px;margin-top:18px}
+.print-actions button{flex:1;padding:11px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.pa-cancel{background:rgba(122,175,212,.12);color:#9ab4d0}
+.pa-go{background:linear-gradient(135deg,#2a5a8f,#1d4368);color:#fff}
+.light-mode .print-modal{background:#ffffff;border-color:#dbe4ee}
+.light-mode .print-modal h3{color:#15314f}
+.light-mode .print-modal p,.light-mode .print-modal label{color:#4a6a88}
+.light-mode .pa-cancel{background:#eef2f7;color:#33536f}
+.light-mode .print-atajos button{border-color:#c0cfdd;color:#33536f}
+@media print{
+  body.printing > *:not(#printArea){display:none!important}
+  body.printing{background:#fff!important}
+  body.printing #printArea{display:block!important;background:#fff;color:#000;padding:0;font-family:Arial,Helvetica,sans-serif}
+  #printArea *{color:#000!important;background:transparent!important;box-shadow:none!important;text-shadow:none!important}
+  #printArea .pr-head{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:16px}
+  #printArea h1{font-size:17px;margin:0}
+  #printArea .pr-sub{font-size:10.5px;margin-top:4px}
+  #printArea h2{font-size:14px;margin:18px 0 4px;border-bottom:1.5px solid #000;padding-bottom:3px;page-break-after:avoid}
+  #printArea h3{font-size:11.5px;margin:10px 0 4px;page-break-after:avoid}
+  #printArea table{width:100%;border-collapse:collapse;font-size:9.5px;margin-bottom:8px}
+  #printArea th,#printArea td{border:1px solid #000!important;padding:3px 5px;text-align:left;vertical-align:top;word-break:break-word}
+  #printArea th{font-weight:700;background:#e8e8e8!important}
+  #printArea tr{page-break-inside:avoid}
+  #printArea ul{margin:2px 0 10px 18px;font-size:10px}
+  #printArea li{margin:1px 0}
 }
-.dark-mode .cfg-panel, .dark-mode .notif-panel { background: var(--bg-secondary); border-color: var(--border-color); }
-.dark-mode .cfg-item, .dark-mode .notif-item { color: var(--text-primary); border-bottom-color: var(--border-color); }
-.dark-mode table { color: var(--text-primary); }
-.dark-mode thead { background: var(--bg-secondary); }
-.dark-mode .data-table tbody tr { border-bottom-color: var(--border-color); }
-.dark-mode .empty-state { color: var(--text-primary); }
-.dark-mode button { background: #2a5a8f; color: #fff; }
-.dark-mode .clickable-row:hover { background: var(--bg-secondary) !important; }
 
 /* ═══ LOGIN ═══ */
 #loginScreen{
@@ -461,6 +573,20 @@ textarea.fi{resize:vertical;min-height:72px}
 .org-toggle-btn{padding:8px 14px;background:rgba(122,175,212,.08);border:1px solid rgba(122,175,212,.18);color:#8ab4d0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;font-family:inherit}
 .org-toggle-btn:hover{background:rgba(122,175,212,.15)}
 .org-toggle-btn.active{background:linear-gradient(135deg,#0f766e,#0a5751);color:#fff;border-color:#0f766e;box-shadow:0 2px 10px rgba(15,118,110,.3)}
+/* ─── Carpetas desplegables por fecha ─── */
+.date-folder td{background:rgba(122,175,212,.10)!important;border-top:1px solid rgba(122,175,212,.22);font-weight:700;color:#cfe3f5;font-size:12.5px;cursor:pointer;padding:10px 12px;user-select:none}
+.date-folder:hover td{background:rgba(122,175,212,.17)!important}
+.df-chev{display:inline-block;width:14px;color:#7aafd4}
+.df-count{float:right;background:rgba(122,175,212,.15);border:1px solid rgba(122,175,212,.25);color:#9ec5e3;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600}
+/* ─── Exámenes desplegables (Reclutamiento) ─── */
+.exam-toggle{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border-radius:8px;border:1px solid rgba(122,175,212,.25);background:rgba(122,175,212,.08);color:#9ec5e3;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.exam-toggle:hover{background:rgba(122,175,212,.18)}
+.exam-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+.exam-subrow td{background:rgba(13,22,35,.55)!important;padding:10px 14px!important}
+.exam-item{display:inline-flex;align-items:center;gap:8px;margin-right:18px;margin-bottom:4px}
+.exam-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#7aafd4;font-weight:700}
+/* ─── Vista Ed. Física: Aspirantes / Personal ─── */
+.edf-count{background:rgba(255,255,255,.14);border-radius:20px;padding:1px 8px;font-size:10.5px;margin-left:4px}
 .org-toggle-count{margin-left:auto;font-size:11px;color:#7aafd4;font-weight:600}
 
 .org-tree-wrap{background:linear-gradient(180deg,#0d1623,#111927);border:1px solid rgba(122,175,212,.1);border-radius:14px;padding:24px 14px;overflow-x:auto}
@@ -715,13 +841,20 @@ textarea.fi{resize:vertical;min-height:72px}
 <!-- ████ CONFIGURACIÓN ████ -->
 <div class="cfg-panel" id="cfgPanel">
   <button class="cfg-item" onclick="toggleDarkMode()">
-    <span class="cfg-icon" id="darkModeIcon">🌙</span>
+    <span class="cfg-icon" id="darkModeIcon">☀️</span>
     <div class="cfg-item-content">
-      <span id="darkModeLabel">Activar modo oscuro</span>
+      <span id="darkModeLabel">Activar modo claro</span>
       <span class="cfg-sub">Tema oscuro para la noche</span>
     </div>
   </button>
   <div class="cfg-head">⚙️ Configuración</div>
+  <button class="cfg-item" onclick="openPrintWeek()">
+    <span class="cfg-icon">🖨️</span>
+    <div class="cfg-item-content">
+      <span>Imprimir registros</span>
+      <span class="cfg-sub">Reporte de la semana o por rango de fechas</span>
+    </div>
+  </button>
   <button class="cfg-item" onclick="openChangePwd()">
     <span class="cfg-icon">🔑</span>
     <div class="cfg-item-content">
@@ -736,6 +869,51 @@ textarea.fi{resize:vertical;min-height:72px}
       <span class="cfg-sub">Solo administradoras</span>
     </div>
   </button>
+</div>
+
+<!-- ████ IMPRESIÓN DE REGISTROS ████ -->
+<div class="print-overlay" id="printOv" onclick="if(event.target.id==='printOv')closePrintWeek()">
+  <div class="print-modal">
+    <h3>🖨️ Imprimir registros</h3>
+    <p>Genera un reporte listo para imprimir con todos los registros cargados en el rango de fechas, organizado por sector y módulo.</p>
+    <label>Desde</label>
+    <input class="fi" type="date" id="printDesde">
+    <label>Hasta</label>
+    <input class="fi" type="date" id="printHasta">
+    <div class="print-atajos">
+      <button onclick="setPrintRango(7)">Últimos 7 días</button>
+      <button onclick="setPrintRango('semana')">Esta semana (lun a hoy)</button>
+      <button onclick="setPrintRango(0)">Solo hoy</button>
+    </div>
+    <div class="print-actions">
+      <button class="pa-cancel" onclick="closePrintWeek()">Cancelar</button>
+      <button class="pa-go" onclick="generarImpresion()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+<div id="printArea"></div>
+
+<!-- ████ EXPORTAR PDF POR RANGO (semana / mes) ████ -->
+<div class="print-overlay" id="pdfOv" onclick="if(event.target.id==='pdfOv')closePdfRango()">
+  <div class="print-modal">
+    <h3>📄 Descargar PDF</h3>
+    <p>Elegí el rango de fechas a incluir. Ideal para la impresión semanal de los viernes, o un reporte mensual.</p>
+    <label>Desde</label>
+    <input class="fi" type="date" id="pdfDesde">
+    <label>Hasta</label>
+    <input class="fi" type="date" id="pdfHasta">
+    <div class="print-atajos">
+      <button onclick="setPdfRango('semana')">📅 Esta semana (lun a hoy)</button>
+      <button onclick="setPdfRango('mes')">🗓️ Este mes</button>
+      <button onclick="setPdfRango('mesAnterior')">⏮️ Mes anterior</button>
+      <button onclick="setPdfRango(7)">Últimos 7 días</button>
+    </div>
+    <div class="print-actions">
+      <button class="pa-cancel" onclick="closePdfRango()">Cancelar</button>
+      <button class="pa-cancel" onclick="exportPDFGenerar(true)" title="Exportar todos los registros sin filtrar por fecha">Todo</button>
+      <button class="pa-go" onclick="exportPDFGenerar(false)">📄 Descargar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ████ MODAL CAMBIO DE CONTRASEÑA ████ -->
@@ -1485,7 +1663,7 @@ const SECTORS = [
   ]},
 
   { id:'NUMEROS_VARIOS', name:'Números Varios', icon:'🔢', color:'#475569', bg:'#e2e8f0', universal:true, modules:[
-    { id:'NUMEROS_VARIOS', name:'Números Varios', fields:[
+    { id:'NUMEROS_VARIOS', name:'Números Varios', groupByMonth:true, fields:[
       {key:'numero',  label:'Número',            type:'text', req:true, auto:'yearly', start:1094},
       {key:'destino', label:'Destino',           type:'text', req:true},
       {key:'asunto',  label:'Asunto',            type:'text', req:true},
@@ -1653,6 +1831,8 @@ let editId = null;
 let sbOpen = false;
 let ntOpen = false;
 let ORG_VIEW = 'lista'; // vista actual del organigrama: 'lista' | 'arbol'
+let EDF_VIEW = 'aspirantes'; // vista de Ed. Física: 'aspirantes' | 'personal'
+const DATE_FOLDERS = {}; // estado abierto/cerrado de las carpetas por fecha, por módulo
 
 // ══════════════════════════════════════════════
 // STORAGE
@@ -2309,48 +2489,65 @@ function renderTable(searchOverride){
       })
     : rows;
 
+  // ─── Ed. Física: subdivisión Aspirantes / Personal DCFyCCCO ───
+  const isEdFisica = (CS.id==='ACADEMICA' && CM.id==='EDUFISICA');
+  let edfBar = '';
+  let viewRows = filteredRows;
+  let totalBase = rows.length;
+  if(isEdFisica){
+    const nAsp = rows.filter(r=>r.grupo!=='PERSONAL').length;
+    const nPer = rows.filter(r=>r.grupo==='PERSONAL').length;
+    viewRows = filteredRows.filter(r => EDF_VIEW==='personal' ? r.grupo==='PERSONAL' : r.grupo!=='PERSONAL');
+    totalBase = EDF_VIEW==='personal' ? nPer : nAsp;
+    edfBar = `<div class="org-toggle">
+      <button class="org-toggle-btn ${EDF_VIEW==='aspirantes'?'active':''}" onclick="setEdfView('aspirantes')">🎓 Aspirantes <span class="edf-count">${nAsp}</span></button>
+      <button class="org-toggle-btn ${EDF_VIEW==='personal'?'active':''}" onclick="setEdfView('personal')">👮 Personal DCFyCCCO <span class="edf-count">${nPer}</span></button>
+    </div>`;
+  }
+
   // Buscador HTML — se muestra siempre, aunque el módulo esté vacío
   const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
     <div style="position:relative;flex:1;min-width:200px;max-width:420px">
       <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
       <input id="${searchId}" class="fi" type="text" placeholder="Buscar en ${CM.name}..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderTable(this.value.toLowerCase())" value="${searchVal}">
     </div>
-    <span style="font-size:12px;color:#7aafd4">${searchVal ? filteredRows.length+' de '+rows.length+' resultado'+(filteredRows.length!==1?'s':'') : rows.length+' registro'+(rows.length!==1?'s':'')}</span>
+    <span class="search-count" style="font-size:12px;color:#7aafd4">${searchVal ? viewRows.length+' de '+totalBase+' resultado'+(viewRows.length!==1?'s':'') : totalBase+' registro'+(totalBase!==1?'s':'')}</span>
   </div>`;
 
-  if(!filteredRows.length && !rows.length){
-    area.innerHTML=`${orgToggleBar}${searchBar}<div class="data-wrap"><div class="empty-state">
+  if(!viewRows.length){
+    area.innerHTML=`${orgToggleBar}${edfBar}${searchBar}<div class="data-wrap"><div class="empty-state">
       <div class="empty-icon">📋</div>
-      <p>Sin registros todavía</p>
-      <small>Tocá "+ Agregar" para cargar el primer registro</small>
+      <p>${searchVal ? 'Sin resultados para la búsqueda' : 'Sin registros todavía'}</p>
+      <small>${searchVal ? 'Probá con otras palabras' : 'Tocá "+ Agregar" para cargar el primer registro'}</small>
     </div></div>`;
     return;
   }
-  const cols=fields.filter(f=>f.type!=='textarea').slice(0,5);
+
+  // ─── Reclutamiento: detectar módulos con los 3 exámenes (desplegable) ───
+  const EXAM_KEYS = ['examPsicologico','examMedico','examSocioambiental'];
+  const isReclu = EXAM_KEYS.every(k=>fields.some(f=>f.key===k));
+  const cols = isReclu
+    ? fields.filter(f=>f.type!=='textarea' && !EXAM_KEYS.includes(f.key)).slice(0,4)
+    : fields.filter(f=>f.type!=='textarea').slice(0,5);
   // Detectamos los campos textarea para mostrarlos como detalle expandible debajo del título
   const textAreas = fields.filter(f=>f.type==='textarea');
-  const showRows = filteredRows;
+  const showRows = viewRows;
   // Mostrar columna de Acciones si el usuario puede editar O si algún registro tiene adjuntos O si puede cargar (para editar sus propios)
   const hasAnyAtt = rows.some(r => r._attachments && r._attachments.length);
   const canCargar = CU.permiso==='cargar' || CU.permiso==='cargar-global';
   const showActions = canEditAll || hasAnyAtt || canCargar;
-  // Total de columnas (incluye campos visibles + Cargado por + Fecha + Acciones)
-  const colSpan = cols.length + 2 + (showActions ? 1 : 0);
+  // Total de columnas (incluye campos visibles + Exámenes + Cargado por + Fecha + Acciones)
+  const colSpan = cols.length + 2 + (isReclu ? 1 : 0) + (showActions ? 1 : 0);
 
   // ════ CORRECCIÓN 2: Calcular si un registro es "nuevo" (dentro de 5 minutos) ════
   const ahora = Date.now();
   const TIMEOUT_NUEVO = 5 * 60 * 1000; // 5 minutos
 
-  area.innerHTML=`${orgToggleBar}${searchBar}
-    <div class="data-wrap fade-in">
-    <table class="data-table">
-      <thead><tr>
-        ${cols.map(f=>`<th>${f.label}</th>`).join('')}
-        <th>Cargado por</th><th>Fecha</th>
-        ${showActions?'<th>Acciones</th>':''}
-      </tr></thead>
-      <tbody>
-        ${showRows.map(r=>{
+  const EXAM_COLORS = {'Apto':'#34d399','No Apto':'#f87171','Pendiente':'#fbbf24'};
+  const EXAM_BADGE  = {'Apto':'bg','No Apto':'br','Pendiente':'by'};
+
+  // ─── Armado del HTML de cada registro (fila principal + exámenes + detalle) ───
+  const rowHTML = r => {
           const nAtt = (r._attachments && r._attachments.length) || 0;
           // ════ CORRECCIÓN 2: Detectar si el registro es nuevo ════
           const esNuevo = r._ts_new && (ahora - r._ts_new < TIMEOUT_NUEVO);
@@ -2358,14 +2555,33 @@ function renderTable(searchOverride){
           // ════ Permisos por contexto (editar / borrar) ════
           const puedeEditarEste = puedeEditarRec(r);
           const puedeBorrarEste = puedeBorrarRec(r);
-          
+
           // Armamos el detalle (textareas con contenido) que va debajo del registro
           const detail = textAreas
             .filter(f => r[f.key] && String(r[f.key]).trim())
             .map(f => `<div style="margin:4px 0;padding:8px 10px;background:rgba(122,175,212,.08);border-left:3px solid ${CS.color||'#7aafd4'};border-radius:6px;font-size:12px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word"><strong style="color:#7aafd4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px">${f.label}</strong>${String(r[f.key]).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`)
             .join('');
+
+          // ─── Celda + subfila desplegable de exámenes (Reclutamiento) ───
+          let examCell = '', examRow = '';
+          if(isReclu){
+            const dots = EXAM_KEYS.map(k=>{
+              const v = r[k] || 'Pendiente';
+              return `<span class="exam-dot" style="background:${EXAM_COLORS[v]||'#5a7a9a'}" title="${v}"></span>`;
+            }).join('');
+            examCell = `<td onclick="event.stopPropagation()"><button class="exam-toggle" onclick="toggleExams('${r._id}')" title="Ver los 3 exámenes">${dots} <span id="exchev_${r._id}">▾</span></button></td>`;
+            examRow = `<tr class="exam-subrow ${rowClass}" id="exrow_${r._id}" style="display:none"><td colspan="${colSpan}">
+              ${EXAM_KEYS.map(k=>{
+                const f = fields.find(x=>x.key===k);
+                const v = r[k] || 'Pendiente';
+                return `<div class="exam-item"><span class="exam-label">${f?f.label:k}</span><span class="badge ${EXAM_BADGE[v]||'bx'}">${v}</span></div>`;
+              }).join('')}
+            </td></tr>`;
+          }
+
           return `<tr class="clickable-row ${rowClass}" data-id="${r._id}" onclick="viewDetail('${r._id}')" style="cursor:pointer" title="Tocá para ver el detalle completo">
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
+          ${examCell}
           <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
           <td style="font-size:11px;color:#4a6a88;white-space:nowrap">${r._ts||'—'}</td>
           ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
@@ -2374,11 +2590,117 @@ function renderTable(searchOverride){
             ${puedeBorrarEste?`<button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
           </div></td>`:''}
         </tr>
+        ${examRow}
         ${detail?`<tr class="detail-row clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
-        }).join('')}
-      </tbody>
+  };
+
+  // ─── Carpetas desplegables por fecha (módulos con campo fecha) ───
+  // ✅ v1.5: soporte de carpetas POR MES (groupByMonth) para módulos sin campo
+  // fecha, como Números Varios: agrupa por el mes de la fecha de carga (_ts).
+  const dateField = fields.find(f=>f.type==='date');
+  const porMes = CM.groupByMonth === true;
+  const useFolders = (!!dateField || porMes) && CM.groupByDate !== false && !isOrgan;
+  let bodyHTML = '';
+  if(useFolders){
+    const grupos = {};
+    showRows.forEach(r=>{
+      let iso = _fechaISORegistro(r, dateField);
+      if(porMes && iso) iso = iso.slice(0,7); // YYYY-MM → una carpeta por mes
+      (grupos[iso] = grupos[iso] || []).push(r);
+    });
+    // Fechas de más reciente a más vieja; "Sin fecha" al final
+    const fechas = Object.keys(grupos).sort((a,b)=>{
+      if(!a) return 1; if(!b) return -1;
+      return b.localeCompare(a);
+    });
+    const modKey = CS.id+'|'+CM.id;
+    if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
+    const st = DATE_FOLDERS[modKey];
+    const buscando = palabras.length > 0; // con búsqueda activa se abren todas las carpetas
+    bodyHTML = fechas.map(iso=>{
+      const g = grupos[iso];
+      // La carpeta más reciente queda abierta por defecto (salvo que el usuario la haya cerrado)
+      const open = buscando || st.open.has(iso) || (iso===fechas[0] && !st.closed.has(iso));
+      return `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${iso}',${open?1:0})">
+        <td colspan="${colSpan}"><span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${_fechaCarpetaLabel(iso)} <span class="df-count">${g.length} registro${g.length!==1?'s':''}</span></td>
+      </tr>` + (open ? g.map(rowHTML).join('') : '');
+    }).join('');
+  } else if(CS.id==='SECCIONES_GEN'){
+    // ─── Sector Secciones: lista estilo agenda, ordenada alfabéticamente con separadores por letra ───
+    const ordenados = showRows.slice().sort((a,b)=>String(a.apellidoNombre||'').localeCompare(String(b.apellidoNombre||''),'es'));
+    let letraActual = '';
+    bodyHTML = ordenados.map(r=>{
+      let ini = String(r.apellidoNombre||'').trim().charAt(0).toUpperCase() || '#';
+      ini = ini.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(!/[A-ZÑ0-9]/.test(ini)) ini = '#';
+      let divisor = '';
+      if(ini !== letraActual){
+        letraActual = ini;
+        divisor = `<tr class="letter-divider"><td colspan="${colSpan}">${ini}</td></tr>`;
+      }
+      return divisor + rowHTML(r);
+    }).join('');
+  } else {
+    bodyHTML = showRows.map(rowHTML).join('');
+  }
+
+  area.innerHTML=`${orgToggleBar}${edfBar}${searchBar}
+    <div class="data-wrap fade-in">
+    <table class="data-table">
+      <thead><tr>
+        ${cols.map(f=>`<th>${f.label}</th>`).join('')}
+        ${isReclu?'<th>Exámenes</th>':''}
+        <th>Cargado por</th><th>Fecha</th>
+        ${showActions?'<th>Acciones</th>':''}
+      </tr></thead>
+      <tbody>${bodyHTML}</tbody>
     </table></div>`;
 }
+
+// ═════ Carpetas por fecha: helpers ═════
+function _fechaISORegistro(r, dateField){
+  // Usa el campo fecha del registro; si no tiene, usa la fecha de carga (_ts dd/mm/yyyy)
+  const v = dateField ? r[dateField.key] : '';
+  if(v && /^\d{4}-\d{2}-\d{2}/.test(String(v))) return String(v).slice(0,10);
+  const m = String(r._ts||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return '';
+}
+function _fechaCarpetaLabel(iso){
+  if(!iso) return 'Sin fecha';
+  // ✅ v1.5: carpetas por mes (YYYY-MM) → "Junio 2026"
+  if(/^\d{4}-\d{2}$/.test(iso)){
+    const dm = new Date(iso+'-15T12:00:00');
+    if(isNaN(dm)) return iso;
+    let txtMes = dm.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    txtMes = txtMes.charAt(0).toUpperCase()+txtMes.slice(1);
+    if(iso===todayISO().slice(0,7)) txtMes += ' · ESTE MES';
+    return txtMes;
+  }
+  const d = new Date(iso+'T12:00:00');
+  if(isNaN(d)) return iso;
+  let txt = d.toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  txt = txt.charAt(0).toUpperCase()+txt.slice(1);
+  if(iso===todayISO()) txt += ' · HOY';
+  return txt;
+}
+function toggleDateFolder(modKey, iso, currentlyOpen){
+  const st = DATE_FOLDERS[modKey] || (DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()});
+  if(currentlyOpen){ st.open.delete(iso); st.closed.add(iso); }
+  else { st.closed.delete(iso); st.open.add(iso); }
+  renderTable();
+}
+// ═════ Exámenes de Reclutamiento: desplegable ═════
+function toggleExams(id){
+  const row = document.getElementById('exrow_'+id);
+  const chev = document.getElementById('exchev_'+id);
+  if(!row) return;
+  const visible = row.style.display !== 'none';
+  row.style.display = visible ? 'none' : 'table-row';
+  if(chev) chev.textContent = visible ? '▾' : '▴';
+}
+// ═════ Ed. Física: vista Aspirantes / Personal DCFyCCCO ═════
+function setEdfView(v){ EDF_VIEW = v; renderTable(); }
 
 // ═════ ORGANIGRAMA: toggle y vista árbol ═════
 function orgToggleHTML(total){
@@ -2612,9 +2934,23 @@ function onEvalAspiranteChange(){
 // ══════════════════════════════════════════════
 // Estado de UI: filtro de sección y orden, por tipo
 const _selAspState = {
-  recargo:     { filtro:'TODAS', orden:'alfabetico', fechaVista:'' },
-  imaginarias: { filtro:'TODAS', orden:'alfabetico', fechaVista:'' }
+  recargo:     { filtro:'TODAS', orden:'alfabetico', fechaVista:'', busca:'', abiertas:null },
+  imaginarias: { filtro:'TODAS', orden:'alfabetico', fechaVista:'', busca:'', abiertas:null }
 };
+// Buscador del listado de aspirantes (mantiene el foco al re-renderizar)
+function setSelBusca(tipo, val){
+  _selAspState[tipo].busca = val;
+  renderTable();
+  const el = document.getElementById('selBusca_'+tipo);
+  if(el){ el.focus(); try{ el.setSelectionRange(el.value.length, el.value.length); }catch(e){} }
+}
+// Abrir/cerrar el acordeón de una sección
+function toggleSelSeccion(tipo, secId){
+  const st = _selAspState[tipo];
+  if(!st.abiertas) st.abiertas = new Set();
+  if(st.abiertas.has(secId)) st.abiertas.delete(secId); else st.abiertas.add(secId);
+  renderTable();
+}
 const _SECC_TABS = [
   {id:'SECC_1', sec:'Sección 1'},
   {id:'SECC_2', sec:'Sección 2'},
@@ -2711,18 +3047,10 @@ function renderSeleccionAspirantes(tipo){
   const esHoy = (fechaVista === today);
   const marcados = _getSeleccionFecha(tipo, fechaVista);
   const marcadoSet = new Set(marcados.map(m=>m.nombre));
-  let aspirantes = _getAspirantes();
-
-  // Filtro por sección
-  if(st.filtro!=='TODAS'){
-    aspirantes = aspirantes.filter(a=>a.seccionId===st.filtro);
-  }
-  // Orden
-  if(st.orden==='alfabetico'){
-    aspirantes.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-  } else {
-    aspirantes.sort((a,b)=> a.seccionId.localeCompare(b.seccionId) || a.nombre.localeCompare(b.nombre,'es'));
-  }
+  const aspirantes = _getAspirantes();
+  const _normA = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const busca = _normA(st.busca||'');
+  if(!st.abiertas) st.abiertas = new Set();
 
   // ¿Hay aspirantes cargados?
   if(!_getAspirantes().length){
@@ -2733,10 +3061,6 @@ function renderSeleccionAspirantes(tipo){
     </div></div>`;
   }
 
-  const btnFiltro = (val,label)=>`<button class="sub-tab ${st.filtro===val?'active':''}" style="${st.filtro===val?`background:${color};color:#fff`:''}" onclick="setSelFiltro('${tipo}','${val}')">${label}</button>`;
-
-  // Lista agrupada visualmente si el orden es por sección y filtro es TODAS
-  let listaHTML='';
   const fila = (a)=>{
     const on = marcadoSet.has(a.nombre);
     const click = `onclick="toggleAspirante('${tipo}','${a.nombre.replace(/'/g,"\\'")}','${a.seccion}')"`;
@@ -2745,22 +3069,36 @@ function renderSeleccionAspirantes(tipo){
       <span class="alm-row-name">${a.nombre} <span style="color:#5a7a9a;font-size:11px">· ${a.seccion}${a.dni?' · DNI '+a.dni:''}</span></span>
     </div>`;
   };
-  if(st.orden==='seccion' && st.filtro==='TODAS'){
-    _SECC_TABS.forEach(t=>{
-      const grupo = aspirantes.filter(a=>a.seccionId===t.id);
-      if(grupo.length){
-        listaHTML += `<div style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px">${t.sec}</div>`;
-        listaHTML += grupo.map(fila).join('');
-      }
-    });
-  } else {
-    listaHTML = aspirantes.map(fila).join('');
+
+  // ─── Acordeones desplegables por sección (con buscador) ───
+  let listaHTML = '';
+  let hayCoincidencias = false;
+  _SECC_TABS.forEach(t=>{
+    const grupoTotal = aspirantes.filter(a=>a.seccionId===t.id);
+    if(!grupoTotal.length) return;
+    let grupo = grupoTotal;
+    if(busca){
+      grupo = grupoTotal.filter(a=>_normA(a.nombre+' '+a.dni).includes(busca));
+      if(!grupo.length) return; // sin coincidencias en esta sección
+    }
+    hayCoincidencias = true;
+    grupo = grupo.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    const marcSec = grupoTotal.filter(a=>marcadoSet.has(a.nombre)).length;
+    const open = busca ? true : st.abiertas.has(t.id);
+    listaHTML += `<button class="sel-acc-head" onclick="toggleSelSeccion('${tipo}','${t.id}')">
+      <span class="sel-acc-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${t.sec}
+      <span class="sel-acc-count">${grupoTotal.length} aspirante${grupoTotal.length!==1?'s':''}${marcSec?` · ✅ ${marcSec} marcado${marcSec!==1?'s':''}`:''}</span>
+    </button>`;
+    if(open) listaHTML += `<div class="sel-acc-body">${grupo.map(fila).join('')}</div>`;
+  });
+  if(busca && !hayCoincidencias){
+    listaHTML = `<div class="alm-empty" style="padding:14px">Sin resultados para "${(st.busca||'').replace(/</g,'&lt;')}"</div>`;
   }
 
   // Selector de fecha LIBRE: input de calendario + flechas ◄ ► (siempre visible)
   const selectorFechas = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 2px 10px;align-items:center">
-      <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:2px">📅 Día:</span>
+      <span class="sel-lbl" style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:2px">📅 Día:</span>
       <button class="sub-tab" title="Día anterior" style="font-weight:700;min-width:38px;font-size:15px" onclick="navSelFecha('${tipo}',-1)">◄</button>
       <input type="date" id="selDate_${tipo}" value="${fechaVista}" onchange="setSelFecha('${tipo}', this.value)"
         style="background:rgba(122,175,212,.1);border:1px solid rgba(122,175,212,.3);color:#e8f0f8;border-radius:9px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">
@@ -2783,18 +3121,13 @@ function renderSeleccionAspirantes(tipo){
       ${selectorFechas}
       ${avisoDiaPasado}
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px 10px;align-items:center">
-        <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:4px">Sección:</span>
-        ${btnFiltro('TODAS','Todas')}
-        ${_SECC_TABS.map(t=>btnFiltro(t.id, t.sec.replace('Sección ',''))).join('')}
-        <span style="width:1px;height:18px;background:rgba(122,175,212,.2);margin:0 4px"></span>
-        <span style="font-size:11px;color:#7aafd4;font-weight:700;margin-right:4px">Orden:</span>
-        <button class="sub-tab ${st.orden==='alfabetico'?'active':''}" style="${st.orden==='alfabetico'?`background:${color};color:#fff`:''}" onclick="setSelOrden('${tipo}','alfabetico')">A-Z</button>
-        <button class="sub-tab ${st.orden==='seccion'?'active':''}" style="${st.orden==='seccion'?`background:${color};color:#fff`:''}" onclick="setSelOrden('${tipo}','seccion')">Por sección</button>
+      <div style="position:relative;padding:0 2px 10px;max-width:440px">
+        <span style="position:absolute;left:13px;top:9px;font-size:13px">🔍</span>
+        <input id="selBusca_${tipo}" class="fi" type="text" placeholder="Buscar aspirante por nombre o DNI..." value="${(st.busca||'').replace(/"/g,'&quot;')}" oninput="setSelBusca('${tipo}', this.value)" style="padding:9px 12px 9px 34px;font-size:13px">
       </div>
 
       <div class="alm-toggle-section" style="padding-bottom:6px">
-        <div class="alm-toggle-q">Marcá los aspirantes que quedan ${tipo==='recargo'?'de recargo':'de imaginaria'} el ${esHoy?'día de hoy':_fechaLabel(fechaVista)}</div>
+        <div class="alm-toggle-q">Tocá una sección para desplegarla y marcá los aspirantes que quedan ${tipo==='recargo'?'de recargo':'de imaginaria'} el ${esHoy?'día de hoy':_fechaLabel(fechaVista)}</div>
         <div class="alm-list" style="margin-top:8px;max-height:none">
           ${listaHTML || '<div class="alm-empty">No hay aspirantes para este filtro</div>'}
         </div>
@@ -3069,7 +3402,16 @@ function buildForm(data){
     return;
   }
 
-  const formHTML = CM.fields.map(f=>{
+  // ─── Ed. Física: ocultar "Sección" cuando se carga Personal DCFyCCCO ───
+  let formFields = CM.fields;
+  if(CS && CS.id==='ACADEMICA' && CM.id==='EDUFISICA'){
+    const esPersonal = editId ? ((data && data.grupo)==='PERSONAL') : (EDF_VIEW==='personal');
+    if(esPersonal) formFields = CM.fields.filter(f=>f.key!=='seccion');
+    const sub = document.getElementById('modalSub');
+    if(sub) sub.textContent += esPersonal ? ' · 👮 Personal DCFyCCCO' : ' · 🎓 Aspirantes';
+  }
+
+  const formHTML = formFields.map(f=>{
     // Campo auto-correlativo: readonly con próximo número (con lápiz para editar manualmente)
     if(f.auto){
       const val = data[f.key] || getNextAutoValue(f);
@@ -3172,7 +3514,7 @@ function loadImg(input, key){
       const compressed = canvas.toDataURL('image/jpeg', 0.75);
 
       // ✅ FIX: intentar subir a Supabase Storage en lugar de guardar base64 en el registro
-      if(typeof clienteS !== 'undefined'){
+      if(typeof clienteS !== 'undefined' && navigator.onLine !== false){
         try{
           const base64Data = compressed.split(',')[1];
           const byteChars = atob(base64Data);
@@ -3180,7 +3522,8 @@ function loadImg(input, key){
           for(let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
           const blob = new Blob([byteArr], {type:'image/jpeg'});
           const path = `images/${Date.now()}_${key}.jpg`;
-          const { error: upErr } = await clienteS.storage.from('suep-files').upload(path, blob, {contentType:'image/jpeg', upsert:true});
+          // ⏱️ Tope de 8 segundos: si la conexión está caída/lenta no queda colgado, pasa al plan B (base64)
+          const { error: upErr } = await _conTimeout(clienteS.storage.from('suep-files').upload(path, blob, {contentType:'image/jpeg', upsert:true}), 8000);
           if(!upErr){
             const { data: urlData } = clienteS.storage.from('suep-files').getPublicUrl(path);
             tempImgs[key] = urlData.publicUrl;
@@ -3276,14 +3619,15 @@ function processAttachment(file){
         fileName = file.name;
       }
 
-      // ✅ FIX: intentar subir a Supabase Storage
-      if(typeof clienteS !== 'undefined'){
+      // ✅ FIX: intentar subir a Supabase Storage (solo con conexión y con tope de 10 segundos)
+      if(typeof clienteS !== 'undefined' && navigator.onLine !== false){
         try{
           const path = `attachments/${Date.now()}_${fileName}`;
-          const { error: upErr } = await clienteS.storage.from('suep-files').upload(path, blob, {
+          // ⏱️ Si la conexión está caída/lenta no queda colgado: pasa al plan B (base64)
+          const { error: upErr } = await _conTimeout(clienteS.storage.from('suep-files').upload(path, blob, {
             contentType: blob.type || file.type || 'application/octet-stream',
             upsert: true
-          });
+          }), 10000);
           if(!upErr){
             const { data: urlData } = clienteS.storage.from('suep-files').getPublicUrl(path);
             resolve({
@@ -3564,7 +3908,9 @@ function logEdit(sector, modulo, recordId, oldData, newData, usuario){
 async function saveRecord(){
   const missing=CM.fields.filter(f=>{
     if(!f.req)return false;
-    return!(document.getElementById(`f_${f.key}`)?.value?.trim());
+    const el = document.getElementById(`f_${f.key}`);
+    if(!el) return false; // campo no presente en este formulario (ej: Sección en Ed. Física Personal)
+    return !(el.value?.trim());
   });
   if(missing.length){alert(`Completá los campos obligatorios:\n${missing.map(f=>'• '+f.label).join('\n')}`);return;}
   const data={};
@@ -3581,6 +3927,16 @@ async function saveRecord(){
   if(tempAttachments.length) data._attachments = tempAttachments;
   else if(editId) data._attachments = []; // permitir borrar todos los adjuntos al editar
 
+  // ─── Ed. Física: asignar el grupo según la vista activa (Aspirantes / Personal) ───
+  if(CS.id==='ACADEMICA' && CM.id==='EDUFISICA'){
+    if(editId){
+      const ex = S.get(CS.id,CM.id).find(r=>r._id===editId);
+      data.grupo = (ex && ex.grupo) || 'ASPIRANTES'; // al editar se conserva el grupo original
+    } else {
+      data.grupo = (EDF_VIEW==='personal') ? 'PERSONAL' : 'ASPIRANTES';
+    }
+  }
+
   // ════ CORRECCIÓN 3: Detectar si ya existe un registro igual (cuando NO estamos editando) ════
   if(!editId){
     const existentes = S.get(CS.id,CM.id);
@@ -3588,12 +3944,12 @@ async function saveRecord(){
     const nuevoFirma = CM.fields
       .filter(f => f.type !== 'image')
       .map(f => String(data[f.key]||'').trim().toLowerCase())
-      .join('|');
+      .join('|') + '|' + String(data.grupo||'');
     const esDuplicado = existentes.some(rec => {
       const recFirma = CM.fields
         .filter(f => f.type !== 'image')
         .map(f => String(rec[f.key]||'').trim().toLowerCase())
-        .join('|');
+        .join('|') + '|' + String(rec.grupo||'');
       return recFirma === nuevoFirma;
     });
     if(esDuplicado){
@@ -3746,10 +4102,55 @@ function exportPDF(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
   const rows = S.get(CS.id, CM.id);
   if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
+  // ✅ v1.5.1: antes de descargar, elegir rango (semana / mes / personalizado)
+  setPdfRango('semana'); // por defecto: la semana en curso (lunes a hoy) → impresión de los viernes
+  document.getElementById('pdfOv').classList.add('open');
+}
+function closePdfRango(){
+  document.getElementById('pdfOv').classList.remove('open');
+}
+function setPdfRango(modo){
+  const hoy = new Date();
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let desde = new Date(hoy), hasta = new Date(hoy);
+  if(modo === 'semana'){
+    const dia = hoy.getDay(); // 0=domingo
+    desde.setDate(hoy.getDate() - ((dia + 6) % 7)); // lunes de esta semana
+  } else if(modo === 'mes'){
+    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  } else if(modo === 'mesAnterior'){
+    desde = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+    hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0); // último día del mes anterior
+  } else {
+    desde.setDate(hoy.getDate() - Number(modo||0));
+  }
+  document.getElementById('pdfDesde').value = iso(desde);
+  document.getElementById('pdfHasta').value = iso(hasta);
+}
+function exportPDFGenerar(todo){
+  if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
+  let desde = '', hasta = '';
+  if(!todo){
+    desde = document.getElementById('pdfDesde').value;
+    hasta = document.getElementById('pdfHasta').value;
+    if(!desde || !hasta){ alert('Elegí las dos fechas del rango'); return; }
+    if(desde > hasta){ alert('La fecha "Desde" no puede ser posterior a "Hasta"'); return; }
+  }
+
+  let rows = S.get(CS.id, CM.id);
+  if(!todo){
+    const dateField = (CM.fields||[]).find(f=>f.type==='date');
+    rows = rows.filter(r=>{
+      const f = _fechaISORegistro(r, dateField);
+      return f && f >= desde && f <= hasta;
+    });
+  }
+  if(!rows.length){alert(todo ? 'No hay datos para exportar en este módulo.' : 'No hay registros en ese rango de fechas.');return;}
   if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
     alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
     return;
   }
+  closePdfRango();
 
   // Excluimos imágenes (no se muestran como texto en la tabla)
   const fields = CM.fields.filter(f => f.type !== 'image');
@@ -3769,12 +4170,13 @@ function exportPDF(){
   const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
 
   const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const rangoTxt = todo ? 'Todos los registros' : `Registros del ${desde.split('-').reverse().join('/')} al ${hasta.split('-').reverse().join('/')}`;
   doc.setFontSize(14);
   doc.setTextColor(8, 17, 31);
   doc.text(`${CS.name} · ${CM.name}`, 40, 36);
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
+  doc.text(`SUEP — ${rangoTxt} · Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
 
   doc.autoTable({
     head: [headers],
@@ -3787,7 +4189,9 @@ function exportPDF(){
   });
 
   const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
-  const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  const fechaArch = todo
+    ? new Date().toLocaleDateString('es-AR').replace(/\//g,'-')
+    : `${desde.split('-').reverse().join('-')}_al_${hasta.split('-').reverse().join('-')}`;
   doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_${fechaArch}.pdf`);
 }
 
@@ -3825,7 +4229,7 @@ function renderAccesosTable(q){
       <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
       <input id="accesosSearch" class="fi" type="text" placeholder="Buscar por nombre, usuario, sector..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderAccesosTable(this.value)" value="${sq}">
     </div>
-    <span style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+accesos.length+' resultado'+(filtrados.length!==1?'s':'') : accesos.length+' registro'+(accesos.length!==1?'s':'')}</span>
+    <span class="search-count" style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+accesos.length+' resultado'+(filtrados.length!==1?'s':'') : accesos.length+' registro'+(accesos.length!==1?'s':'')}</span>
     <div style="display:flex;gap:8px;margin-left:auto">
       <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
       <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');renderAccesosTable('');}">🗑️ Limpiar</button>
@@ -3948,32 +4352,126 @@ function toggleCfg(){
   }
 }
 
-// ── Dark Mode ──
+// ── Modo claro / oscuro (el oscuro azul institucional es el diseño base) ──
+// ═════ IMPRESIÓN DE REGISTROS (reporte semanal / por rango) ═════
+function openPrintWeek(){
+  cfgOpen = false;
+  document.getElementById('cfgPanel').classList.remove('show');
+  setPrintRango(7); // por defecto: últimos 7 días
+  document.getElementById('printOv').classList.add('open');
+}
+function closePrintWeek(){
+  document.getElementById('printOv').classList.remove('open');
+}
+function setPrintRango(modo){
+  const hoy = new Date();
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let desde = new Date(hoy);
+  if(modo === 'semana'){
+    const dia = hoy.getDay(); // 0=domingo
+    desde.setDate(hoy.getDate() - ((dia + 6) % 7)); // lunes de esta semana
+  } else {
+    desde.setDate(hoy.getDate() - Number(modo||0));
+  }
+  document.getElementById('printDesde').value = iso(desde);
+  document.getElementById('printHasta').value = iso(hoy);
+}
+function generarImpresion(){
+  const desde = document.getElementById('printDesde').value;
+  const hasta = document.getElementById('printHasta').value;
+  if(!desde || !hasta){ alert('Elegí las dos fechas del rango'); return; }
+  if(desde > hasta){ alert('La fecha "Desde" no puede ser posterior a "Hasta"'); return; }
+  const enRango = isoF => isoF && isoF >= desde && isoF <= hasta;
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  let out = `<div class="pr-head">
+    <h1>SUEP — Escuela de Policía · DCFyCCCO</h1>
+    <div class="pr-sub">Reporte de registros del ${_fechaLabel(desde)} al ${_fechaLabel(hasta)} · Generado por ${esc(CU.nombre)} el ${ahora}</div>
+  </div>`;
+  let hayAlgo = false;
+
+  SECTORS.forEach(sec=>{
+    if(sec.custom==='almuerzo' || sec.id==='ORGANIGRAMA') return; // se manejan aparte / no aplican
+    let secHTML = '';
+    const procesarModulo = (mod, titulo)=>{
+      // Recargo / Imaginarias: listar marcados por fecha
+      if(mod.custom==='recargo' || mod.custom==='imaginarias'){
+        const recs = S.get(sec.id, mod.id).filter(r=>enRango(r.fecha) && (r.marcados||[]).length);
+        if(!recs.length) return;
+        secHTML += `<h3>${esc(titulo)}</h3>`;
+        recs.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).forEach(r=>{
+          const ms = (r.marcados||[]).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+          secHTML += `<h3 style="font-weight:600">&nbsp;&nbsp;📅 ${_fechaLabel(r.fecha)} — ${ms.length} aspirante${ms.length!==1?'s':''}</h3>
+            <ul>${ms.map(m=>`<li>${esc(m.nombre)}${m.seccion?' · '+esc(m.seccion):''}</li>`).join('')}</ul>`;
+        });
+        return;
+      }
+      if(!mod.fields) return;
+      const dateField = mod.fields.find(f=>f.type==='date');
+      const rows = S.get(sec.id, mod.id).filter(r=>enRango(_fechaISORegistro(r, dateField)));
+      if(!rows.length) return;
+      const cols = mod.fields.filter(f=>f.type!=='image');
+      const orden = rows.slice().sort((a,b)=>_fechaISORegistro(a,dateField).localeCompare(_fechaISORegistro(b,dateField)));
+      secHTML += `<h3>${esc(titulo)} · ${rows.length} registro${rows.length!==1?'s':''}</h3>
+        <table><thead><tr>${cols.map(f=>`<th>${esc(f.label)}</th>`).join('')}<th>Cargado por</th><th>Carga</th></tr></thead>
+        <tbody>${orden.map(r=>`<tr>${cols.map(f=>`<td>${esc(r[f.key])||'—'}</td>`).join('')}<td>${esc(r._por)||'—'}</td><td>${esc(r._ts)||'—'}</td></tr>`).join('')}</tbody></table>`;
+    };
+    (sec.modules||[]).forEach(mod=>{
+      if(mod.subTabs){ mod.subTabs.forEach(stb=>procesarModulo(stb, mod.name+' — '+stb.name.replace(/^[^A-Za-zÁÉÍÓÚÑ0-9]+/,''))); }
+      else procesarModulo(mod, mod.name);
+    });
+    if(secHTML){
+      hayAlgo = true;
+      out += `<h2>${esc(sec.name)}</h2>` + secHTML;
+    }
+  });
+
+  // Almuerzo: quiénes se quedaron a almorzar cada día del rango
+  try{
+    const alm = S.get('ALMUERZO','ALMUERZO').filter(r=>enRango(r.fecha));
+    if(alm.length){
+      hayAlgo = true;
+      out += `<h2>Almuerzo</h2>`;
+      const porFecha = {};
+      alm.forEach(r=>{ (porFecha[r.fecha]=porFecha[r.fecha]||[]).push(r); });
+      Object.keys(porFecha).sort().forEach(f=>{
+        const si = porFecha[f].filter(r=>r.almuerza==='Sí').sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+        out += `<h3>📅 ${_fechaLabel(f)} — almuerzan ${si.length}</h3>
+          <ul>${si.length ? si.map(r=>`<li>${esc(r.nombre)}</li>`).join('') : '<li>Nadie marcado</li>'}</ul>`;
+      });
+    }
+  }catch(e){}
+
+  if(!hayAlgo){ alert('No se encontraron registros en ese rango de fechas'); return; }
+  document.getElementById('printArea').innerHTML = out;
+  closePrintWeek();
+  document.body.classList.add('printing');
+  setTimeout(()=>{ window.print(); }, 150);
+}
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('printing');
+  const pa = document.getElementById('printArea');
+  if(pa) pa.innerHTML = '';
+});
+
 function toggleDarkMode(){
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('suep_dark_mode', isDark);
-  
+  const esClaro = document.body.classList.toggle('light-mode');
+  localStorage.setItem('suep_light_mode', esClaro);
+  _actualizarLabelTema(esClaro);
+}
+function _actualizarLabelTema(esClaro){
   const icon = document.getElementById('darkModeIcon');
   const label = document.getElementById('darkModeLabel');
-  
-  if(isDark){
-    icon.textContent = '☀️';
-    label.textContent = 'Desactivar modo oscuro';
-  } else {
-    icon.textContent = '🌙';
-    label.textContent = 'Activar modo oscuro';
-  }
+  if(icon) icon.textContent = esClaro ? '🌙' : '☀️';
+  if(label) label.textContent = esClaro ? 'Volver al modo oscuro' : 'Activar modo claro';
 }
 
-// Cargar dark mode al iniciar
+// Cargar el tema elegido al iniciar
 window.addEventListener('DOMContentLoaded', ()=>{
-  if(localStorage.getItem('suep_dark_mode') === 'true'){
-    document.body.classList.add('dark-mode');
-    const icon = document.getElementById('darkModeIcon');
-    const label = document.getElementById('darkModeLabel');
-    if(icon) icon.textContent = '☀️';
-    if(label) label.textContent = 'Desactivar modo oscuro';
-  }
+  const esClaro = localStorage.getItem('suep_light_mode') === 'true';
+  if(esClaro) document.body.classList.add('light-mode');
+  _actualizarLabelTema(esClaro);
 });
 
 // ── Modal Cambiar mi contraseña ──
@@ -4436,13 +4934,9 @@ function _mergeAllDynUsers(){
 // Correr el merge al cargar la página por si hay usuarios dinámicos previos
 _mergeAllDynUsers();
 
-// También al bajar datos de Supabase, re-mergear (para sincronizar usuarios creados en otro dispositivo)
-var _origPullAll = window.pullAllFromSupabase;
-if(_origPullAll) window.pullAllFromSupabase = async function(){
-  const res = await _origPullAll();
-  _mergeAllDynUsers();
-  return res;
-};
+// ✅ v1.5: el re-merge de usuarios dinámicos tras bajar datos de la nube ahora
+// se hace ADENTRO de pullAllFromSupabase. El wrap que había acá nunca se
+// enganchaba porque este bloque corre antes de que esa función exista.
 
 </script>
 
@@ -4521,6 +5015,14 @@ function syncStatus(msg, color){
 
 // ─── Sobreescribimos S (storage) para que también escriba en Supabase ───
 // Guardamos referencias originales que solo escriben en localStorage
+// Corre una promesa con tope de tiempo: si tarda más, rechaza y se usa el plan B
+function _conTimeout(promesa, ms){
+  return Promise.race([
+    promesa,
+    new Promise((_, rej)=> setTimeout(()=> rej(new Error('timeout '+ms+'ms')), ms))
+  ]);
+}
+
 var _S_set_local = function(s,m,d){ localStorage.setItem(S.key(s,m), JSON.stringify(d)); };
 var _S_sn_local  = function(n){ localStorage.setItem('suep_notifs', JSON.stringify(n)); };
 
@@ -4551,7 +5053,7 @@ async function _fetchModuloFresco(s, m){
   if(typeof clienteS === 'undefined') return null;
   try{
     const key = S.key(s, m);
-    const { data, error } = await clienteS.from('app_data').select('value').eq('key', key).maybeSingle();
+    const { data, error } = await _conTimeout(clienteS.from('app_data').select('value').eq('key', key).maybeSingle(), 6000);
     if(error){ console.warn('No se pudo traer versión fresca de', key, error.message); return null; }
     return (data && Array.isArray(data.value)) ? data.value : (data ? [] : null);
   }catch(e){ console.warn('Sin conexión al traer versión fresca:', e); return null; }
@@ -4598,12 +5100,13 @@ async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
         console.error('❌ Supabase RECHAZÓ la escritura de', S.key(s,m), '→', error.message||error, error);
         syncStatus(`⚠️ La nube rechazó el guardado: ${error.message||'ver consola'}`, '#f87171');
       } else {
+        _quitarPendiente(S.key(s, m));
         syncStatus('✓ Guardado y sincronizado', '#34d399');
       }
     }catch(e){
-      console.warn('No se pudo subir inmediatamente, queda en cola local:', e);
-      syncToSupabase(S.key(s, m), fusionada); // reintento por la vía normal
-      syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+      console.warn('No se pudo subir inmediatamente, queda anotado para reintentar:', e);
+      _marcarPendiente(S.key(s, m)); // se reintenta solo cuando vuelva internet
+      syncStatus('📴 Guardado en el dispositivo — se sincroniza al volver internet', '#fbbf24');
     }
   }
   return fusionada;
@@ -4683,8 +5186,12 @@ S.delSafe = async function(s, m, id){
         syncStatus('✓ Eliminado y sincronizado', '#34d399');
       }
     }catch(e){
-      console.warn('No se pudo subir el borrado, queda en cola local:', e);
-      syncToSupabase(S.key(s, m), filtrada);
+      console.warn('No se pudo subir el borrado, queda anotado para reintentar:', e);
+      // Marcamos REEMPLAZO directo: al reconectar se sube la lista sin el registro borrado
+      // (sin fusionar con la nube, para que el borrado no "resucite")
+      _marcarPendiente(S.key(s, m));
+      _marcarReemplazo(S.key(s, m));
+      syncStatus('📴 Eliminado en el dispositivo — se sincroniza al volver internet', '#fbbf24');
     }
   }
 };
@@ -4698,6 +5205,83 @@ function syncToSupabase(key, value){
   clearTimeout(_writeDebounce);
   _writeDebounce = setTimeout(flushWrites, 350);
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// COLA DE PENDIENTES OFFLINE: si una escritura a la nube falla (sin internet),
+// la clave queda anotada en localStorage y se reintenta sola cuando vuelve la
+// conexión (evento 'online'), al volver a abrir la app, y cada 60 segundos.
+// ═══════════════════════════════════════════════════════════════════
+function _getPendientes(){ try{ return JSON.parse(localStorage.getItem('suep_pending_sync')||'[]'); }catch(_){ return []; } }
+function _marcarPendiente(key){
+  const p = _getPendientes();
+  if(!p.includes(key)){ p.push(key); localStorage.setItem('suep_pending_sync', JSON.stringify(p)); }
+}
+function _quitarPendiente(key){
+  const p = _getPendientes().filter(k=>k!==key);
+  localStorage.setItem('suep_pending_sync', JSON.stringify(p));
+}
+// Claves que deben subirse SIN fusionar (borrados hechos sin conexión)
+function _getReemplazos(){ try{ return JSON.parse(localStorage.getItem('suep_pending_replace')||'[]'); }catch(_){ return []; } }
+function _marcarReemplazo(key){
+  const p = _getReemplazos();
+  if(!p.includes(key)){ p.push(key); localStorage.setItem('suep_pending_replace', JSON.stringify(p)); }
+}
+function _quitarReemplazo(key){
+  const p = _getReemplazos().filter(k=>k!==key);
+  localStorage.setItem('suep_pending_replace', JSON.stringify(p));
+}
+let _flushEnCurso = false;
+async function flushPendingSync(){
+  if(_flushEnCurso) return;
+  if(typeof clienteS === 'undefined') return;
+  if(navigator.onLine === false) return; // seguimos sin internet, probamos después
+  const pendientes = _getPendientes();
+  if(!pendientes.length) return;
+  _flushEnCurso = true;
+  syncStatus('☁️ Subiendo pendientes ('+pendientes.length+')...', '#fbbf24');
+  let subidas = 0;
+  try{
+    for(const key of pendientes){
+      let val = null;
+      try{ val = JSON.parse(localStorage.getItem(key) || 'null'); }catch(_){ }
+      if(val === null){ _quitarPendiente(key); continue; }
+      let subir = val;
+      const esReemplazo = _getReemplazos().includes(key); // borrado offline: subir tal cual, sin fusionar
+      // Si es una lista de registros, fusionamos con lo fresco de la nube (anti "el último gana")
+      if(!esReemplazo && Array.isArray(val) && val.length && val[0] && val[0]._id !== undefined){
+        try{
+          const { data } = await clienteS.from('app_data').select('value').eq('key', key).maybeSingle();
+          const remoto = (data && Array.isArray(data.value)) ? data.value : [];
+          subir = _mergeRegistros(remoto, val, null);
+          try{ localStorage.setItem(key, JSON.stringify(subir)); }catch(_){ }
+        }catch(e){ break; } // sin conexión todavía
+      }
+      const { error } = await clienteS.from('app_data').upsert([{
+        key, value: subir, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+      }], { onConflict: 'key' });
+      if(error){ console.warn('Pendiente sigue fallando:', key, error.message||error); continue; }
+      _quitarPendiente(key);
+      _quitarReemplazo(key);
+      subidas++;
+    }
+  }catch(e){
+    console.warn('Sin conexión al subir pendientes, se reintenta luego:', e);
+  }finally{
+    _flushEnCurso = false;
+  }
+  const quedan = _getPendientes().length;
+  if(subidas && !quedan) syncStatus('✓ Todo sincronizado', '#34d399');
+  else if(quedan) syncStatus('📴 '+quedan+' guardado'+(quedan>1?'s':'')+' esperando conexión', '#fbbf24');
+  if(subidas && typeof _refrescarSiVisible === 'function' && typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM){
+    try{ _refrescarSiVisible(S.key(CS.id, CM.id)); }catch(_){ }
+  }
+}
+// Disparadores: vuelve internet / vuelve a la app / cada 60s / al iniciar
+window.addEventListener('online', ()=>{ syncStatus('📶 Conexión recuperada — sincronizando...', '#34d399'); setTimeout(flushPendingSync, 1200); });
+window.addEventListener('offline', ()=>{ syncStatus('📴 Sin conexión — todo se guarda en el dispositivo', '#fbbf24'); });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(flushPendingSync, 1500); });
+setInterval(flushPendingSync, 60000);
+window.addEventListener('DOMContentLoaded', ()=>{ setTimeout(flushPendingSync, 5000); });
 async function flushWrites(){
   const writes = _pendingWrites;
   _pendingWrites = {};
@@ -4729,6 +5313,24 @@ async function flushWrites(){
         try{ localStorage.setItem('suep_notifs', JSON.stringify(fusionadas)); refreshBadge(); }catch(_){}
       }catch(e){ console.warn('No se pudo fusionar notifs antes de subir', e); }
     }
+    // ✅ v1.5: Almuerzo y Operacional (Recargo/Imaginarias) guardan la lista
+    // completa con S.set, sin la fusión de addSafe. Si dos personas marcaban a
+    // la vez desde distintos dispositivos, el último pisaba al primero. Ahora
+    // fusionamos con lo fresco de la nube por _id antes de subir (estos módulos
+    // nunca borran registros, así que la fusión es segura).
+    for(const k of keys){
+      if(!/^suep_(ALMUERZO|OPERACIONAL)_/.test(k)) continue;
+      const val = writes[k];
+      if(!Array.isArray(val)) continue;
+      try{
+        const { data: frescoAlm } = await _conTimeout(
+          clienteS.from('app_data').select('value').eq('key', k).maybeSingle(), 6000);
+        const remotoAlm = (frescoAlm && Array.isArray(frescoAlm.value)) ? frescoAlm.value : [];
+        const fusionAlm = _mergeRegistros(remotoAlm, val, null);
+        writes[k] = fusionAlm;
+        try{ localStorage.setItem(k, JSON.stringify(fusionAlm)); }catch(_){ }
+      }catch(e){ console.warn('No se pudo fusionar', k, 'antes de subir (sigue el flujo normal):', e); }
+    }
     const rows = keys.map(k => ({
       key: k,
       value: writes[k],
@@ -4740,17 +5342,25 @@ async function flushWrites(){
       // ✅ FIX: mostrar el error real en consola para facilitar el diagnóstico
       console.error('Error subiendo a Supabase:', error.message || error);
       console.error('Claves que fallaron:', keys);
+      keys.forEach(_marcarPendiente); // se reintenta solo cuando haya conexión
       syncStatus(`⚠️ Error sync: ${error.message||'ver consola'}`, '#f87171');
     } else {
+      keys.forEach(_quitarPendiente);
       syncStatus('✓ Sincronizado', '#34d399');
     }
   }catch(err){
     console.error('Error de red al sincronizar:', err);
-    syncStatus('⚠️ Sin conexión (guardado local)', '#f87171');
+    keys.forEach(_marcarPendiente); // se reintenta solo cuando vuelva internet
+    syncStatus('📴 Guardado en el dispositivo — se sincroniza al volver internet', '#fbbf24');
   }
 }
 
 // ─── Bajar TODO desde Supabase y reemplazar el localStorage local ───
+// ✅ v1.5 FIX CRÍTICO: las claves con cambios locales SIN SUBIR (cola offline)
+// NO se pisan con la versión de la nube. Antes, al reconectar, el pull corría
+// primero y reemplazaba el módulo local con la copia de la nube (que todavía
+// no tenía el registro cargado sin internet) → el registro se perdía. Ahora
+// esas claves se conservan tal cual hasta que flushPendingSync las fusione y suba.
 async function pullAllFromSupabase(){
   syncStatus('☁️ Descargando datos...', '#fbbf24');
   try{
@@ -4760,8 +5370,13 @@ async function pullAllFromSupabase(){
       syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
       return false;
     }
+    const _protegidas = new Set([..._getPendientes(), ..._getReemplazos()]);
     if(data && data.length){
       data.forEach(row => {
+        if(_protegidas.has(row.key)){
+          console.warn('⏭️ Pull: se conserva la versión local de', row.key, '(tiene cambios sin subir; se fusionan al sincronizar)');
+          return;
+        }
         try{
           localStorage.setItem(row.key, JSON.stringify(row.value));
         }catch(e){
@@ -4769,6 +5384,10 @@ async function pullAllFromSupabase(){
         }
       });
     }
+    // ✅ v1.5: re-mergear usuarios dinámicos tras CADA pull (antes solo pasaba en
+    // el login; el wrap viejo de _origPullAll nunca llegaba a engancharse porque
+    // corría antes de que esta función existiera).
+    if(typeof _mergeAllDynUsers === 'function'){ try{ _mergeAllDynUsers(); }catch(_){ } }
     syncStatus('✓ Datos al día ('+(data?.length||0)+' claves)', '#34d399');
     return true;
   }catch(err){
@@ -4819,6 +5438,12 @@ function subscribeRealtime(){
               try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
             }
           } else {
+            // ✅ v1.5: si esta clave tiene cambios locales sin subir, no la pisamos
+            // con la versión remota; al fusionar y subir los pendientes se reconcilia.
+            if(_getPendientes().includes(row.key) || _getReemplazos().includes(row.key)){
+              console.warn('⏭️ Realtime: se conserva la versión local de', row.key, '(cambios sin subir)');
+              return;
+            }
             try{
               localStorage.setItem(row.key, JSON.stringify(row.value));
             }catch(e){
