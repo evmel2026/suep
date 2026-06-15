@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.1">
+<meta name="app-version" content="1.5.2">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2263,6 +2263,10 @@ function buildSidebar(){
           <span class="s-icon">👁️</span>
           <span class="s-name">Registro de Accesos</span>
         </button>
+        <button class="sector-btn" id="sb_NAVEGACION" onclick="showNavegacion()">
+          <span class="s-icon">🧭</span>
+          <span class="s-name">Recorrido de Usuarios</span>
+        </button>
         <button class="sector-btn" id="sb_PANEL_ADMIN" onclick="showPanelAdmin()">
           <span class="s-icon">🛠️</span>
           <span class="s-name">Panel de Administración</span>
@@ -2293,6 +2297,7 @@ function selectSector(id){
   document.getElementById('exportBtn').style.display=(isCustom || (CM && CM.custom))?'none':'flex';
   if(canAdd) document.getElementById('addBtn').style.background=`linear-gradient(135deg,${sec.color},${dk(sec.color)})`;
   buildModTabs(); buildSubTabs(); renderTable(); closeSidebar();
+  try{ logNav(); }catch(_){}
 }
 function buildModTabs(){
   document.getElementById('modTabs').innerHTML=CS.modules.map(m=>{
@@ -2350,6 +2355,7 @@ function selectMod(id){
   refreshAddExportButtons();
   buildSubTabs();
   renderTable();
+  try{ logNav(); }catch(_){}
 }
 // Recalcula visibilidad de los botones Agregar/Exportar según el módulo actual
 function refreshAddExportButtons(){
@@ -2370,6 +2376,7 @@ function selectSubMod(parentId, subId){
   CM = sub;
   buildSubTabs();
   renderTable();
+  try{ logNav(); }catch(_){}
 }
 
 // ══════════════════════════════════════════════
@@ -3934,6 +3941,49 @@ async function saveRecord(){
     }
   }
 
+  // ════ v1.5.2: RESERVA SEGURA DEL NÚMERO CORRELATIVO (anti-repetidos) ════
+  // El número de "Números Varios" (y cualquier campo auto:'yearly') se calculaba al
+  // ABRIR el formulario, con los datos locales. Si dos personas abrían a la vez, las
+  // dos veían el mismo "siguiente" y se generaban números repetidos. AHORA, al apretar
+  // Guardar, bajamos la versión más fresca de la nube, recalculamos contra TODOS los
+  // números ya usados este año y, si hay choque, saltamos al primero libre. Así dos
+  // cargas casi simultáneas no se pisan el número. Si no hay internet, se usa el número
+  // local y se sincroniza después (el detector de repetidos los marca por si acaso).
+  const autoField = !editId ? CM.fields.find(f=>f.auto==='yearly') : null;
+  if(autoField){
+    const inp = document.getElementById('f_'+autoField.key);
+    const manual = inp && !inp.hasAttribute('readonly'); // el usuario lo editó a mano (✏️)
+    try{
+      if(typeof syncStatus==='function') syncStatus('🔢 Reservando número...', '#fbbf24');
+      let base = S.get(CS.id, CM.id);
+      if(typeof _fetchModuloFresco === 'function'){
+        const fresco = await _fetchModuloFresco(CS.id, CM.id);
+        if(fresco !== null && typeof _mergeRegistros === 'function'){
+          base = _mergeRegistros(fresco, S.get(CS.id, CM.id), null);
+          try{ _S_set_local(CS.id, CM.id, base); }catch(_){}
+        }
+      }
+      const year = new Date().getFullYear();
+      const usados = new Set(
+        base.filter(r=>{ const m=(r._ts||'').match(/(\d{4})/); return m && +m[1]===year; })
+            .map(r=> parseInt(r[autoField.key]) || 0)
+      );
+      if(manual){
+        const elegido = parseInt(data[autoField.key]) || 0;
+        if(usados.has(elegido)){
+          if(!confirm('⚠️ El número '+elegido+' ya está usado este año.\n\n¿Guardarlo igual? (Aceptar = guardar repetido · Cancelar = volver)')){
+            if(typeof syncStatus==='function') syncStatus('Cancelado', '#7aafd4');
+            return;
+          }
+        }
+      } else {
+        let n = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
+        while(usados.has(n)) n++;
+        data[autoField.key] = String(n);
+      }
+    }catch(e){ console.warn('Sin conexión al reservar número, se usa el local:', e); }
+  }
+
   // Bloquear el botón mientras se guarda (evita doble carga por doble clic)
   const btnSave = document.getElementById('btnSave');
   const txtPrev = btnSave ? btnSave.textContent : '';
@@ -5389,6 +5439,32 @@ async function flushWrites(){
         try{ localStorage.setItem('suep_notifs', JSON.stringify(fusionadas)); refreshBadge(); }catch(_){}
       }catch(e){ console.warn('No se pudo fusionar notifs antes de subir', e); }
     }
+    // ✅ v1.5.2: LOGS MULTIUSUARIO (accesos y navegación) — fusión por id antes de subir.
+    // Son listas append-only que escriben TODOS los usuarios. Sin esta fusión, dos
+    // personas entrando/navegando a la vez se pisaban los registros (el último ganaba).
+    // Ahora se combinan por id con lo que haya en la nube: no se pierde el registro de nadie.
+    for(const k of ['suep_accesos','suep_navegacion']){
+      if(!keys.includes(k)) continue;
+      try{
+        const { data: rem } = await _conTimeout(
+          clienteS.from('app_data').select('value').eq('key', k).maybeSingle(), 6000);
+        const remotos = (rem && Array.isArray(rem.value)) ? rem.value : [];
+        const locales = Array.isArray(writes[k]) ? writes[k] : [];
+        const porId = new Map();
+        // Remotos primero; los locales pisan al mismo id (pueden tener salida/duración más nueva)
+        remotos.forEach(x => { if(x && x.id) porId.set(x.id, x); });
+        locales.forEach(x => {
+          if(!x || !x.id) return;
+          if(!porId.has(x.id)){ porId.set(x.id, x); return; }
+          porId.set(x.id, {...porId.get(x.id), ...x});
+        });
+        const fus = Array.from(porId.values())
+          .sort((a,b)=> (b.entradaTs||b.ts||0) - (a.entradaTs||a.ts||0))
+          .slice(0, 800);
+        writes[k] = fus;
+        try{ localStorage.setItem(k, JSON.stringify(fus)); }catch(_){}
+      }catch(e){ console.warn('No se pudo fusionar el log', k, 'antes de subir', e); }
+    }
     // ✅ v1.5: Almuerzo y Operacional (Recargo/Imaginarias) guardan la lista
     // completa con S.set, sin la fusión de addSafe. Si dos personas marcaban a
     // la vez desde distintos dispositivos, el último pisaba al primero. Ahora
@@ -5487,6 +5563,26 @@ function subscribeRealtime(){
           if(payload.new && payload.new.device_id === DEVICE_ID) return;
           if(payload.eventType === 'DELETE'){
             localStorage.removeItem(row.key);
+          } else if(row.key === 'suep_accesos' || row.key === 'suep_navegacion'){
+            // ✅ v1.5.2: fusión por id de los logs multiusuario llegados desde otro
+            // dispositivo, para no perder los registros locales aún sin subir.
+            try{
+              const remotos = Array.isArray(row.value) ? row.value : [];
+              const locales = JSON.parse(localStorage.getItem(row.key)||'[]');
+              const porId = new Map();
+              remotos.forEach(x => { if(x && x.id) porId.set(x.id, x); });
+              locales.forEach(x => {
+                if(!x || !x.id) return;
+                if(!porId.has(x.id)){ porId.set(x.id, x); return; }
+                porId.set(x.id, {...porId.get(x.id), ...x});
+              });
+              const fus = Array.from(porId.values())
+                .sort((a,b)=> (b.entradaTs||b.ts||0) - (a.entradaTs||a.ts||0))
+                .slice(0, 800);
+              localStorage.setItem(row.key, JSON.stringify(fus));
+            }catch(e){
+              try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
+            }
           } else if(row.key === 'suep_notifs'){
             // ✅ FUSIÓN de notificaciones por id: si dos personas cargan a la vez,
             // ninguna notificación se pierde. Combinamos las locales con las remotas,
@@ -5825,6 +5921,170 @@ window.verSectorEventos = verSectorEventos;
       if(CU){ try{ mostrarRecordatoriosEventos(false); }catch(e){ console.warn('Recordatorio eventos:', e); } }
     }, 1400);
   };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.2 — RECORRIDO DE USUARIOS (qué pestaña abre cada uno)
+// y DETECTOR DE NÚMEROS REPETIDOS
+// ═══════════════════════════════════════════════════════════════════
+window._adminView = null;
+
+function logNav(){
+  if(typeof CU==='undefined' || !CU || !CS || !CM) return;
+  const sectorNombre = CS.name;
+  const moduloNombre = (CM.name && CM.name !== CS.name) ? CM.name : CS.name;
+  let log = [];
+  try{ log = JSON.parse(localStorage.getItem('suep_navegacion')||'[]'); }catch(_){ log = []; }
+  // Dedupe: no repetir la misma pestaña del mismo usuario dentro de 3 segundos
+  const ahora = Date.now();
+  const ult = log[0];
+  if(ult && ult.usuario===CU.usuario && ult.sectorId===CS.id && ult.modulo===moduloNombre && (ahora - (ult.ts||0)) < 3000){
+    return;
+  }
+  log.unshift({
+    id: ahora.toString(36) + Math.random().toString(36).slice(2,7),
+    usuario: CU.usuario,
+    nombre: CU.nombre,
+    rol: CU.rol,
+    sectorId: CS.id,
+    sector: sectorNombre,
+    modulo: moduloNombre,
+    ts: ahora,
+    fecha: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  });
+  log = log.slice(0, 800); // tope para no crecer infinito
+  try{ localStorage.setItem('suep_navegacion', JSON.stringify(log)); }catch(_){}
+  if(typeof syncToSupabase === 'function') syncToSupabase('suep_navegacion', log);
+}
+
+function renderNavegacionTable(q){
+  const log = (()=>{ try{ return JSON.parse(localStorage.getItem('suep_navegacion')||'[]'); }catch(_){ return []; } })();
+  const area = document.getElementById('dataArea');
+  const sq = (q||'').toLowerCase().trim();
+  const filtrados = sq ? log.filter(a =>
+    (a.nombre||'').toLowerCase().includes(sq) ||
+    (a.usuario||'').toLowerCase().includes(sq) ||
+    (a.sector||'').toLowerCase().includes(sq) ||
+    (a.modulo||'').toLowerCase().includes(sq) ||
+    (a.rol||'').toLowerCase().includes(sq) ||
+    (a.fecha||'').toLowerCase().includes(sq)
+  ) : log;
+
+  const exportNav = () => {
+    if(!log.length){alert('Sin registros');return;}
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ['Usuario','Nombre','Rol','Sector','Pestaña','Fecha y Hora'],
+      ...log.map(a=>[a.usuario,a.nombre,a.rol,a.sector,a.modulo,a.fecha])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:18},{wch:22},{wch:18},{wch:22},{wch:24},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,ws,'Recorrido');
+    XLSX.writeFile(wb,`SUEP_Recorrido_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
+  };
+
+  const searchBar = `<div style="display:flex;align-items:center;gap:10px;padding:8px 2px 10px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px;max-width:420px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="navSearch" class="fi" type="text" placeholder="Buscar por nombre, usuario, pestaña..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="renderNavegacionTable(this.value)" value="${sq}">
+    </div>
+    <span class="search-count" style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+log.length+' resultado'+(filtrados.length!==1?'s':'') : log.length+' registro'+(log.length!==1?'s':'')}</span>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="export-btn" onclick="renderNavegacionTable('')">🔄 Actualizar</button>
+      <button class="export-btn" onclick="(${exportNav.toString()})()">📥 Excel</button>
+      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el recorrido de usuarios?')){localStorage.removeItem('suep_navegacion'); if(typeof syncToSupabase==='function') syncToSupabase('suep_navegacion',[]); renderNavegacionTable('');}">🗑️ Limpiar</button>
+    </div>
+  </div>`;
+
+  if(!log.length){
+    area.innerHTML=searchBar+'<div class="data-wrap"><div class="empty-state"><div class="empty-icon">🧭</div><p>Sin recorrido registrado aún</p><small>Se registra automáticamente qué pestaña abre cada usuario</small></div></div>';
+    return;
+  }
+
+  area.innerHTML=`${searchBar}
+    <div class="data-wrap fade-in">
+    <table class="data-table">
+      <thead><tr>
+        <th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sector</th><th>Pestaña</th><th>Fecha y Hora</th>
+      </tr></thead>
+      <tbody>
+        ${filtrados.length ? filtrados.map(a=>`<tr>
+          <td style="font-weight:600;color:#a8c8e0">${a.nombre||'—'}</td>
+          <td style="font-size:11px;color:#5a7a9a">${a.usuario||'—'}</td>
+          <td style="font-size:11px;color:#7aafd4">${a.rol||'—'}</td>
+          <td><span class="badge bb" style="font-size:10px">${a.sector||'—'}</span></td>
+          <td style="font-weight:600;color:#18a0a8">${a.modulo||'—'}</td>
+          <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.fecha||'—'}</td>
+        </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#5a7a9a;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
+      </tbody>
+    </table></div>`;
+}
+
+function showNavegacion(){
+  window._adminView = 'navegacion';
+  document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
+  const ab=document.getElementById('sb_NAVEGACION');
+  if(ab){ab.classList.add('active');ab.style.background='#1a3a5a';ab.style.color='#fff';}
+  document.getElementById('sectorHeader').style.display='block';
+  document.getElementById('shIcon').textContent='🧭';
+  document.getElementById('shName').textContent='Recorrido de Usuarios';
+  document.getElementById('shCount').textContent='Qué pestaña abre cada usuario · solo Administradoras';
+  document.getElementById('addBtn').style.display='none';
+  document.getElementById('exportBtn').style.display='none';
+  document.getElementById('modTabs').innerHTML='';
+  const st=document.getElementById('subTabs'); if(st){ st.classList.remove('visible'); st.innerHTML=''; }
+  renderNavegacionTable('');
+  closeSidebar();
+}
+
+// Salir del modo admin-view al volver a un sector normal o a Accesos
+(function(){
+  if(typeof selectSector === 'function'){
+    const _origSelSec = selectSector;
+    window.selectSector = function(id){ window._adminView = null; return _origSelSec(id); };
+  }
+  if(typeof showAccesos === 'function'){
+    const _origShowAcc = showAccesos;
+    window.showAccesos = function(){ window._adminView = 'accesos'; return _origShowAcc(); };
+  }
+})();
+
+// ─── Detector visual de NÚMEROS REPETIDOS (mismo año) ───
+function _marcarNumerosRepetidos(){
+  if(!CS || !CM || !Array.isArray(CM.fields)) return;
+  const campo = CM.fields.find(f=>f.auto==='yearly');
+  if(!campo) return;
+  const area = document.getElementById('dataArea');
+  if(!area) return;
+  const viejo = document.getElementById('avisoRepetidos');
+  if(viejo) viejo.remove();
+  const rows = S.get(CS.id, CM.id);
+  const cuenta = {};
+  rows.forEach(r=>{
+    const m=(r._ts||'').match(/(\d{4})/);
+    const year = m ? m[1] : 's/f';
+    const num = String(r[campo.key]||'').trim();
+    if(!num) return;
+    const k = year+'#'+num;
+    cuenta[k] = (cuenta[k]||0)+1;
+  });
+  const repes = Object.keys(cuenta).filter(k=>cuenta[k]>1)
+    .map(k=>{ const p=k.split('#'); return p[1]+' ('+p[0]+', '+cuenta[k]+' veces)'; });
+  if(!repes.length) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'avisoRepetidos';
+  aviso.style.cssText='margin:0 2px 10px;padding:10px 14px;border-radius:10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-size:13px;line-height:1.5';
+  aviso.innerHTML = '⚠️ <b>Números repetidos detectados:</b> '+repes.join(' · ')+
+    '<br><small style="color:#fbbf24">Editá uno de los registros repetidos y corregí el número a mano (tocá ✏️ en el campo Número).</small>';
+  area.insertBefore(aviso, area.firstChild);
+}
+
+// Enganchar el detector después de cada render de tabla
+(function(){
+  if(typeof renderTable === 'function'){
+    const _origRT = renderTable;
+    window.renderTable = function(o){ const r = _origRT(o); try{ _marcarNumerosRepetidos(); }catch(_){} return r; };
+  }
 })();
 </script>
 </body>
