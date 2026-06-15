@@ -266,6 +266,10 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .login-error{font-size:12px;color:#f87171;background:rgba(248,113,113,.12);border-radius:8px;padding:8px 12px;width:100%;text-align:center;display:none}
 .login-error.show{display:block}
 .login-credit{font-size:10px;color:rgba(255,255,255,.18);text-align:center;margin-top:6px}
+.pwd-wrap{position:relative;width:100%}
+.pwd-wrap > input{width:100%;padding-right:44px!important}
+.pwd-eye{position:absolute;top:50%;right:10px;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,230,.65);font-size:18px;line-height:1}
+.pwd-eye:hover{color:#7aafd4}
 
 /* ═══ APP ═══ */
 #appScreen{flex-direction:column;background:#111927}
@@ -730,7 +734,10 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="login-hr"></div>
     <div class="login-fields">
       <input id="loginUser" class="login-input" type="text" placeholder="👤  Usuario" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <input id="loginPass" class="login-input" type="password" placeholder="🔒  Contraseña" autocomplete="current-password">
+      <div class="pwd-wrap">
+        <input id="loginPass" class="login-input" type="password" placeholder="🔒  Contraseña" autocomplete="current-password">
+        <button type="button" class="pwd-eye" onclick="togglePwd('loginPass',this)" aria-label="Mostrar contraseña">👁️</button>
+      </div>
       <div id="loginError" class="login-error">Usuario o contraseña incorrectos</div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">INGRESAR AL SISTEMA</button>
       <button class="login-btn" id="btnHuella" onclick="loginConHuella()" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:10px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.5);color:#d4af37">
@@ -909,15 +916,24 @@ textarea.fi{resize:vertical;min-height:72px}
       </div>
       <div class="pwd-field">
         <label>Contraseña actual</label>
-        <input class="pwd-input" type="password" id="pwdActual" placeholder="Tu contraseña actual">
+        <div class="pwd-wrap">
+          <input class="pwd-input" type="password" id="pwdActual" placeholder="Tu contraseña actual">
+          <button type="button" class="pwd-eye" onclick="togglePwd('pwdActual',this)" aria-label="Mostrar contraseña">👁️</button>
+        </div>
       </div>
       <div class="pwd-field">
         <label>Nueva contraseña</label>
-        <input class="pwd-input" type="password" id="pwdNueva" placeholder="Mínimo 4 caracteres">
+        <div class="pwd-wrap">
+          <input class="pwd-input" type="password" id="pwdNueva" placeholder="Mínimo 4 caracteres">
+          <button type="button" class="pwd-eye" onclick="togglePwd('pwdNueva',this)" aria-label="Mostrar contraseña">👁️</button>
+        </div>
       </div>
       <div class="pwd-field">
         <label>Repetir nueva contraseña</label>
-        <input class="pwd-input" type="password" id="pwdNueva2" placeholder="Repetir para confirmar">
+        <div class="pwd-wrap">
+          <input class="pwd-input" type="password" id="pwdNueva2" placeholder="Repetir para confirmar">
+          <button type="button" class="pwd-eye" onclick="togglePwd('pwdNueva2',this)" aria-label="Mostrar contraseña">👁️</button>
+        </div>
       </div>
       <div class="pwd-msg" id="pwdChangeMsg"></div>
     </div>
@@ -1822,7 +1838,7 @@ const S = {
     const rows=S.get(s,m);
     const r={...data,_id:Date.now().toString(36)+Math.random().toString(36).slice(2),
       _por:CU?.nombre||'—',_sector:s,_mod:m,
-      _ts:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})};
+      _ts:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'})};
     rows.push(r); S.set(s,m,rows); newNotif(s,m,r); return r;
   },
   upd(s,m,id,data){
@@ -1869,7 +1885,7 @@ function seedOrganigrama(){
       _por: 'Sistema (carga inicial)',
       _sector: 'ORGANIGRAMA',
       _mod: 'ORGANIGRAMA',
-      _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'})
     };
     existing.push(rec);
   });
@@ -1907,7 +1923,7 @@ function newNotif(sId,mId,rec,accion){
     secId:sId, modId:mId, rId:rec._id,
     txt:`<strong>${quien}</strong> ${verbo} <strong>${mod?.name||mId}</strong>`,
     sec:sec?.name||sId, icon:sec?.icon||'📌',
-    time:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    time:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',hour12:false,minute:'2-digit'}),
     _tsMs: ahora,   // ⏱️ timestamp numérico real para ordenar de forma confiable
     // ✅ Estado de "leída" INDIVIDUAL por usuario. leidaPor = { usuario: true }.
     // Cada usuario ve la notificación como nueva hasta que ÉL la marque/abra,
@@ -2095,7 +2111,7 @@ function iniciarSesion(user){
         nombre: user.nombre,
         sector: user.permiso==='admin'?'Administradora':user.permiso==='visor'?'Visor':user.permiso==='cargar-global'?'Ver todo + Agregar':(user.sectores||[]).join(' · ')||'Cargador',
         rol: user.rol,
-        entrada: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+        entrada: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit',second:'2-digit'}),
         entradaTs: Date.now(),
         salida: '—',
         duracion: '—',
@@ -2112,6 +2128,17 @@ function iniciarSesion(user){
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
       // Ofrecer registrar huella tras login con contraseña (solo en celu compatible)
       ofrecerRegistroHuella(user.usuario);
+}
+function togglePwd(id, btn){
+  const inp = document.getElementById(id);
+  if(!inp) return;
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    if(btn){ btn.textContent = '🙈'; btn.setAttribute('aria-label','Ocultar contraseña'); }
+  } else {
+    inp.type = 'password';
+    if(btn){ btn.textContent = '👁️'; btn.setAttribute('aria-label','Mostrar contraseña'); }
+  }
 }
 function doLogin(){
   const u=document.getElementById('loginUser').value.trim();
@@ -2212,7 +2239,7 @@ function registrarSalida(){
     const segs = Math.floor((diff%60000)/1000);
     const horas = Math.floor(mins/60);
     const minsRest = mins%60;
-    accesos[idx].salida = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    accesos[idx].salida = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit',second:'2-digit'});
     accesos[idx].duracion = horas>0 ? `${horas}h ${minsRest}m` : mins>0 ? `${mins}m ${segs}s` : `${segs} seg`;
     accesos[idx].activo = false;
     localStorage.setItem('suep_accesos', JSON.stringify(accesos));
@@ -3003,7 +3030,7 @@ function toggleAspirante(tipo, nombre, seccion){
   const key=_selKey(tipo);
   const recs=S.get('OPERACIONAL', key);
   let r=recs.find(x=>x.fecha===fecha);
-  const now=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const now=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
   if(!r){
     r={_id:Date.now().toString(36)+Math.random().toString(36).slice(2),
        fecha:fecha, marcados:[], _por:CU.nombre, _ts:now,
@@ -3145,7 +3172,7 @@ function setAlmuerzo(value){
   const today = todayISO();
   const records = S.get('ALMUERZO','ALMUERZO');
   const idx = records.findIndex(r => r.usuario === CU.usuario && r.fecha === today);
-  const now = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const now = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
   if(idx >= 0){
     records[idx].almuerza = value;
     records[idx]._ts = now;
@@ -3862,7 +3889,7 @@ function logEdit(sector, modulo, recordId, oldData, newData, usuario){
   const changelog = JSON.parse(localStorage.getItem('suep_changelog')||'[]');
   changelog.unshift({
     id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-    timestamp: new Date().toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    timestamp: new Date().toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit',second:'2-digit'}),
     usuario: usuario || (CU ? CU.nombre : 'desconocido'),
     sector: sector,
     modulo: modulo,
@@ -4151,7 +4178,7 @@ function exportPDF(){
   const orientation = headers.length > 6 ? 'landscape' : 'portrait';
   const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
 
-  const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
   doc.setFontSize(14);
   doc.setTextColor(8, 17, 31);
   doc.text(`${CS.name} · ${CM.name}`, 40, 36);
@@ -4362,7 +4389,7 @@ function generarImpresion(){
   if(desde > hasta){ alert('La fecha "Desde" no puede ser posterior a "Hasta"'); return; }
   const enRango = isoF => isoF && isoF >= desde && isoF <= hasta;
   const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
 
   let out = `<div class="pr-head">
     <h1>SUEP — Escuela de Policía · DCFyCCCO</h1>
@@ -5251,7 +5278,7 @@ function _enColaModulo(s, m, fn){
 S.addSafe = async function(s, m, data){
   const r = {...data, _id: Date.now().toString(36)+Math.random().toString(36).slice(2),
     _por: CU?.nombre||'—', _sector: s, _mod: m,
-    _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})};
+    _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'})};
   const local = S.get(s, m);
   local.push(r);
   _S_set_local(s, m, local);   // 1) guardado local INMEDIATO (si no hay espacio, lanza y lo avisa el formulario)
@@ -5950,7 +5977,7 @@ function logNav(){
     sector: sectorNombre,
     modulo: moduloNombre,
     ts: ahora,
-    fecha: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    fecha: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit',second:'2-digit'})
   });
   log = log.slice(0, 800); // tope para no crecer infinito
   try{ localStorage.setItem('suep_navegacion', JSON.stringify(log)); }catch(_){}
