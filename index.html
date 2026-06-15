@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.2">
+<meta name="app-version" content="1.5.3">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4017,30 +4017,27 @@ async function saveRecord(){
   if(btnSave){ btnSave.disabled = true; btnSave.textContent = '☁️ GUARDANDO...'; }
 
   try {
-  // ═══ FIX PWA DESKTOP: Timeout de seguridad (30 segundos máximo) ═══
-  const timeoutId = setTimeout(()=>{
-    if(btnSave && btnSave.textContent === "☁️ GUARDANDO..."){
-      btnSave.disabled = false;
-      btnSave.textContent = txtPrev || "GUARDAR REGISTRO";
-      alert("⚠️ El guardado se demoró demasiado. Verifica tu conexión.\n\nTus datos se guardarán cuando se restablezca la conexión.");
-    }
-  }, 30000);
+    // ═══════════════════════════════════════════════════════════════════
+    // ✅ v1.5.3 — GUARDADO 100% NO BLOQUEANTE (fin del "GUARDANDO..." pegado)
+    // ═══════════════════════════════════════════════════════════════════
+    // addSafe / updSafe guardan en el dispositivo de forma INSTANTÁNEA y mandan
+    // la nube a una cola en segundo plano. Por eso NO esperamos (await) a la red:
+    // guardamos local, cerramos el modal YA y refrescamos la tabla. La nube se
+    // sincroniza sola por detrás. Así el botón nunca queda colgado en "GUARDANDO...".
     if(editId) {
-      // Obtener datos viejos para el changelog
       const oldRecord = S.get(CS.id,CM.id).find(r=>r._id===editId);
       logEdit(CS.id, CM.id, editId, oldRecord, data, CU?.nombre);
-      // Usa la versión segura si está disponible (fusiona con la nube antes de guardar)
-      if(typeof S.updSafe === 'function') await S.updSafe(CS.id,CM.id,editId,data);
+      if(typeof S.updSafe === 'function') S.updSafe(CS.id,CM.id,editId,data); // sin await
       else S.upd(CS.id,CM.id,editId,data);
     } else {
-      // ════ CORRECCIÓN 2: Marcar registros como nuevos con timestamp especial ════
-      data._ts_new = Date.now(); // Timestamp para identificar registros nuevos
-      logEdit(CS.id, CM.id, null, null, data, CU?.nombre); // Registrar que se creó
-      if(typeof S.addSafe === 'function') await S.addSafe(CS.id,CM.id,data);
+      data._ts_new = Date.now();
+      logEdit(CS.id, CM.id, null, null, data, CU?.nombre);
+      if(typeof S.addSafe === 'function') S.addSafe(CS.id,CM.id,data); // sin await
       else S.add(CS.id,CM.id,data);
     }
+    // Cerramos enseguida: el dato YA quedó guardado en el dispositivo.
+    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     closeModal(); renderTable();
-    clearTimeout(timeoutId);
   } catch(err){
     if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
@@ -5059,7 +5056,7 @@ async function _fetchModuloFresco(s, m){
   if(typeof clienteS === 'undefined') return null;
   try{
     const key = S.key(s, m);
-    const { data, error } = await _conTimeout(clienteS.from('app_data').select('value').eq('key', key).maybeSingle(), 6000);
+    const { data, error } = await _conTimeout(clienteS.from('app_data').select('value').eq('key', key).maybeSingle(), 3000);
     if(error){ console.warn('No se pudo traer versión fresca de', key, error.message); return null; }
     return (data && Array.isArray(data.value)) ? data.value : (data ? [] : null);
   }catch(e){ console.warn('Sin conexión al traer versión fresca:', e); return null; }
