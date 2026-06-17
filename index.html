@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.3">
+<meta name="app-version" content="1.5.7">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1666,14 +1666,14 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', universal:true, modules:[
+  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', universal:true, custom:'minuta', modules:[
     { id:'MINUTAS_MOD', name:'Minutas', fields:[
-      {key:'fecha',      label:'Fecha',                             type:'date',     req:true},
-      {key:'hora',       label:'Hora',                             type:'time'},
-      {key:'sector',     label:'Sector que informa',               type:'text',     req:true},
-      {key:'informante', label:'Informante',                       type:'text',     req:true},
-      {key:'mensaje',    label:'Mensaje / Contenido WhatsApp',     type:'textarea', req:true},
-      {key:'obs',        label:'Observaciones',                    type:'textarea'},
+      {key:'fecha',         label:'Fecha',          type:'date',     req:true},
+      {key:'hora',          label:'Hora',           type:'time'},
+      {key:'interviniente', label:'Interviniente',  type:'text',     req:true},
+      {key:'asunto',        label:'Asunto',         type:'text',     req:true},
+      {key:'relato',        label:'Relato',         type:'textarea', req:true},
+      {key:'informa',       label:'Informa',        type:'text',     req:true},
     ]},
   ]},
 
@@ -2494,6 +2494,12 @@ function renderTable(searchOverride){
     return;
   }
 
+  // ─── Pestaña custom: MINUTAS (generador para WhatsApp) ───
+  if(CS.custom==='minuta'){
+    area.innerHTML = renderMinuta();
+    return;
+  }
+
   // ─── Pestañas custom a nivel módulo: Recargo / Imaginarias (selección de aspirantes) ───
   if(CM.custom==='recargo' || CM.custom==='imaginarias'){
     area.innerHTML = renderSeleccionAspirantes(CM.custom);
@@ -2912,6 +2918,352 @@ function renderAlmuerzo(){
       </div>
     </div>
   `;
+}
+
+// ══════════════════════════════════════════════
+// MINUTAS — generador de minuta lista para WhatsApp
+// ══════════════════════════════════════════════
+// Encabezado institucional fijo de toda minuta
+const MINUTA_ENCABEZADO = 'DEPARTAMENTO CENTRO DE FORMACIÓN Y CAPACITACIÓN CUTRAL CO';
+// Asuntos fijos del selector (más la opción "Otro" para escribir uno manual)
+const MINUTA_ASUNTOS = ['INFORMAR','INFORMAR NOVEDAD','SOLICITAR','ELEVAR','REMITO','GIRO'];
+
+// "Informa" por defecto (firma de la autoridad). Se recuerda lo último usado.
+function _minutaInformaDefault(){
+  return localStorage.getItem('suep_minuta_informa') || 'COMISARIO INSPECTOR MARCOS BLANCO';
+}
+// Busca la jerarquía del usuario actual en el Organigrama (cruzando por nombre).
+// Devuelve '' si no encuentra coincidencia. Insensible a mayúsculas y acentos.
+function _normNombre(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function _jerarquiaDeUsuario(){
+  if(!CU || !CU.nombre) return '';
+  const objetivo = _normNombre(CU.nombre);
+  if(!objetivo) return '';
+  const org = S.get('ORGANIGRAMA','ORGANIGRAMA');
+  const hit = org.find(r => _normNombre(r.apellidoNombre) === objetivo);
+  return hit ? (hit.jerarquia||'').trim() : '';
+}
+// Interviniente por defecto: "Jerarquía Nombre" si hay jerarquía cargada en el Organigrama
+function _intervinienteDefault(){
+  const jer = _jerarquiaDeUsuario();
+  const nom = (CU && CU.nombre) ? CU.nombre : '';
+  return (jer ? jer+' ' : '') + nom;
+}
+// Número de WhatsApp opcional al que se envía directo (solo dígitos, con código de país, ej: 542994XXXXXXX)
+function _minutaWaNum(){
+  return (localStorage.getItem('suep_minuta_wa_num') || '').replace(/[^0-9]/g,'');
+}
+// Convierte fecha ISO (aaaa-mm-dd) a dd-mm-aaaa para mostrarla en la minuta
+function _isoADMA(iso){
+  if(!iso) return '';
+  const p = String(iso).split('-');
+  return p.length===3 ? `${p[2]}-${p[1]}-${p[0]}` : iso;
+}
+// Escapa HTML para mostrar texto plano dentro de la vista previa inicial
+function _minEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Arma el texto de la minuta con formato WhatsApp (negritas con *)
+function _minutaTextoDesde(fecha, hora, interviniente, asunto, relato, informa){
+  return [
+    `*${MINUTA_ENCABEZADO}*`,
+    `*FECHA: ${_isoADMA(fecha)}*`,
+    hora ? `*HORA: ${hora}*` : `*HORA:*`,
+    `*INTERVINIENTE:* ${interviniente||''}`,
+    `*ASUNTO:* ${asunto||''}`,
+    `*RELATO:* ${relato||''}`,
+    `*INFORMA:* ${informa||''}`
+  ].join('\n');
+}
+// Reconstruye el texto desde un registro guardado (compatible con minutas viejas)
+function _minutaTextoRec(r){
+  return _minutaTextoDesde(
+    r.fecha, r.hora,
+    r.interviniente || r.informante || '',
+    r.asunto || 'INFORMAR',
+    r.relato || r.mensaje || '',
+    r.informa || _minutaInformaDefault()
+  );
+}
+// Valor del asunto: el del selector, o el texto manual si se eligió "Otro"
+function _minutaAsuntoVal(){
+  const sel = document.getElementById('min_asunto_sel');
+  if(!sel) return 'INFORMAR';
+  if(sel.value==='__OTRO__') return (document.getElementById('min_asunto_otro')?.value||'').trim() || 'INFORMAR';
+  return sel.value;
+}
+function minutaAsuntoChange(){
+  const sel = document.getElementById('min_asunto_sel');
+  const otro = document.getElementById('min_asunto_otro');
+  const esOtro = sel && sel.value==='__OTRO__';
+  if(otro){ otro.style.display = esOtro ? 'block' : 'none'; if(esOtro) otro.focus(); }
+  minutaUpdatePreview();
+}
+// Lee los valores del formulario y arma el texto
+function _minutaTextoForm(){
+  const g = id => (document.getElementById(id)?.value || '');
+  return _minutaTextoDesde(g('min_fecha'), g('min_hora'), g('min_interv'), _minutaAsuntoVal(), g('min_relato'), g('min_informa'));
+}
+// Actualiza la vista previa en vivo
+function minutaUpdatePreview(){
+  const el = document.getElementById('minutaPreview');
+  if(el) el.textContent = _minutaTextoForm();
+}
+// Copia texto al portapapeles (con respaldo para webviews viejos)
+async function _copiarTexto(txt){
+  try{ if(navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(txt); return true; } }catch(_){}
+  try{
+    const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta); return ok;
+  }catch(_){ return false; }
+}
+// Abre WhatsApp con el texto ya escrito. Si hay número configurado va directo a ese chat;
+// si no, abre el selector de contactos/grupos de WhatsApp para que elijas a quién mandarla.
+function _abrirWhatsApp(txt){
+  const num = _minutaWaNum();
+  const base = num ? `https://wa.me/${num}` : 'https://wa.me/';
+  window.open(`${base}?text=${encodeURIComponent(txt)}`, '_blank');
+}
+function _minutaValidar(){
+  if(!(document.getElementById('min_relato')?.value||'').trim()){ alert('Escribí el RELATO antes de continuar.'); return false; }
+  if(!(document.getElementById('min_interv')?.value||'').trim()){ alert('Completá el campo INTERVINIENTE.'); return false; }
+  return true;
+}
+// Guarda la minuta en el registro (sincroniza a la nube y notifica como cualquier carga)
+async function minutaGuardar(silencioso){
+  if(!_minutaValidar()) return null;
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const informa = g('min_informa');
+  if(informa) localStorage.setItem('suep_minuta_informa', informa); // recordar la firma
+  const data = {
+    fecha: g('min_fecha'), hora: g('min_hora'),
+    interviniente: g('min_interv'), asunto: _minutaAsuntoVal(),
+    relato: g('min_relato'), informa: informa,
+    textoWhatsapp: _minutaTextoForm()
+  };
+  try{
+    if(typeof S.addSafe==='function') await S.addSafe('MINUTAS','MINUTAS_MOD',data);
+    else S.add('MINUTAS','MINUTAS_MOD',data);
+  }catch(e){ alert('Error al guardar la minuta: '+(e?.message||'')); return null; }
+  if(!silencioso){
+    if(typeof syncStatus==='function') syncStatus('✓ Minuta guardada en el registro','#34d399');
+    const rel = document.getElementById('min_relato'); if(rel) rel.value='';
+    minutaFiltrar();
+  }
+  return data;
+}
+async function minutaCopiar(){
+  if(!(document.getElementById('min_relato')?.value||'').trim()){ alert('Escribí el RELATO primero.'); return; }
+  const ok = await _copiarTexto(_minutaTextoForm());
+  if(typeof syncStatus==='function') syncStatus(ok?'📋 Minuta copiada al portapapeles':'No se pudo copiar', ok?'#34d399':'#f87171');
+}
+// Flujo principal: guarda en el registro y abre WhatsApp listo para enviar
+async function minutaGuardarYEnviar(){
+  if(!_minutaValidar()) return;
+  const texto = _minutaTextoForm();
+  const data = await minutaGuardar(true);
+  if(!data) return;
+  _abrirWhatsApp(texto);
+  const rel = document.getElementById('min_relato'); if(rel) rel.value=''; // limpiar para la próxima
+  if(typeof syncStatus==='function') syncStatus('✓ Guardada · abriendo WhatsApp...','#34d399');
+  minutaFiltrar();
+}
+// Guardar la configuración (firma "Informa" y número de WhatsApp)
+function minutaGuardarConfig(){
+  const inf = (document.getElementById('min_cfg_informa')?.value||'').trim();
+  const num = (document.getElementById('min_cfg_num')?.value||'').replace(/[^0-9]/g,'');
+  if(inf) localStorage.setItem('suep_minuta_informa', inf);
+  localStorage.setItem('suep_minuta_wa_num', num);
+  const fi = document.getElementById('min_informa'); if(fi && inf) fi.value = inf; // reflejar la firma nueva ya
+  minutaUpdatePreview();
+  const panel = document.getElementById('minutaCfg'); if(panel) panel.style.display='none';
+  if(typeof syncStatus==='function') syncStatus('✓ Preferencias de minuta guardadas','#34d399');
+}
+function minutaToggleConfig(){
+  const el = document.getElementById('minutaCfg');
+  if(el) el.style.display = (el.style.display==='none' ? 'block' : 'none');
+}
+// Acciones sobre minutas ya guardadas (lista)
+async function minutaCopiarRec(id){
+  const r = S.get('MINUTAS','MINUTAS_MOD').find(x=>x._id===id); if(!r) return;
+  const ok = await _copiarTexto(r.textoWhatsapp || _minutaTextoRec(r));
+  if(typeof syncStatus==='function') syncStatus(ok?'📋 Minuta copiada':'No se pudo copiar', ok?'#34d399':'#f87171');
+}
+function minutaWhatsAppRec(id){
+  const r = S.get('MINUTAS','MINUTAS_MOD').find(x=>x._id===id); if(!r) return;
+  _abrirWhatsApp(r.textoWhatsapp || _minutaTextoRec(r));
+}
+// Borra una minuta refrescando SOLO la lista (no toca el formulario que estés escribiendo)
+async function minutaBorrarRec(id){
+  if(!confirm('¿Eliminar esta minuta?')) return;
+  const s='MINUTAS', m='MINUTAS_MOD', key=S.key(s,m);
+  if(typeof S.delSafe==='function'){
+    try{ _S_set_local(s,m,S.get(s,m).filter(r=>r._id!==id)); }catch(_){}
+    minutaFiltrar();
+    _enColaModulo(s, m, async ()=>{ await S.delSafe(s,m,id); });
+  } else { S.del(s,m,id); minutaFiltrar(); }
+}
+// Tarjeta de una minuta guardada
+function _minutaCardHTML(r){
+  const ac = '#22d3ee';
+  const txtAsunto = r.asunto || 'INFORMAR';
+  const txtInterv = r.interviniente || r.informante || '—';
+  const txtRelato = r.relato || r.mensaje || '';
+  const hora = r.hora ? (' · '+_minEsc(r.hora)) : '';
+  const borrar = (typeof puedeBorrarRec==='function' && puedeBorrarRec(r));
+  return `<div style="background:rgba(255,255,255,.025);border:1px solid rgba(122,175,212,.12);border-radius:12px;padding:13px 14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="background:rgba(34,211,238,.14);color:${ac};border:1px solid rgba(34,211,238,.3);font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:20px">${_minEsc(txtAsunto)}</span>
+        <span style="font-size:12px;color:#cbd9e6;font-weight:600">🕐 ${(r._ts||'').slice(11)||_minEsc(r.hora)||''}</span>
+        <span style="font-size:11px;color:#7aafd4">· ${_minEsc(txtInterv)}</span>
+        <span style="margin-left:auto;font-size:10px;color:#4a6a88">${_minEsc(r._por||'')}</span>
+      </div>
+      <div style="font-size:12.5px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word;line-height:1.5;background:rgba(13,22,35,.4);border-left:3px solid ${ac};border-radius:6px;padding:8px 10px;margin-bottom:9px">${_minEsc(txtRelato) || '<span style=\"color:#2a4060\">(sin relato)</span>'}</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button onclick="minutaCopiarRec('${r._id}')" style="flex:1;min-width:120px;background:rgba(122,175,212,.12);color:#cbd9e6;border:1px solid rgba(122,175,212,.25);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer">📋 Copiar</button>
+        <button onclick="minutaWhatsAppRec('${r._id}')" style="flex:1;min-width:120px;background:rgba(37,211,102,.16);color:#4ade80;border:1px solid rgba(37,211,102,.35);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer">🟢 WhatsApp</button>
+        ${borrar?`<button onclick="minutaBorrarRec('${r._id}')" style="background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:9px;padding:8px 11px;font-size:12px;cursor:pointer">🗑️</button>`:''}
+      </div>
+    </div>`;
+}
+// Lista de minutas agrupada en CARPETAS POR FECHA (más reciente arriba), con filtro opcional
+function _minutaListaHTML(filtro){
+  const modKey = 'MINUTAS|MINUTAS_MOD';
+  const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const palabras = norm(filtro).split(/\s+/).filter(Boolean);
+  let recs = S.get('MINUTAS','MINUTAS_MOD').slice();
+  if(palabras.length){
+    recs = recs.filter(r=>{
+      const txt = norm([r.asunto, r.interviniente||r.informante, r.relato||r.mensaje, r.informa, _isoADMA(r.fecha), r._ts, r._por].join(' '));
+      return palabras.every(p=>txt.includes(p));
+    });
+  }
+  if(!recs.length){
+    return `<div class="empty-state"><div class="empty-icon">💬</div><p>${filtro?'Sin resultados para la búsqueda':'Todavía no hay minutas cargadas'}</p><small>${filtro?'Probá con otras palabras':'Escribí el relato arriba y tocá "Guardar y enviar"'}</small></div>`;
+  }
+  // Agrupar por fecha (campo fecha; si falta, fecha de carga)
+  const dateField = {key:'fecha'};
+  const grupos = {};
+  recs.forEach(r=>{ const iso=_fechaISORegistro(r,dateField); (grupos[iso]=grupos[iso]||[]).push(r); });
+  const fechas = Object.keys(grupos).sort((a,b)=>{ if(!a)return 1; if(!b)return -1; return b.localeCompare(a); });
+  if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
+  const st = DATE_FOLDERS[modKey];
+  const buscando = palabras.length>0;
+  return fechas.map(iso=>{
+    const g = grupos[iso].slice().reverse(); // más reciente primero dentro del día
+    const open = buscando || st.open.has(iso) || (iso===fechas[0] && !st.closed.has(iso));
+    const header = `<div onclick="minutaToggleFolder('${iso}',${open?1:0})" style="background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.22);color:#cfe3f5;font-weight:700;font-size:12.5px;cursor:pointer;padding:10px 12px;border-radius:10px;user-select:none;margin-top:10px;margin-bottom:${open?'10px':'0'}">
+        <span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${_fechaCarpetaLabel(iso)} <span class="df-count">${g.length} minuta${g.length!==1?'s':''}</span>
+      </div>`;
+    return header + (open ? g.map(_minutaCardHTML).join('') : '');
+  }).join('');
+}
+// Abre/cierra una carpeta de fecha SIN re-renderizar el formulario
+function minutaToggleFolder(iso, open){
+  const modKey = 'MINUTAS|MINUTAS_MOD';
+  const st = DATE_FOLDERS[modKey] || (DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()});
+  if(open){ st.open.delete(iso); st.closed.add(iso); }
+  else { st.closed.delete(iso); st.open.add(iso); }
+  minutaFiltrar();
+}
+// Re-dibuja SOLO el listado (respeta el buscador) sin tocar lo que estés escribiendo
+function minutaFiltrar(){
+  const wrap = document.getElementById('minutaListWrap');
+  if(wrap) wrap.innerHTML = _minutaListaHTML(document.getElementById('min_buscar')?.value || '');
+}
+
+function renderMinuta(){
+  // Si el formulario ya existe (re-render), conservamos lo que el usuario tenga escrito
+  const _ex = document.getElementById('min_relato');
+  const prev = _ex ? {
+    fecha:   document.getElementById('min_fecha')?.value,
+    hora:    document.getElementById('min_hora')?.value,
+    interv:  document.getElementById('min_interv')?.value,
+    aSel:    document.getElementById('min_asunto_sel')?.value,
+    aOtro:   document.getElementById('min_asunto_otro')?.value || '',
+    relato:  _ex.value,
+    informa: document.getElementById('min_informa')?.value,
+    buscar:  document.getElementById('min_buscar')?.value || ''
+  } : null;
+
+  const hoy     = (prev && prev.fecha) || todayISO();
+  const ahoraHM = prev ? (prev.hora||'') : new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const interv  = prev ? (prev.interv||'') : _intervinienteDefault();
+  const informa = prev ? (prev.informa||'') : _minutaInformaDefault();
+  const relato  = prev ? (prev.relato||'') : '';
+  const asunto  = prev ? (prev.aSel||'INFORMAR') : 'INFORMAR';
+  const asuntoOtro = prev ? prev.aOtro : '';
+  const esOtro  = asunto === '__OTRO__';
+  const filtro  = prev ? prev.buscar : '';
+  const waNum   = _minutaWaNum();
+  const ac = '#22d3ee'; // acento cian para esta pestaña
+
+  // Texto inicial de la vista previa (con lo que ya haya escrito)
+  const asuntoTxt = esOtro ? (asuntoOtro||'INFORMAR') : asunto;
+  const previa = _minutaTextoDesde(hoy, ahoraHM, interv, asuntoTxt, relato, informa);
+
+  const label = t => `<label style="display:block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#7aafd4;margin:0 0 5px 2px">${t}</label>`;
+
+  // ─── Listado de minutas agrupado por fecha (se arma en _minutaListaHTML) ───
+  const recsTotal = S.get('MINUTAS','MINUTAS_MOD').length;
+
+  return `
+  <div class="fade-in" style="padding:4px 2px;max-width:640px;margin:0 auto">
+
+    <div style="background:linear-gradient(135deg,rgba(34,211,238,.1),rgba(34,211,238,.02));border:1px solid rgba(34,211,238,.22);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">💬 Nueva minuta</div>
+      <div style="font-size:12px;color:#9fc4e0;margin-top:4px;line-height:1.5">Completá los datos (ya vienen cargados) y escribí solo el <strong style="color:${ac}">RELATO</strong>. Después tocá <strong style="color:#4ade80">Guardar y enviar</strong>: queda registrada para todos y se abre WhatsApp con la minuta lista.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div>${label('Fecha')}<input id="min_fecha" class="fi" type="date" value="${hoy}" oninput="minutaUpdatePreview()"></div>
+      <div>${label('Hora')}<input id="min_hora" class="fi" type="time" value="${ahoraHM}" oninput="minutaUpdatePreview()"></div>
+    </div>
+
+    <div style="margin-bottom:11px">${label('Interviniente (quién informa)')}<input id="min_interv" class="fi" type="text" value="${_minEsc(interv)}" placeholder="Ej: AGENTE N/C Apellido Nombre" oninput="minutaUpdatePreview()"></div>
+
+    <div style="margin-bottom:11px">${label('Asunto')}
+      <select id="min_asunto_sel" class="fi" onchange="minutaAsuntoChange()">
+        ${MINUTA_ASUNTOS.map(a=>`<option value="${a}"${a===asunto?' selected':''}>${a}</option>`).join('')}
+        <option value="__OTRO__"${esOtro?' selected':''}>Otro (escribir)...</option>
+      </select>
+      <input id="min_asunto_otro" class="fi" type="text" style="display:${esOtro?'block':'none'};margin-top:8px" value="${_minEsc(asuntoOtro)}" placeholder="Escribí el asunto" oninput="minutaUpdatePreview()">
+    </div>
+
+    <div style="margin-bottom:11px">${label('Relato ✍️ (lo único que tenés que escribir)')}
+      <textarea id="min_relato" class="fi" style="min-height:130px" placeholder="Señor Director, llevo a su conocimiento que..." oninput="minutaUpdatePreview()">${_minEsc(relato)}</textarea>
+    </div>
+
+    <div style="margin-bottom:6px">${label('Informa (firma)')}<input id="min_informa" class="fi" type="text" value="${_minEsc(informa)}" oninput="minutaUpdatePreview()"></div>
+
+    <button onclick="minutaToggleConfig()" style="background:none;border:none;color:#7aafd4;font-size:11.5px;cursor:pointer;padding:6px 2px;margin-bottom:6px">⚙️ Configurar firma y número de WhatsApp</button>
+    <div id="minutaCfg" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(122,175,212,.15);border-radius:12px;padding:13px 14px;margin-bottom:14px">
+      <div style="margin-bottom:10px">${label('Firma por defecto (Informa)')}<input id="min_cfg_informa" class="fi" type="text" value="${_minEsc(informa)}"></div>
+      <div style="margin-bottom:6px">${label('Número de WhatsApp para envío directo (opcional)')}<input id="min_cfg_num" class="fi" type="text" value="${_minEsc(waNum)}" placeholder="Ej: 5492990000000 (con código país, sin + ni espacios)"></div>
+      <div style="font-size:11px;color:#7aafd4;line-height:1.5;margin:2px 2px 11px">Si lo dejás vacío, al enviar se abre WhatsApp para que elijas el contacto o <strong>grupo</strong> (los grupos no se pueden fijar por número). Si ponés un número, va directo a ese chat.</div>
+      <button onclick="minutaGuardarConfig()" style="background:${ac};color:#062a30;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:800;cursor:pointer">Guardar preferencias</button>
+    </div>
+
+    ${label('Vista previa (así llega por WhatsApp)')}
+    <div style="background:#0b141a;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:inset 0 0 0 9999px rgba(37,211,102,.02)">
+      <pre id="minutaPreview" style="margin:0;font-family:inherit;font-size:12.5px;line-height:1.55;color:#e3eef0;white-space:pre-wrap;word-break:break-word">${_minEsc(previa)}</pre>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button onclick="minutaGuardarYEnviar()" style="flex:2;min-width:200px;background:linear-gradient(135deg,#25d366,#1da851);color:#062a14;border:none;border-radius:11px;padding:13px;font-size:13.5px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(37,211,102,.25)">🟢 Guardar y enviar por WhatsApp</button>
+      <button onclick="minutaCopiar()" style="flex:1;min-width:120px;background:rgba(122,175,212,.12);color:#cbd9e6;border:1px solid rgba(122,175,212,.25);border-radius:11px;padding:13px;font-size:13px;font-weight:700;cursor:pointer">📋 Copiar</button>
+    </div>
+    <button onclick="minutaGuardar()" style="width:100%;background:none;color:#7aafd4;border:1px dashed rgba(122,175,212,.3);border-radius:10px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:22px">💾 Solo guardar en el registro (sin enviar)</button>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 10px">
+      <div style="font-size:13px;font-weight:800;color:#cbd9e6">🗂️ Minutas cargadas</div>
+      <div style="font-size:11px;color:#7aafd4">${recsTotal} registro${recsTotal!==1?'s':''}</div>
+    </div>
+    <div style="position:relative;margin-bottom:4px">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+      <input id="min_buscar" class="fi" type="text" value="${_minEsc(filtro)}" placeholder="Buscar por relato, asunto, fecha, quién informa..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="minutaFiltrar()">
+    </div>
+    <div id="minutaListWrap">${_minutaListaHTML(filtro)}</div>
+  </div>`;
 }
 
 // ══════════════════════════════════════════════
