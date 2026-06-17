@@ -1964,6 +1964,37 @@ function _notifMs(n){
   }
   return 0;
 }
+// 🔑 Identidad ESTABLE de una notificación. Si está vinculada a un registro
+// (rId), usamos el registro como clave (sector+módulo+rId). Así una notificación
+// "real" y su "reconstruida" del mismo registro se reconocen como LA MISMA y se
+// fusionan (conservando quién la leyó), en vez de duplicarse y resucitar como no
+// leída. Si no tiene rId, caemos al id propio.
+function _notifKey(n){
+  if(!n) return '';
+  if(n.rId){ return 'r:' + (n.secId||'') + ':' + (n.modId||'') + ':' + n.rId; }
+  return 'id:' + n.id;
+}
+// Fusiona dos listas de notificaciones por _notifKey, uniendo el estado "leídaPor"
+// de cada usuario (si alguien la leyó en cualquier dispositivo, queda leída) y
+// dejando las más nuevas primero. Nada se pierde: el universo es la unión de ambas.
+function _fusionarNotifs(remotas, locales){
+  const porKey = new Map();
+  const meter = (n)=>{
+    if(!n || (!n.id && !n.rId)) return;
+    const k = _notifKey(n);
+    if(!porKey.has(k)){ porKey.set(k, n); return; }
+    const ex = porKey.get(k);
+    // Conservamos el registro más nuevo como base y unimos las marcas de lectura
+    const base = (_notifMs(n) >= _notifMs(ex)) ? n : ex;
+    const otro = (base === n) ? ex : n;
+    porKey.set(k, {...otro, ...base, leidaPor: {...(otro.leidaPor||{}), ...(base.leidaPor||{})}});
+  };
+  (Array.isArray(remotas)?remotas:[]).forEach(meter);
+  (Array.isArray(locales)?locales:[]).forEach(meter);
+  return Array.from(porKey.values())
+    .sort((a,b)=> _notifMs(b) - _notifMs(a))
+    .slice(0,200);
+}
 // Devuelve las notificaciones SIEMPRE ordenadas: más reciente primero
 function _notifsOrdenadas(){
   return S.gn().slice().sort((a,b)=> _notifMs(b) - _notifMs(a));
@@ -4017,27 +4048,30 @@ async function saveRecord(){
   if(btnSave){ btnSave.disabled = true; btnSave.textContent = '☁️ GUARDANDO...'; }
 
   try {
-    // ═══════════════════════════════════════════════════════════════════
-    // ✅ v1.5.3 — GUARDADO 100% NO BLOQUEANTE (fin del "GUARDANDO..." pegado)
-    // ═══════════════════════════════════════════════════════════════════
-    // addSafe / updSafe guardan en el dispositivo de forma INSTANTÁNEA y mandan
-    // la nube a una cola en segundo plano. Por eso NO esperamos (await) a la red:
-    // guardamos local, cerramos el modal YA y refrescamos la tabla. La nube se
-    // sincroniza sola por detrás. Así el botón nunca queda colgado en "GUARDANDO...".
+  // ═══ FIX PWA DESKTOP: Timeout de seguridad (30 segundos máximo) ═══
+  const timeoutId = setTimeout(()=>{
+    if(btnSave && btnSave.textContent === "☁️ GUARDANDO..."){
+      btnSave.disabled = false;
+      btnSave.textContent = txtPrev || "GUARDAR REGISTRO";
+      alert("⚠️ El guardado se demoró demasiado. Verifica tu conexión.\n\nTus datos se guardarán cuando se restablezca la conexión.");
+    }
+  }, 30000);
     if(editId) {
+      // Obtener datos viejos para el changelog
       const oldRecord = S.get(CS.id,CM.id).find(r=>r._id===editId);
       logEdit(CS.id, CM.id, editId, oldRecord, data, CU?.nombre);
-      if(typeof S.updSafe === 'function') S.updSafe(CS.id,CM.id,editId,data); // sin await
+      // Usa la versión segura si está disponible (fusiona con la nube antes de guardar)
+      if(typeof S.updSafe === 'function') await S.updSafe(CS.id,CM.id,editId,data);
       else S.upd(CS.id,CM.id,editId,data);
     } else {
-      data._ts_new = Date.now();
-      logEdit(CS.id, CM.id, null, null, data, CU?.nombre);
-      if(typeof S.addSafe === 'function') S.addSafe(CS.id,CM.id,data); // sin await
+      // ════ CORRECCIÓN 2: Marcar registros como nuevos con timestamp especial ════
+      data._ts_new = Date.now(); // Timestamp para identificar registros nuevos
+      logEdit(CS.id, CM.id, null, null, data, CU?.nombre); // Registrar que se creó
+      if(typeof S.addSafe === 'function') await S.addSafe(CS.id,CM.id,data);
       else S.add(CS.id,CM.id,data);
     }
-    // Cerramos enseguida: el dato YA quedó guardado en el dispositivo.
-    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     closeModal(); renderTable();
+    clearTimeout(timeoutId);
   } catch(err){
     if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
@@ -5056,7 +5090,7 @@ async function _fetchModuloFresco(s, m){
   if(typeof clienteS === 'undefined') return null;
   try{
     const key = S.key(s, m);
-    const { data, error } = await _conTimeout(clienteS.from('app_data').select('value').eq('key', key).maybeSingle(), 3000);
+    const { data, error } = await _conTimeout(clienteS.from('app_data').select('value').eq('key', key).maybeSingle(), 6000);
     if(error){ console.warn('No se pudo traer versión fresca de', key, error.message); return null; }
     return (data && Array.isArray(data.value)) ? data.value : (data ? [] : null);
   }catch(e){ console.warn('Sin conexión al traer versión fresca:', e); return null; }
@@ -5447,17 +5481,7 @@ async function flushWrites(){
           .select('value').eq('key','suep_notifs').maybeSingle();
         const remotas = (remoto && Array.isArray(remoto.value)) ? remoto.value : [];
         const locales = Array.isArray(writes['suep_notifs']) ? writes['suep_notifs'] : [];
-        const porId = new Map();
-        remotas.forEach(n => { if(n && n.id) porId.set(n.id, n); });
-        locales.forEach(n => {
-          if(!n || !n.id) return;
-          if(!porId.has(n.id)){ porId.set(n.id, n); return; }
-          const ex = porId.get(n.id);
-          porId.set(n.id, {...ex, ...n, leidaPor: {...(ex.leidaPor||{}), ...(n.leidaPor||{})}});
-        });
-        const fusionadas = Array.from(porId.values())
-          .sort((a,b)=> String(b.id).localeCompare(String(a.id)))
-          .slice(0,200);
+        const fusionadas = _fusionarNotifs(remotas, locales);
         writes['suep_notifs'] = fusionadas;
         // Actualizamos también el local con la versión fusionada
         try{ localStorage.setItem('suep_notifs', JSON.stringify(fusionadas)); refreshBadge(); }catch(_){}
@@ -5555,7 +5579,32 @@ async function pullAllFromSupabase(){
           return;
         }
         try{
-          localStorage.setItem(row.key, JSON.stringify(row.value));
+          if(row.key === 'suep_notifs'){
+            // ✅ FIX v1.5.3: NO pisar las notificaciones al entrar/volver a la app.
+            // Las fusionamos por registro conservando quién leyó qué; si no, se
+            // perdían las marcas de "leída" y reaparecían como nuevas (lo "tardío").
+            const remotas = Array.isArray(row.value) ? row.value : [];
+            const fusionadas = _fusionarNotifs(remotas, S.gn());
+            localStorage.setItem('suep_notifs', JSON.stringify(fusionadas));
+          } else if(row.key === 'suep_accesos' || row.key === 'suep_navegacion'){
+            // ✅ FIX v1.5.3: logs append-only multiusuario → fusionar por id para no
+            // perder registros locales aún sin subir cuando se vuelve a la app.
+            const remotos = Array.isArray(row.value) ? row.value : [];
+            const locales = JSON.parse(localStorage.getItem(row.key) || '[]');
+            const porId = new Map();
+            remotos.forEach(x => { if(x && x.id) porId.set(x.id, x); });
+            (Array.isArray(locales)?locales:[]).forEach(x => {
+              if(!x || !x.id) return;
+              if(!porId.has(x.id)){ porId.set(x.id, x); return; }
+              porId.set(x.id, {...porId.get(x.id), ...x});
+            });
+            const fus = Array.from(porId.values())
+              .sort((a,b)=> (b.entradaTs||b.ts||0) - (a.entradaTs||a.ts||0))
+              .slice(0, 800);
+            localStorage.setItem(row.key, JSON.stringify(fus));
+          } else {
+            localStorage.setItem(row.key, JSON.stringify(row.value));
+          }
         }catch(e){
           console.warn('No se pudo guardar', row.key, e);
         }
@@ -5608,27 +5657,12 @@ function subscribeRealtime(){
               try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
             }
           } else if(row.key === 'suep_notifs'){
-            // ✅ FUSIÓN de notificaciones por id: si dos personas cargan a la vez,
-            // ninguna notificación se pierde. Combinamos las locales con las remotas,
-            // sin duplicar (por id) y conservando el estado "leída" de cada usuario.
+            // ✅ FUSIÓN de notificaciones por registro: si dos personas cargan a la
+            // vez, ninguna se pierde, sin duplicar y conservando el estado "leída"
+            // de cada usuario.
             try{
               const remotas = Array.isArray(row.value) ? row.value : [];
-              const locales = S.gn();
-              const porId = new Map();
-              // Primero las remotas, después las locales (las locales pueden tener
-              // marcas de "leída" más nuevas que conviene conservar al fusionar).
-              remotas.forEach(n => { if(n && n.id) porId.set(n.id, n); });
-              locales.forEach(n => {
-                if(!n || !n.id) return;
-                if(!porId.has(n.id)){ porId.set(n.id, n); return; }
-                // misma notif en ambos lados: fusionar el estado leidaPor
-                const ex = porId.get(n.id);
-                porId.set(n.id, {...ex, ...n, leidaPor: {...(ex.leidaPor||{}), ...(n.leidaPor||{})}});
-              });
-              // Ordenar por timestamp real (más nuevo primero), no por id
-              const fusionadas = Array.from(porId.values())
-                .sort((a,b)=> _notifMs(b) - _notifMs(a))
-                .slice(0,200);
+              const fusionadas = _fusionarNotifs(remotas, S.gn());
               localStorage.setItem('suep_notifs', JSON.stringify(fusionadas));
             }catch(e){
               console.warn('No se pudo fusionar notificaciones remotas', e);
@@ -5759,7 +5793,11 @@ document.addEventListener('visibilitychange', ()=>{
 // nunca generamos duplicados: solo creamos las que faltan.
 function reconstruirNotifsFaltantes(){
   const notifs = S.gn();
-  const idsConNotif = new Set(notifs.map(n=>n.rId).filter(Boolean));
+  // Deduplicamos por la MISMA clave estable que usan las fusiones (sector+módulo+rId),
+  // así no recreamos una "gemela" no leída de una notificación que ya existe (y que
+  // quizás ya leíste). Antes se comparaba solo por rId y la copia reconstruida tenía
+  // otro id, por lo que las fusiones no la reconocían y resucitaba como no leída.
+  const clavesConNotif = new Set(notifs.filter(n=>n.rId).map(n=>_notifKey(n)));
 
   // Convierte "dd/mm/aaaa hh:mm[:ss]" (es-AR) a timestamp para poder ordenar
   const parseTs = (ts)=>{
@@ -5777,7 +5815,9 @@ function reconstruirNotifsFaltantes(){
       targets.forEach(t=>{
         const rows = S.get(sec.id, t.id);
         rows.forEach(r=>{
-          if(!r._id || idsConNotif.has(r._id)) return; // ya tiene notificación
+          if(!r._id) return;
+          // ¿ya hay una notificación para este registro (real o reconstruida)?
+          if(clavesConNotif.has('r:'+sec.id+':'+t.id+':'+r._id)) return;
           const tsMs = parseTs(r._ts);
           nuevos.push({
             id: (tsMs||Date.now()) + '_' + r._id,   // id estable por registro
