@@ -4627,7 +4627,7 @@ function exportPDF(){
 // REGISTRO DE ACCESOS
 // ══════════════════════════════════════════════
 function renderAccesosTable(q){
-  const accesos = JSON.parse(localStorage.getItem('suep_accesos')||'[]');
+  const accesos = _aplicarPurga('suep_accesos', JSON.parse(localStorage.getItem('suep_accesos')||'[]'));
   const area = document.getElementById('dataArea');
   const sq = (q||'').toLowerCase().trim();
   const filtrados = sq ? accesos.filter(a =>
@@ -4659,7 +4659,7 @@ function renderAccesosTable(q){
     <span class="search-count" style="font-size:12px;color:#7aafd4">${sq ? filtrados.length+' de '+accesos.length+' resultado'+(filtrados.length!==1?'s':'') : accesos.length+' registro'+(accesos.length!==1?'s':'')}</span>
     <div style="display:flex;gap:8px;margin-left:auto">
       <button class="export-btn" onclick="(${exportAccesos.toString()})()">📥 Excel</button>
-      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos?')){localStorage.removeItem('suep_accesos');renderAccesosTable('');}">🗑️ Limpiar</button>
+      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el historial de accesos en TODOS los dispositivos?')){_purgeKey('suep_accesos');renderAccesosTable('');}">🗑️ Limpiar</button>
     </div>
   </div>`;
 
@@ -4934,12 +4934,18 @@ function dictar(targetId, btn, cb){
   btn.title = 'Tocá para detener el dictado';
 
   reco.onresult = (ev)=>{
+    // ✅ FIX duplicación (v1.5.10): en modo continuo, sumar con _final += txt hacía
+    // que un mismo resultado final reportado de nuevo se pegara 2 o 3 veces (típico
+    // en Android). Ahora reconstruimos TODO el texto final desde cero recorriendo
+    // todos los resultados en cada evento: nunca se duplica porque no acumulamos.
+    let finalTxt = '';
     let interim = '';
-    for(let i=ev.resultIndex; i<ev.results.length; i++){
+    for(let i=0; i<ev.results.length; i++){
       const txt = ev.results[i][0].transcript;
-      if(ev.results[i].isFinal) reco._final += txt;
+      if(ev.results[i].isFinal) finalTxt += txt;
       else interim += txt;
     }
+    reco._final = finalTxt;
     const base = reco._base;
     const sep = (base && !/\s$/.test(base)) ? ' ' : '';
     ta.value = base + sep + reco._final + interim;
@@ -5955,9 +5961,9 @@ async function flushWrites(){
           if(!porId.has(x.id)){ porId.set(x.id, x); return; }
           porId.set(x.id, {...porId.get(x.id), ...x});
         });
-        const fus = Array.from(porId.values())
+        const fus = _aplicarPurga(k, Array.from(porId.values()))
           .sort((a,b)=> (b.entradaTs||b.ts||0) - (a.entradaTs||a.ts||0))
-          .slice(0, 800);
+          .slice(0, 150);
         writes[k] = fus;
         try{ localStorage.setItem(k, JSON.stringify(fus)); }catch(_){}
       }catch(e){ console.warn('No se pudo fusionar el log', k, 'antes de subir', e); }
@@ -6106,6 +6112,20 @@ function subscribeRealtime(){
           }
           // Ignorar nuestras propias escrituras (vienen del mismo dispositivo)
           if(payload.new && payload.new.device_id === DEVICE_ID) return;
+          // ✅ Marca de purga (vaciado de logs por el admin): se respeta en todos
+          // los dispositivos. Al llegar, guardamos la marca y filtramos lo viejo.
+          if(row.key === 'suep_navegacion_purge' || row.key === 'suep_accesos_purge'){
+            const baseKey = row.key.replace('_purge','');
+            const val = row.value;
+            if(val){
+              localStorage.setItem(row.key, String(val));
+              try{
+                const lista = JSON.parse(localStorage.getItem(baseKey)||'[]');
+                localStorage.setItem(baseKey, JSON.stringify(_aplicarPurga(baseKey, lista)));
+              }catch(_){}
+            }
+            return;
+          }
           // ✅ AHORRO DE EGRESS (v1.5.10): los logs de auditoría (recorrido de usuarios
           // y accesos) NO se sincronizan por realtime. Antes, cada vez que alguien
           // cambiaba de pestaña, la lista entera (hasta 800 entradas, cientos de KB)
@@ -6477,6 +6497,34 @@ window.verSectorEventos = verSectorEventos;
 // ═══════════════════════════════════════════════════════════════════
 window._adminView = null;
 
+// ✅ BORRADO DEFINITIVO EN TODA LA FLOTA (v1.5.10)
+// Problema: al "Limpiar" el recorrido/accesos, otro dispositivo con la lista vieja
+// la volvía a fusionar y revivía todo. Solución: guardamos una MARCA con la fecha/hora
+// del vaciado ('suep_navegacion_purge' / 'suep_accesos_purge'). Todos los dispositivos,
+// al sincronizar o renderizar, descartan los registros anteriores a esa marca.
+// Así el borrado del admin se respeta en todos lados y no puede revivir, pero los
+// registros NUEVOS posteriores al borrado se siguen guardando normal.
+function _purgeKey(baseKey){
+  const purgeKey = baseKey + '_purge';
+  const ahora = Date.now();
+  localStorage.setItem(purgeKey, String(ahora));
+  localStorage.setItem(baseKey, '[]');
+  if(typeof syncToSupabase === 'function'){
+    syncToSupabase(purgeKey, ahora);
+    syncToSupabase(baseKey, []);
+  }
+  return ahora;
+}
+function _getPurge(baseKey){
+  return +localStorage.getItem(baseKey + '_purge') || 0;
+}
+// Filtra una lista de logs quitando los anteriores a la marca de purga
+function _aplicarPurga(baseKey, lista){
+  const corte = _getPurge(baseKey);
+  if(!corte || !Array.isArray(lista)) return lista || [];
+  return lista.filter(x => x && (x.ts || x.entradaTs || 0) >= corte);
+}
+
 function logNav(){
   if(typeof CU==='undefined' || !CU || !CS || !CM) return;
   const sectorNombre = CS.name;
@@ -6516,7 +6564,7 @@ function logNav(){
 }
 
 function renderNavegacionTable(q){
-  const log = (()=>{ try{ return JSON.parse(localStorage.getItem('suep_navegacion')||'[]'); }catch(_){ return []; } })();
+  const log = (()=>{ try{ return _aplicarPurga('suep_navegacion', JSON.parse(localStorage.getItem('suep_navegacion')||'[]')); }catch(_){ return []; } })();
   const area = document.getElementById('dataArea');
   const sq = (q||'').toLowerCase().trim();
   const filtrados = sq ? log.filter(a =>
@@ -6550,7 +6598,7 @@ function renderNavegacionTable(q){
     <div style="display:flex;gap:8px;margin-left:auto">
       <button class="export-btn" onclick="renderNavegacionTable('')">🔄 Actualizar</button>
       <button class="export-btn" onclick="(${exportNav.toString()})()">📥 Excel</button>
-      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el recorrido de usuarios?')){localStorage.removeItem('suep_navegacion'); if(typeof syncToSupabase==='function') syncToSupabase('suep_navegacion',[]); renderNavegacionTable('');}">🗑️ Limpiar</button>
+      <button class="export-btn" style="border-color:rgba(239,68,68,.3);color:#f87171" onclick="if(confirm('¿Borrar todo el recorrido de usuarios en TODOS los dispositivos?')){_purgeKey('suep_navegacion'); renderNavegacionTable('');}">🗑️ Limpiar</button>
     </div>
   </div>`;
 
@@ -6595,6 +6643,9 @@ function showNavegacion(){
   // ✅ Como el recorrido ya NO llega por realtime (para ahorrar egress), al abrir
   // esta pantalla el admin baja una vez la versión actual de la nube y la fusiona.
   if(typeof clienteS !== 'undefined'){
+    // Traer también la marca de purga para respetar un vaciado hecho desde otro dispositivo
+    clienteS.from('app_data').select('value').eq('key','suep_navegacion_purge').maybeSingle()
+      .then(({data})=>{ if(data && data.value){ localStorage.setItem('suep_navegacion_purge', String(data.value)); } }).catch(()=>{});
     clienteS.from('app_data').select('value').eq('key','suep_navegacion').maybeSingle()
       .then(({data})=>{
         if(data && Array.isArray(data.value)){
@@ -6604,7 +6655,7 @@ function showNavegacion(){
             const porId = new Map();
             remotos.forEach(x=>{ if(x&&x.id) porId.set(x.id,x); });
             locales.forEach(x=>{ if(x&&x.id&&!porId.has(x.id)) porId.set(x.id,x); });
-            const fus = Array.from(porId.values()).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,150);
+            const fus = _aplicarPurga('suep_navegacion', Array.from(porId.values())).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,150);
             localStorage.setItem('suep_navegacion', JSON.stringify(fus));
             if(window._adminView==='navegacion') renderNavegacionTable(document.getElementById('navSearch')?.value||'');
           }catch(_){}
