@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.7">
+<meta name="app-version" content="1.5.10">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -478,6 +478,15 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .fi{width:100%;padding:10px 13px;border-radius:10px;border:1.5px solid rgba(122,175,212,.2);background:rgba(255,255,255,.05);color:#c8dff0;font-size:13px;outline:none;transition:border-color .2s,background .2s;font-family:inherit}
 .fi:focus{border-color:#08111f;background:#fff;color:#111927}
 textarea.fi{resize:vertical;min-height:72px}
+/* ═══ Dictado por voz (micrófono en textos largos) ═══ */
+.ta-wrap{position:relative}
+.ta-wrap textarea.fi{padding-right:48px}
+.mic-btn{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:9px;border:1px solid rgba(122,175,212,.35);background:rgba(122,175,212,.12);color:#7aafd4;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;flex-shrink:0}
+.mic-btn:hover{background:rgba(122,175,212,.22)}
+.mic-btn.rec{background:rgba(220,60,60,.18);border-color:rgba(220,60,60,.55);color:#ff6b6b;animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,60,60,.45)}50%{box-shadow:0 0 0 7px rgba(220,60,60,0)}}
+.light-mode .mic-btn{border-color:rgba(21,49,79,.25);background:rgba(21,49,79,.06);color:#2a4a6b}
+.light-mode .mic-btn:hover{background:rgba(21,49,79,.12)}
 .modal-foot{padding:14px 22px 20px;display:flex;gap:8px;position:sticky;bottom:0;background:#0d1928;border-top:1px solid rgba(122,175,212,.15)}
 .btn-save{flex:1;padding:12px;border-radius:10px;border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;font-family:inherit}
 .btn-save:hover{transform:translateY(-1px)}
@@ -2148,10 +2157,10 @@ function iniciarSesion(user){
         duracion: '—',
         activo: true
       });
-      localStorage.setItem('suep_accesos', JSON.stringify(accesos));
+      localStorage.setItem('suep_accesos', JSON.stringify(accesos.slice(0,150)));
       localStorage.setItem('suep_acceso_actual', accId);
       // ✅ FIX: sincronizar registro de accesos a Supabase
-      if(typeof syncToSupabase === 'function') syncToSupabase('suep_accesos', accesos);
+      if(typeof syncToSupabase === 'function') syncToSupabase('suep_accesos', accesos.slice(0,150));
       migratePanol();
       seedOrganigrama();
       buildSidebar(); refreshBadge();
@@ -3230,7 +3239,10 @@ function renderMinuta(){
     </div>
 
     <div style="margin-bottom:11px">${label('Relato ✍️ (lo único que tenés que escribir)')}
-      <textarea id="min_relato" class="fi" style="min-height:130px" placeholder="Señor Director, llevo a su conocimiento que..." oninput="minutaUpdatePreview()">${_minEsc(relato)}</textarea>
+      <div class="ta-wrap">
+        <textarea id="min_relato" class="fi" style="min-height:130px" placeholder="Señor Director, llevo a su conocimiento que..." oninput="minutaUpdatePreview()">${_minEsc(relato)}</textarea>
+        <button type="button" class="mic-btn" id="mic_min_relato" title="Dictar por voz" onclick="dictar('min_relato',this,minutaUpdatePreview)">🎙️</button>
+      </div>
     </div>
 
     <div style="margin-bottom:6px">${label('Informa (firma)')}<input id="min_informa" class="fi" type="text" value="${_minEsc(informa)}" oninput="minutaUpdatePreview()"></div>
@@ -3575,10 +3587,31 @@ function setAlmuerzo(value){
   S.set('ALMUERZO','ALMUERZO',records);
   renderTable();
 }
+// ✅ Devuelve una URL de miniatura reducida para fotos guardadas en Supabase Storage.
+// Usa el transformador de imágenes de Supabase (render/image) que entrega una versión
+// chica (~unos pocos KB) en vez de la foto completa (cientos de KB). Para imágenes
+// base64 (fallback offline) o externas, devuelve el valor tal cual.
+function _imgThumb(url, px){
+  try{
+    if(!url || typeof url !== 'string') return url;
+    if(url.startsWith('data:')) return url; // base64: ya está en el registro, no hay descarga extra
+    if(url.includes('/storage/v1/object/public/')){
+      const u = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+      const sep = u.includes('?') ? '&' : '?';
+      return `${u}${sep}width=${px||120}&quality=55&resize=cover`;
+    }
+    return url;
+  }catch(e){ return url; }
+}
 function cell(f,v){
   if(f.type==='image'){
     if(!v) return '<span style="color:#2a4060">Sin imagen</span>';
-    return `<img src="${v}" style="height:38px;width:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid rgba(122,175,212,.2)" onclick="viewImg('${v}')" title="Ver imagen completa">`;
+    // ✅ AHORRO DE EGRESS: la miniatura de la tabla pide una versión chica (120px)
+    // a Supabase en vez de la imagen completa, y se descarga solo cuando aparece
+    // en pantalla (loading=lazy). La imagen completa se baja únicamente al hacer
+    // clic en viewImg(). Antes cada fila bajaba la foto entera en cada render.
+    const thumb = _imgThumb(v, 120);
+    return `<img src="${thumb}" loading="lazy" decoding="async" style="height:38px;width:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid rgba(122,175,212,.2)" onclick="viewImg('${v}')" title="Ver imagen completa">`;
   }
   if(v===undefined||v===null||v==='')return'<span style="color:#2a4060">—</span>';
   // Badges para exámenes de reclutamiento
@@ -3836,7 +3869,10 @@ function buildForm(data){
             ).join('')}
           </select>`
         :f.type==='textarea'
-        ?`<textarea class="fi" id="f_${f.key}" placeholder="${f.label}">${data[f.key]||''}</textarea>`
+        ?`<div class="ta-wrap">
+            <textarea class="fi" id="f_${f.key}" placeholder="${f.label}">${data[f.key]||''}</textarea>
+            <button type="button" class="mic-btn" id="mic_f_${f.key}" title="Dictar por voz" onclick="dictar('f_${f.key}',this)">🎙️</button>
+          </div>`
         :f.type==='image'
         ?`<div>
             <input type="file" accept="image/*" capture="environment" class="fi" id="f_${f.key}_cam"
@@ -4148,7 +4184,9 @@ function viewDetail(recordId){
     if(v === undefined || v === null || v === ''){
       display = '<span style="color:#5a7a9a;font-style:italic">— sin dato —</span>';
     } else if(f.type === 'image'){
-      display = `<img src="${v}" style="max-width:100%;max-height:280px;border-radius:10px;border:1px solid rgba(122,175,212,.2);display:block;margin-top:4px;cursor:zoom-in" onclick="viewImg('${v}')">`;
+      // ✅ AHORRO DE EGRESS: en el detalle se muestra una versión mediana (640px);
+      // la imagen completa solo se baja al hacer clic para ampliar (viewImg).
+      display = `<img src="${_imgThumb(v, 640)}" loading="lazy" decoding="async" style="max-width:100%;max-height:280px;border-radius:10px;border:1px solid rgba(122,175,212,.2);display:block;margin-top:4px;cursor:zoom-in" onclick="viewImg('${v}')">`;
     } else if(f.type === 'textarea'){
       display = `<div style="white-space:pre-wrap;word-break:break-word;line-height:1.5;color:#dbe6f0">${escape(v)}</div>`;
     } else {
@@ -4856,12 +4894,71 @@ function _actualizarLabelTema(esClaro){
   if(label) label.textContent = esClaro ? 'Volver al modo oscuro' : 'Activar modo claro';
 }
 
-// Cargar el tema elegido al iniciar
+// Cargar el tema elegido al iniciar.
+// ✅ El modo OSCURO (azul institucional) es el diseño base y predeterminado.
+// El modo claro es opcional: solo se activa si el usuario lo eligió explícitamente
+// en este dispositivo (guardado como 'true'). Cualquier otro valor → modo oscuro.
 window.addEventListener('DOMContentLoaded', ()=>{
   const esClaro = localStorage.getItem('suep_light_mode') === 'true';
+  document.body.classList.remove('light-mode');      // siempre partimos del oscuro
   if(esClaro) document.body.classList.add('light-mode');
   _actualizarLabelTema(esClaro);
 });
+
+// ═══ Dictado por voz (micrófono) para textos largos: minutas, novedades, etc. ═══
+let _recoActivo = null;
+function dictar(targetId, btn, cb){
+  const ta = document.getElementById(targetId);
+  if(!ta) return;
+  // Si este mismo botón ya está grabando, lo frenamos
+  if(_recoActivo && _recoActivo._btn === btn){ try{_recoActivo.stop();}catch(e){} return; }
+  // Si había otro dictado activo, lo cortamos primero
+  if(_recoActivo){ try{_recoActivo.stop();}catch(e){} _recoActivo=null; }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    alert('Este navegador no permite dictado por voz.\n\nUsá Chrome en Android o en la PC para dictar las minutas y novedades.');
+    return;
+  }
+  const reco = new SR();
+  reco.lang = 'es-AR';
+  reco.continuous = true;
+  reco.interimResults = true;
+  reco._btn = btn;
+  reco._base = ta.value;   // lo que ya estaba escrito antes de dictar
+  reco._final = '';        // texto ya reconocido en firme
+  _recoActivo = reco;
+
+  btn.classList.add('rec');
+  btn.textContent = '⏹️';
+  btn.title = 'Tocá para detener el dictado';
+
+  reco.onresult = (ev)=>{
+    let interim = '';
+    for(let i=ev.resultIndex; i<ev.results.length; i++){
+      const txt = ev.results[i][0].transcript;
+      if(ev.results[i].isFinal) reco._final += txt;
+      else interim += txt;
+    }
+    const base = reco._base;
+    const sep = (base && !/\s$/.test(base)) ? ' ' : '';
+    ta.value = base + sep + reco._final + interim;
+    if(cb) cb();
+  };
+  reco.onerror = (ev)=>{
+    if(ev.error==='not-allowed' || ev.error==='service-not-allowed'){
+      alert('Necesito permiso para usar el micrófono.\n\nActivalo en el navegador y volvé a intentar.');
+    }
+  };
+  reco.onend = ()=>{
+    btn.classList.remove('rec');
+    btn.textContent = '🎙️';
+    btn.title = 'Dictar por voz';
+    if(_recoActivo === reco) _recoActivo = null;
+    if(cb) cb();
+  };
+  try{ reco.start(); }catch(e){}
+}
 
 // ── Modal Cambiar mi contraseña ──
 function openChangePwd(){
@@ -5913,10 +6010,20 @@ async function flushWrites(){
 // primero y reemplazaba el módulo local con la copia de la nube (que todavía
 // no tenía el registro cargado sin internet) → el registro se perdía. Ahora
 // esas claves se conservan tal cual hasta que flushPendingSync las fusione y suba.
-async function pullAllFromSupabase(){
-  syncStatus('☁️ Descargando datos...', '#fbbf24');
+// Cursor de sincronización: el updated_at más nuevo que ya bajamos. Sirve para
+// pedir SOLO lo que cambió desde la última vez (baja el consumo de "Salida"/egress).
+function _getPullCursor(){ return localStorage.getItem('suep_pull_cursor') || ''; }
+function _setPullCursor(v){ if(v) localStorage.setItem('suep_pull_cursor', v); }
+
+async function pullAllFromSupabase(opts){
+  // full = bajar TODO (primera vez, o reconciliación forzada). Si no, bajar solo lo nuevo.
+  const cursor = _getPullCursor();
+  const full = !!(opts && opts.full) || !cursor;
+  syncStatus(full ? '☁️ Descargando datos...' : '☁️ Sincronizando...', '#fbbf24');
   try{
-    const { data, error } = await clienteS.from('app_data').select('key,value,updated_at');
+    let consulta = clienteS.from('app_data').select('key,value,updated_at');
+    if(!full && cursor) consulta = consulta.gt('updated_at', cursor);
+    const { data, error } = await consulta;
     if(error){
       console.error('Error bajando de Supabase:', error);
       syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
@@ -5966,7 +6073,15 @@ async function pullAllFromSupabase(){
     // el login; el wrap viejo de _origPullAll nunca llegaba a engancharse porque
     // corría antes de que esta función existiera).
     if(typeof _mergeAllDynUsers === 'function'){ try{ _mergeAllDynUsers(); }catch(_){ } }
-    syncStatus('✓ Datos al día ('+(data?.length||0)+' claves)', '#34d399');
+    // Avanzar el cursor al updated_at más nuevo que bajamos (para la próxima vez pedir solo lo nuevo)
+    if(data && data.length){
+      let maxTs = cursor;
+      data.forEach(r=>{ if(r.updated_at && (!maxTs || r.updated_at > maxTs)) maxTs = r.updated_at; });
+      _setPullCursor(maxTs);
+    }
+    if(full) localStorage.setItem('suep_last_full', String(Date.now()));
+    const n = (data && data.length) || 0;
+    syncStatus(full ? ('✓ Datos al día ('+n+' claves)') : (n ? ('✓ '+n+' cambio'+(n!==1?'s':'')) : '✓ Sin cambios'), '#34d399');
     return true;
   }catch(err){
     console.error('Error de red al descargar:', err);
@@ -5984,8 +6099,20 @@ function subscribeRealtime(){
         (payload) => {
           const row = payload.new || payload.old;
           if(!row) return;
+          // Avanzar el cursor con cualquier cambio visto por realtime (propio o ajeno),
+          // así la próxima descarga incremental no vuelve a bajar lo que ya tenemos.
+          if(payload.new && payload.new.updated_at && typeof _setPullCursor==='function'){
+            const c = _getPullCursor(); if(!c || payload.new.updated_at > c) _setPullCursor(payload.new.updated_at);
+          }
           // Ignorar nuestras propias escrituras (vienen del mismo dispositivo)
           if(payload.new && payload.new.device_id === DEVICE_ID) return;
+          // ✅ AHORRO DE EGRESS (v1.5.10): los logs de auditoría (recorrido de usuarios
+          // y accesos) NO se sincronizan por realtime. Antes, cada vez que alguien
+          // cambiaba de pestaña, la lista entera (hasta 800 entradas, cientos de KB)
+          // se bajaba a los ~40 dispositivos. Eso era la principal fuga de "Salida".
+          // Estos logs solo le interesan al admin y se ven al abrir esa pantalla,
+          // que baja la versión fresca en ese momento (renderNavegacionTable/Accesos).
+          if(row.key === 'suep_navegacion' || row.key === 'suep_accesos') return;
           if(payload.eventType === 'DELETE'){
             localStorage.removeItem(row.key);
           } else if(row.key === 'suep_accesos' || row.key === 'suep_navegacion'){
@@ -6099,7 +6226,11 @@ window.doLogin = async function(){
 (function bajarAlArrancar(){
   const run = ()=>{
     if(typeof clienteS === 'undefined' || typeof pullAllFromSupabase !== 'function') return;
-    pullAllFromSupabase().then(ok=>{
+    // Descarga COMPLETA como mucho una vez por día (reconciliación). El resto del
+    // tiempo solo baja lo que cambió, para no gastar "Salida" de Supabase de gusto.
+    const ultimoFull = +localStorage.getItem('suep_last_full') || 0;
+    const necesitaFull = (Date.now() - ultimoFull) > 24*60*60*1000;
+    pullAllFromSupabase({full: necesitaFull}).then(ok=>{
       if(ok){
         // Si ya hay un usuario en pantalla (sesión activa), refrescar la tabla visible
         if(typeof CU !== 'undefined' && CU){
@@ -6122,10 +6253,11 @@ var _lastVisPull = 0;
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden) return;
   if(typeof clienteS === 'undefined' || typeof pullAllFromSupabase !== 'function') return;
-  // Freno: si ya bajamos todo hace menos de 15s, no repetimos la descarga
-  // completa (evita re-descargas al ir y volver entre pestañas/apps).
+  // Freno: con realtime activo, basta con sincronizar (solo lo nuevo) cada pocos
+  // minutos al volver. Antes bajaba TODO cada 15s al ir y volver de WhatsApp, lo
+  // que disparaba el consumo de "Salida". Ahora: incremental y como mucho cada 3 min.
   var _ahora = Date.now();
-  if(_ahora - _lastVisPull < 15000) return;
+  if(_ahora - _lastVisPull < 180000) return;
   _lastVisPull = _ahora;
   pullAllFromSupabase().then(ok=>{
     if(ok && typeof CU !== 'undefined' && CU){
@@ -6202,7 +6334,7 @@ window.reconstruirNotifsFaltantes = reconstruirNotifsFaltantes;
 
 // ─── Función para refrescar manualmente desde Supabase ───
 window.recargarDesdeNube = async function(){
-  const ok = await pullAllFromSupabase();
+  const ok = await pullAllFromSupabase({full:true});
   if(ok){
     if(typeof buildSidebar==='function') buildSidebar();
     if(typeof refreshBadge==='function') refreshBadge();
@@ -6368,9 +6500,19 @@ function logNav(){
     ts: ahora,
     fecha: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit',second:'2-digit'})
   });
-  log = log.slice(0, 800); // tope para no crecer infinito
+  log = log.slice(0, 150); // tope reducido: el recorrido es auditoría, no hace falta histórico enorme
   try{ localStorage.setItem('suep_navegacion', JSON.stringify(log)); }catch(_){}
-  if(typeof syncToSupabase === 'function') syncToSupabase('suep_navegacion', log);
+  // ✅ AHORRO DE EGRESS (v1.5.10): NO subimos la lista entera en cada cambio de
+  // pestaña. Antes esto movía cientos de KB por cada clic de cada usuario, ×40.
+  // Ahora se sube a la nube como mucho una vez cada 2 minutos por dispositivo;
+  // mientras tanto queda guardado local y se sube en el próximo envío permitido.
+  if(typeof syncToSupabase === 'function'){
+    const ultNavSync = +localStorage.getItem('suep_nav_last_sync') || 0;
+    if(ahora - ultNavSync > 120000){
+      localStorage.setItem('suep_nav_last_sync', String(ahora));
+      syncToSupabase('suep_navegacion', log);
+    }
+  }
 }
 
 function renderNavegacionTable(q){
@@ -6450,6 +6592,25 @@ function showNavegacion(){
   document.getElementById('modTabs').innerHTML='';
   const st=document.getElementById('subTabs'); if(st){ st.classList.remove('visible'); st.innerHTML=''; }
   renderNavegacionTable('');
+  // ✅ Como el recorrido ya NO llega por realtime (para ahorrar egress), al abrir
+  // esta pantalla el admin baja una vez la versión actual de la nube y la fusiona.
+  if(typeof clienteS !== 'undefined'){
+    clienteS.from('app_data').select('value').eq('key','suep_navegacion').maybeSingle()
+      .then(({data})=>{
+        if(data && Array.isArray(data.value)){
+          try{
+            const remotos = data.value;
+            const locales = JSON.parse(localStorage.getItem('suep_navegacion')||'[]');
+            const porId = new Map();
+            remotos.forEach(x=>{ if(x&&x.id) porId.set(x.id,x); });
+            locales.forEach(x=>{ if(x&&x.id&&!porId.has(x.id)) porId.set(x.id,x); });
+            const fus = Array.from(porId.values()).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,150);
+            localStorage.setItem('suep_navegacion', JSON.stringify(fus));
+            if(window._adminView==='navegacion') renderNavegacionTable(document.getElementById('navSearch')?.value||'');
+          }catch(_){}
+        }
+      }).catch(()=>{});
+  }
   closeSidebar();
 }
 
