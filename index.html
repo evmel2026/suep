@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.10">
+<meta name="app-version" content="1.5.12">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2674,6 +2674,33 @@ function renderTable(searchOverride){
     if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
     const st = DATE_FOLDERS[modKey];
     const buscando = palabras.length > 0; // con búsqueda activa se abren todas las carpetas
+    // ✅ Si el módulo usa número correlativo (auto:'yearly'), ordenamos cada
+    // carpeta por ese número de menor a mayor, así no quedan fuera de orden
+    // los que se cargaron a destiempo (ej.: un 1340 cargado después del 1345).
+    // Cuando dos registros tienen el MISMO número (duplicado), desempatamos por
+    // la hora de carga: queda primero el que se cargó más temprano.
+    const campoNum = fields.find(f=>f.auto==='yearly');
+    if(campoNum){
+      const _n = r => { const v = parseInt(String(r[campoNum.key]||'').replace(/\D/g,''),10); return isNaN(v) ? Infinity : v; };
+      const _cargaMs = r => {
+        // 1) _ts_new es un Date.now() en ms guardado al crear el registro
+        if(typeof r._ts_new === 'number') return r._ts_new;
+        // 2) _ts es "dd/mm/yyyy, HH:MM" (es-AR, 24h) → lo pasamos a ms
+        const m = String(r._ts||'').match(/(\d{2})\/(\d{2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})/);
+        if(m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime();
+        // 3) el _id arranca con Date.now() en base 36 → último recurso
+        const p = String(r._id||'').split(/[^0-9a-z]/i)[0];
+        const t = parseInt(p, 36);
+        return isNaN(t) ? 0 : t;
+      };
+      Object.keys(grupos).forEach(k=>{
+        grupos[k] = grupos[k].slice().sort((a,b)=>{
+          const dn = _n(a) - _n(b);
+          if(dn !== 0) return dn;
+          return _cargaMs(a) - _cargaMs(b); // mismo número → más temprano primero
+        });
+      });
+    }
     bodyHTML = fechas.map(iso=>{
       const g = grupos[iso];
       // La carpeta más reciente queda abierta por defecto (salvo que el usuario la haya cerrado)
@@ -4404,11 +4431,13 @@ async function saveRecord(){
     try{
       if(typeof syncStatus==='function') syncStatus('🔢 Reservando número...', '#fbbf24');
       let base = S.get(CS.id, CM.id);
+      let verificadoNube = false; // ¿pudimos contrastar contra la versión de la nube?
       if(typeof _fetchModuloFresco === 'function'){
         const fresco = await _fetchModuloFresco(CS.id, CM.id);
         if(fresco !== null && typeof _mergeRegistros === 'function'){
           base = _mergeRegistros(fresco, S.get(CS.id, CM.id), null);
           try{ _S_set_local(CS.id, CM.id, base); }catch(_){}
+          verificadoNube = true;
         }
       }
       const year = new Date().getFullYear();
@@ -4428,6 +4457,16 @@ async function saveRecord(){
         let n = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
         while(usados.has(n)) n++;
         data[autoField.key] = String(n);
+      }
+      // ⚠️ ANTI-DUPLICADO: si NO pudimos verificar contra la nube (sin internet o la
+      // nube no respondió), el número asignado puede chocar con el que otra persona
+      // está cargando al mismo tiempo desde otro dispositivo. Avisamos antes de guardar.
+      if(!verificadoNube){
+        const numAsignado = data[autoField.key];
+        if(!confirm('📴 No se pudo verificar el número '+numAsignado+' contra la nube (parece que estás sin conexión).\n\nSi otra persona está cargando al mismo tiempo desde otro dispositivo, el número podría repetirse.\n\n• Aceptar = guardar igual (revisá luego que no haya quedado repetido)\n• Cancelar = esperar a tener buena conexión y volver a intentar')){
+          if(typeof syncStatus==='function') syncStatus('Cancelado — sin conexión segura', '#fbbf24');
+          return;
+        }
       }
     }catch(e){ console.warn('Sin conexión al reservar número, se usa el local:', e); }
   }
@@ -6680,6 +6719,12 @@ function showNavegacion(){
 // ─── Detector visual de NÚMEROS REPETIDOS (mismo año) ───
 function _marcarNumerosRepetidos(){
   if(!CS || !CM || !Array.isArray(CM.fields)) return;
+  // El aviso de números repetidos es solo para las administradoras: el resto
+  // de usuarios carga cronológicamente y no necesita ver esta alerta interna.
+  if(typeof CU === 'undefined' || !CU || CU.permiso !== 'admin'){
+    const v = document.getElementById('avisoRepetidos'); if(v) v.remove();
+    return;
+  }
   const campo = CM.fields.find(f=>f.auto==='yearly');
   if(!campo) return;
   const area = document.getElementById('dataArea');
