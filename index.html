@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.12">
+<meta name="app-version" content="1.5.14">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4454,9 +4454,33 @@ async function saveRecord(){
           }
         }
       } else {
-        let n = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
-        while(usados.has(n)) n++;
-        data[autoField.key] = String(n);
+        // ✅ RESERVA ATÓMICA EN SUPABASE (v1.5.13): pedimos a la base que nos
+        // entregue el próximo número de forma atómica. Si dos personas cargan en el
+        // mismo instante desde distintos dispositivos, la base le da a cada una un
+        // número distinto (una el N, la otra el N+1). NUNCA el mismo. Esta es la
+        // única forma de garantizar que un correlativo no se repita jamás.
+        let reservadoOk = false;
+        if(typeof clienteS !== 'undefined' && verificadoNube){
+          try{
+            const year = new Date().getFullYear();
+            const contadorKey = 'contador_' + CS.id + '_' + CM.id + '_' + year;
+            const piso = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
+            const { data: numReservado, error: errNum } = await _conTimeout(
+              clienteS.rpc('suep_reservar_numero', { p_contador: contadorKey, p_piso: piso }), 8000);
+            if(!errNum && numReservado != null){
+              let n = parseInt(numReservado) || piso;
+              while(usados.has(n)) n++; // por las dudas, contra un histórico migrado
+              data[autoField.key] = String(n);
+              reservadoOk = true;
+            }
+          }catch(e){ console.warn('No se pudo reservar número atómico, se usa el local:', e); }
+        }
+        if(!reservadoOk){
+          // Fallback local (sin internet o si la RPC no existe todavía)
+          let n = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
+          while(usados.has(n)) n++;
+          data[autoField.key] = String(n);
+        }
       }
       // ⚠️ ANTI-DUPLICADO: si NO pudimos verificar contra la nube (sin internet o la
       // nube no respondió), el número asignado puede chocar con el que otra persona
@@ -6090,6 +6114,12 @@ async function pullAllFromSupabase(opts){
             const remotas = Array.isArray(row.value) ? row.value : [];
             const fusionadas = _fusionarNotifs(remotas, S.gn());
             localStorage.setItem('suep_notifs', JSON.stringify(fusionadas));
+            // ✅ FIX v1.5.13: refrescar la UI en el acto. Antes, al marcar una
+            // notificación leída en un dispositivo, el otro recibía el cambio por
+            // realtime y lo guardaba, pero NO actualizaba el badge ni el panel, así
+            // que se seguía viendo como no leída hasta recargar la app.
+            try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
+            try{ if(typeof ntOpen!=='undefined' && ntOpen && typeof renderNotifs==='function') renderNotifs(); }catch(_){}
           } else if(row.key === 'suep_accesos' || row.key === 'suep_navegacion'){
             // ✅ FIX v1.5.3: logs append-only multiusuario → fusionar por id para no
             // perder registros locales aún sin subir cuando se vuelve a la app.
