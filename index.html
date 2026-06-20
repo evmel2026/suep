@@ -885,6 +885,13 @@ textarea.fi{resize:vertical;min-height:72px}
       <span class="cfg-sub">Solo administradoras</span>
     </div>
   </button>
+  <button class="cfg-item admin" id="cfgMigrarItem" onclick="migrarAdjuntosStorage()" style="display:none">
+    <span class="cfg-icon">📦</span>
+    <div class="cfg-item-content">
+      <span>Migrar adjuntos a la nube</span>
+      <span class="cfg-sub">Libera espacio del dispositivo · solo administradoras</span>
+    </div>
+  </button>
 </div>
 
 <!-- ████ IMPRESIÓN DE REGISTROS ████ -->
@@ -2166,6 +2173,7 @@ function iniciarSesion(user){
       buildSidebar(); refreshBadge();
       // Mostrar opción admin del menú de configuración solo a administradoras
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
+      var _cfgMig = document.getElementById('cfgMigrarItem'); if(_cfgMig) _cfgMig.style.display = (user.permiso==='admin') ? 'flex' : 'none';
       // Ofrecer registrar huella tras login con contraseña (solo en celu compatible)
       ofrecerRegistroHuella(user.usuario);
 }
@@ -4114,6 +4122,94 @@ function processAttachment(file){
     };
     reader.readAsDataURL(file);
   });
+}
+
+// ══════════════════════════════════════════════
+// MIGRADOR DE ADJUNTOS: base64 (nube + dispositivo) → Supabase Storage
+// Botón en Configuración (solo admin). Idempotente y seguro: salta los que ya
+// tienen URL. Lee de la nube (fuente completa), sube los archivos al bucket,
+// reemplaza el base64 por la URL en la nube y en el dispositivo, y libera espacio.
+// ══════════════════════════════════════════════
+async function migrarAdjuntosStorage(){
+  if(typeof clienteS === 'undefined'){ alert('No hay conexión con Supabase en esta página. Abrí SUEP y volvé a intentar.'); return; }
+  if(!confirm('Esto sube a la nube todos los archivos adjuntos que hoy están guardados como texto pesado dentro de los registros, y libera espacio del dispositivo.\n\nNo se pierde ningún dato: todo queda respaldado en la nube. Según cuántos archivos haya, puede tardar un rato.\n\n¿Empezar la migración?')) return;
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(8,17,31,.95);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="max-width:480px;width:100%;background:#0f1c2e;border:1px solid rgba(122,175,212,.25);border-radius:14px;padding:22px;color:#c8d8e8;font-family:system-ui,sans-serif">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:10px">📦 Migrando adjuntos a la nube…</div>'
+    + '<div id="migEstado" style="font-size:13px;line-height:1.6;color:#9fc0db;white-space:pre-wrap">Leyendo datos…</div>'
+    + '<div style="height:10px;background:rgba(122,175,212,.15);border-radius:6px;margin-top:14px;overflow:hidden"><div id="migBar" style="height:100%;width:0%;background:#34d399;transition:width .25s"></div></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  const $est = ov.querySelector('#migEstado');
+  const $bar = ov.querySelector('#migBar');
+  const log = (t)=>{ $est.textContent = t; };
+  const toBlob = async (durl)=> (await fetch(durl)).blob();
+
+  try{
+    const { data: rows, error } = await clienteS.from('app_data').select('key,value');
+    if(error){ log('❌ No pude leer los datos de la nube:\n'+(error.message||error)); setTimeout(()=>ov.remove(), 6000); return; }
+
+    let totalPend = 0;
+    for(const row of rows){
+      const arr = row.value;
+      if(!Array.isArray(arr)) continue;
+      for(const rec of arr){
+        if(!rec || !Array.isArray(rec._attachments)) continue;
+        for(const att of rec._attachments){ if(att && att.data && !att.url) totalPend++; }
+      }
+    }
+    if(totalPend === 0){ log('✅ No hay nada para migrar.\nTodos los adjuntos ya están en la nube.'); $bar.style.width='100%'; setTimeout(()=>ov.remove(), 2800); return; }
+
+    let hechos=0, ok=0, nMod=0, nErr=0;
+    for(const row of rows){
+      const key = row.key;
+      const arr = row.value;
+      if(!Array.isArray(arr)) continue;
+      let cambiado=false;
+      for(const rec of arr){
+        if(!rec || !Array.isArray(rec._attachments)) continue;
+        for(let i=0;i<rec._attachments.length;i++){
+          const att = rec._attachments[i];
+          if(!att || att.url || !att.data) continue;
+          try{
+            const blob = await toBlob(att.data);
+            const nombre = (att.name||'archivo').replace(/[^\w.\-]+/g,'_');
+            const path = 'attachments/'+Date.now()+'_'+Math.random().toString(36).slice(2,7)+'_'+nombre;
+            const { error: e1 } = await clienteS.storage.from('suep-files').upload(path, blob, { contentType: att.type||blob.type||'application/octet-stream', upsert:true });
+            hechos++;
+            if(e1){
+              const msg = (e1.message||'').toLowerCase();
+              if(msg.includes('bucket') || msg.includes('not found')){
+                log('❌ Todavía no está creado el almacenamiento en la nube.\n\nHay que correr primero el SQL en Supabase (el bucket "suep-files"). Cuando esté hecho, volvé a apretar el botón.');
+                setTimeout(()=>ov.remove(), 8000);
+                return;
+              }
+              nErr++; $bar.style.width = Math.round(hechos/totalPend*100)+'%'; continue;
+            }
+            const { data: u } = clienteS.storage.from('suep-files').getPublicUrl(path);
+            rec._attachments[i] = { name:att.name, type:att.type, size:att.size, url:u.publicUrl, _storage:true };
+            cambiado=true; ok++;
+            $bar.style.width = Math.round(hechos/totalPend*100)+'%';
+            log('Subiendo… '+hechos+' de '+totalPend+' archivos\nÚltimo: '+(att.name||'archivo'));
+          }catch(e){ hechos++; nErr++; $bar.style.width = Math.round(hechos/totalPend*100)+'%'; }
+        }
+      }
+      if(cambiado){
+        const { error: e2 } = await clienteS.from('app_data').upsert([{ key:key, value:arr, device_id:(typeof DEVICE_ID!=='undefined'?DEVICE_ID:null), updated_at:new Date().toISOString() }], { onConflict:'key' });
+        if(e2){ nErr++; }
+        else { nMod++; try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(_){ } }
+      }
+    }
+
+    $bar.style.width='100%';
+    log('🏁 Listo.\nArchivos migrados: '+ok+'\nMódulos actualizados: '+nMod+(nErr? '\nErrores: '+nErr : '')+'\n\nLa app se va a recargar para liberar el espacio.');
+    setTimeout(()=>{ location.reload(); }, 3800);
+  }catch(e){
+    log('❌ Ocurrió un error inesperado:\n'+(e && e.message ? e.message : e));
+    setTimeout(()=>ov.remove(), 7000);
+  }
 }
 
 function attIcon(att){
