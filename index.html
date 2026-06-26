@@ -5752,9 +5752,23 @@ function syncStatus(msg, color){
   }
   el.textContent = msg;
   if(color) el.style.color = color;
+  el.style.display = 'block';
   el.style.opacity = '1';
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.opacity = '0.35'; }, 2500);
+  clearTimeout(el._t); clearTimeout(el._t2);
+  const exito = /^✓/.test(msg) || /^📋/.test(msg);
+  if(exito){
+    // Mensaje de éxito: se desvanece y se OCULTA del todo, así no queda el
+    // cartelito "guardando/guardado" pegado en pantalla. (Solo afecta la
+    // presentación del aviso; no cambia cómo se guarda ni se sincroniza.)
+    el._t = setTimeout(()=>{
+      el.style.opacity = '0';
+      el._t2 = setTimeout(()=>{ if(el.style.opacity==='0') el.style.display='none'; }, 600);
+    }, 3000);
+  } else {
+    // Avisos / errores / "sin conexión": quedan tenues pero visibles para no
+    // perder de vista que hay algo pendiente.
+    el._t = setTimeout(()=>{ el.style.opacity = '0.4'; }, 2800);
+  }
 }
 
 // ─── Sobreescribimos S (storage) para que también escriba en Supabase ───
@@ -7033,6 +7047,24 @@ function _expEstado(r){
 function _expNumOrden(r){ const n = parseInt(r.numero,10); return isNaN(n) ? (r.numero||'') : String(n).padStart(3,'0'); }
 function _expFechaCorta(f){ const d=_expParseFecha(f); if(!d) return f? _expEsc(f):'—'; const p=x=>String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
 
+// ─── Carpetas por mes (agrupa por la fecha de ENTRADA del expediente) ───
+const EXP_MESES = { abiertos:new Set(), cerrados:new Set(), _reciente:null };
+const _EXP_MESNOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function _expMesKey(r){ const f=_expParseFecha(r.fecha); if(!f) return 'Sin fecha'; return f.getFullYear()+'-'+String(f.getMonth()+1).padStart(2,'0'); }
+function _expMesLabel(k){ if(k==='Sin fecha') return 'Sin fecha'; const p=k.split('-'); const mi=parseInt(p[1],10)-1; return (_EXP_MESNOM[mi]||p[1])+' '+p[0]; }
+function _expMesAbierto(k){ if(EXP_MESES.abiertos.has(k)) return true; if(EXP_MESES.cerrados.has(k)) return false; return k===EXP_MESES._reciente; }
+function expToggleMes(k){
+  if(_expMesAbierto(k)){ EXP_MESES.abiertos.delete(k); EXP_MESES.cerrados.add(k); }
+  else { EXP_MESES.cerrados.delete(k); EXP_MESES.abiertos.add(k); }
+  renderTable();
+}
+function _expReaplicarCarpetas(){
+  document.querySelectorAll('.exp-table tbody[data-mes]').forEach(tb=>{
+    tb.style.display = _expMesAbierto(tb.getAttribute('data-mes')) ? '' : 'none';
+  });
+  document.querySelectorAll('.exp-table tbody.exp-folder').forEach(h=>{ h.style.display=''; });
+}
+
 async function expProximoNumero(){
   let lista = _expRows();
   try{
@@ -7084,6 +7116,11 @@ function expEnsureEstilos(){
   .exp-field b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#a78bfa;margin-bottom:3px}
   .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .exp-foot{margin-top:8px;font-size:11px;color:#64748b}
+  /* Carpetas por mes */
+  .exp-folder td{background:rgba(122,175,212,.10);border-top:1px solid rgba(122,175,212,.22);font-weight:700;color:#cfe3f5;font-size:12.5px;cursor:pointer;padding:10px 12px;user-select:none}
+  .exp-folder:hover td{background:rgba(122,175,212,.17)}
+  .exp-fchev{color:#7aafd4;margin-right:2px}
+  .exp-fcount{font-size:10px;color:#7aafd4;background:rgba(122,175,212,.14);padding:1px 8px;border-radius:10px;margin-left:6px}
   /* Barra de acciones dentro del detalle (siempre visible y tocable en el celu) */
   .exp-detacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(124,58,237,.3)}
   .exp-da{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;color:#fff}
@@ -7133,6 +7170,10 @@ function expEnsureEstilos(){
   .light-mode .exp-detalle td{background:#f5f8fb}
   .light-mode .exp-aviso{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.35);color:#b91c1c}
   .light-mode .exp-aviso small{color:#b45309}
+  .light-mode .exp-folder td{background:#e8eff6;border-top-color:#d4e0ec;color:#22405e}
+  .light-mode .exp-folder:hover td{background:#dde9f3}
+  .light-mode .exp-fchev{color:#4a6a88}
+  .light-mode .exp-fcount{background:rgba(21,49,79,.07);color:#33536f}
   .light-mode .exp-field{background:rgba(124,58,237,.06);color:#33506b}
   .light-mode .exp-field b{color:#6d28d9}
   .light-mode .exp-da-lock{color:#5a7a9a}
@@ -7183,7 +7224,7 @@ function renderExpedientes(){
       <div style="text-align:center;color:#94a3b8;padding:40px 12px">Todavía no hay expedientes cargados.</div></div>`;
   }
 
-  const filas = rows.map(r=>{
+  const filaTbody = r=>{
     const est = _expEstado(r);
     const editable = _expEditablePorUsuario(r);
     const imp = r._importado ? ' 📖' : '';
@@ -7221,7 +7262,9 @@ function renderExpedientes(){
       <div class="exp-foot">${r._importado ? '📖 Importado del libro físico · ' : ''}${r._por ? 'Cargado por: '+_expEsc(r._por) : ''}</div>
       <div class="exp-detacts">${acts}</div>`;
 
-    return `<tbody data-buscar="${buscable}">
+    const mes = _expMesKey(r);
+    const oculto = _expMesAbierto(mes) ? '' : ' style="display:none"';
+    return `<tbody data-buscar="${buscable}" data-mes="${mes}"${oculto}>
       <tr class="exp-row" onclick="expToggleDetalle('${r._id}')">
         <td class="exp-num"><span class="exp-chev" id="expchev_${r._id}">▶</span> ${_expNumOrden(r)}${imp}</td>
         <td>${_expFechaCorta(r.fecha)}</td>
@@ -7230,6 +7273,20 @@ function renderExpedientes(){
       </tr>
       <tr class="exp-detalle" id="expdet_${r._id}" style="display:none"><td colspan="4">${detalle}</td></tr>
     </tbody>`;
+  };
+
+  // Agrupar por mes de la fecha de ENTRADA (carpetas, como las otras pestañas)
+  const grupos = {};
+  rows.forEach(r=>{ const k=_expMesKey(r); (grupos[k]=grupos[k]||[]).push(r); });
+  // Meses de más reciente a más viejo; "Sin fecha" al final
+  const claves = Object.keys(grupos).sort((a,b)=>{ if(a==='Sin fecha')return 1; if(b==='Sin fecha')return -1; return b.localeCompare(a); });
+  EXP_MESES._reciente = claves.find(k=>k!=='Sin fecha') || claves[0] || null;
+  const filas = claves.map(k=>{
+    const g = grupos[k];
+    const abierto = _expMesAbierto(k);
+    const header = `<tbody class="exp-folder" data-folder="${k}"><tr onclick="expToggleMes('${k}')">
+      <td colspan="4"><span class="exp-fchev">${abierto?'▾':'▸'}</span> ${abierto?'📂':'📁'} ${_expMesLabel(k)} <span class="exp-fcount">${g.length}</span></td></tr></tbody>`;
+    return header + g.map(filaTbody).join('');
   }).join('');
 
   return `<div class="exp-wrap">${aviso}${head}
@@ -7245,7 +7302,7 @@ function renderExpedientes(){
         ${filas}
       </table>
     </div>
-    <div class="exp-foot">Tocá una fila para ver el detalle completo y los botones de Editar / Borrar / Cargar salida. 📖 = importado del libro físico · 🔒 = fuera del plazo de ${EXP_VENTANA_DIAS} días.</div>
+    <div class="exp-foot">Los expedientes están en carpetas por mes (tocá el mes para abrir/cerrar). Tocá una fila para ver el detalle y los botones de Editar / Borrar / Cargar salida. 📖 = importado del libro físico · 🔒 = fuera del plazo de ${EXP_VENTANA_DIAS} días.</div>
   </div>`;
 }
 
@@ -7260,9 +7317,12 @@ function expToggleDetalle(id){
 
 function expFiltrar(q){
   const t = String(q||'').toLowerCase().trim();
+  if(!t){ _expReaplicarCarpetas(); return; } // sin búsqueda: respetar carpetas abiertas/cerradas
+  // Con búsqueda: mostrar las coincidencias de cualquier mes y mantener visibles las carpetas
   document.querySelectorAll('.exp-table tbody[data-buscar]').forEach(tb=>{
-    tb.style.display = (!t || tb.getAttribute('data-buscar').includes(t)) ? '' : 'none';
+    tb.style.display = tb.getAttribute('data-buscar').includes(t) ? '' : 'none';
   });
+  document.querySelectorAll('.exp-table tbody.exp-folder').forEach(h=>{ h.style.display=''; });
 }
 
 // ─────────────────────────── MODAL PROPIO ───────────────────────────
