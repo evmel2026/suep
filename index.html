@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.14">
+<meta name="app-version" content="1.5.15">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1156,6 +1156,43 @@ const USERS = [
 ];
 
 // ══════════════════════════════════════════════
+// LIBRO DE EXPEDIENTES — Lista de acceso a la pestaña
+// ══════════════════════════════════════════════
+// Las administradoras (permiso:'admin') SIEMPRE tienen acceso total a la pestaña
+// "Libro de Expedientes" (crean, editan cualquier campo, borran y reciben los avisos
+// de salidas vencidas). Acá se agregan los OTROS usuarios que también pueden ver la
+// pestaña y cargar la SALIDA de un expediente (solo dentro de los 10 días). Poné el
+// "usuario" exacto (el de la lista USERS de arriba), uno por línea. Por ejemplo:
+//   'sergio.bascur', 'juana.catricura'
+// Mientras esté vacía, solo las administradoras ven el Libro de Expedientes.
+// ─── ACCESO AL LIBRO DE EXPEDIENTES (definitivo) ───
+// Las administradoras (permiso:'admin' → Eliana Velázquez y Melina La Fuente) tienen
+// CONTROL ABSOLUTO: ver, crear, editar, borrar, recibir el aviso de los 10 días y cargar
+// la salida fuera de plazo. NO hace falta listarlas acá.
+// Los usuarios de abajo CARGAN (crean expediente y cargan la salida) pero NO editan, y
+// pasados los 10 días sin salida quedan bloqueados hasta que una administradora la cargue.
+const EXPEDIENTES_ACCESO = [
+  'sergio.bascur',     // Bascur Sergio
+  'marcos.blanco',     // Blanco Marcos
+  'elias.munoz',       // Muñoz Elías
+  'adriana.sanchez',   // Sánchez Adriana
+  'ariel.cumillan',    // Cumillan Ariel
+  'nahuel.calderon',   // Calderón Nahuel
+  'micaela.castillo',  // Castillo Micaela
+  'daniela.euliarte',  // Euliarte Daniela
+  'juan.yanez',        // Yáñez Juan
+  'yoseli.romero',     // Romero Yoseli
+  'pablo.quevedo',     // Quevedo Pablo
+  'juana.catricura',   // Catricura Juana
+  'giuliana.escobar',  // Escobar Giuliana
+];
+// ¿El usuario actual puede VER la pestaña Libro de Expedientes?
+function _expTieneAcceso(){
+  if(typeof CU === 'undefined' || !CU) return false;
+  return CU.permiso === 'admin' || EXPEDIENTES_ACCESO.includes(CU.usuario);
+}
+
+// ══════════════════════════════════════════════
 // DEFINICIÓN SECTORES Y MÓDULOS
 // ══════════════════════════════════════════════
 const SECTORS = [
@@ -1693,6 +1730,28 @@ const SECTORS = [
     ]},
   ]},
 
+  // ─── LIBRO DE EXPEDIENTES (acceso restringido: administradoras + lista EXPEDIENTES_ACCESO) ───
+  // custom:'expedientes' → usa la vista propia renderExpedientes(). restringido:true →
+  // NO se muestra a todos aunque sea custom; la visibilidad la decide _expTieneAcceso().
+  { id:'EXPEDIENTES', name:'Libro de Expedientes', icon:'📚', color:'#7c3aed', bg:'#ede9fe', custom:'expedientes', restringido:true, modules:[
+    { id:'EXPEDIENTES', name:'Libro de Expedientes', fields:[
+      // ENTRADA
+      {key:'numero',      label:'N° de Orden',  type:'text', auto:'yearly', start:1},
+      {key:'fecha',       label:'Fecha',        type:'date'},
+      {key:'procedencia', label:'Procedencia',  type:'text'},
+      {key:'expNumero',   label:'Expediente N°',type:'text'},
+      {key:'expLetra',    label:'Letra',        type:'text'},
+      {key:'telegrama',   label:'Telegrama',    type:'text'},
+      {key:'nota',        label:'Nota',         type:'text'},
+      {key:'objeto',      label:'Objeto',       type:'textarea'},
+      // SALIDA
+      {key:'secretario',  label:'Secretario',         type:'text'},
+      {key:'fechaSalida', label:'Fecha de Salida',    type:'date'},
+      {key:'destino',     label:'Destino (hacia dónde va)', type:'text'},
+      {key:'observacion', label:'Observación',        type:'textarea'},
+    ]},
+  ]},
+
   { id:'NOVEDADES', name:'Novedades', icon:'📢', color:'#6d28d9', bg:'#ede9fe', universal:true, modules:[
     { id:'NOVEDADES_MOD', name:'Novedades', fields:[
       {key:'fecha',       label:'Fecha',        type:'date',     req:true},
@@ -2170,6 +2229,7 @@ function iniciarSesion(user){
       if(typeof syncToSupabase === 'function') syncToSupabase('suep_accesos', accesos.slice(0,150));
       migratePanol();
       seedOrganigrama();
+      seedExpedientes(); // carga inicial del Libro de Expedientes (solo si está vacío) — fire-and-forget
       buildSidebar(); refreshBadge();
       // Mostrar opción admin del menú de configuración solo a administradoras
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
@@ -2317,7 +2377,13 @@ function buildSidebar(){
   const isVisor=CU.permiso==='visor';
   const isCargarGlobal=CU.permiso==='cargar-global';
   const veTodo = isAdmin||isVisor||isCargarGlobal;
-  const visible=veTodo?SECTORS:SECTORS.filter(s=> (CU.sectores||[]).includes(s.id) || s.universal || s.custom);
+  const visible=SECTORS.filter(s=>{
+    // Sectores restringidos (Libro de Expedientes): solo administradoras o lista EXPEDIENTES_ACCESO,
+    // sin importar que el rol "vea todo" (visor / cargar-global NO lo ven automáticamente).
+    if(s.restringido) return _expTieneAcceso();
+    if(veTodo) return true;
+    return (CU.sectores||[]).includes(s.id) || s.universal || s.custom;
+  });
   document.getElementById('sectorList').innerHTML=visible.map(s=>`
     <button class="sector-btn" id="sb_${s.id}" onclick="selectSector('${s.id}')">
       <span class="s-icon">${s.icon}</span>
@@ -2514,6 +2580,13 @@ function renderTable(searchOverride){
   // ─── Pestaña custom: MINUTAS (generador para WhatsApp) ───
   if(CS.custom==='minuta'){
     area.innerHTML = renderMinuta();
+    return;
+  }
+
+  // ─── Pestaña custom: LIBRO DE EXPEDIENTES ───
+  if(CS.custom==='expedientes'){
+    area.innerHTML = renderExpedientes();
+    expEnsureModal();
     return;
   }
 
@@ -6877,6 +6950,611 @@ function _marcarNumerosRepetidos(){
     '<br><small style="color:#fbbf24">Editá uno de los registros repetidos y corregí el número a mano (tocá ✏️ en el campo Número).</small>';
   area.insertBefore(aviso, area.firstChild);
 }
+
+
+
+
+
+// ═══════ INICIO MÓDULO LIBRO DE EXPEDIENTES ═══════
+// ═══════════════════════════════════════════════════════════════════
+// LIBRO DE EXPEDIENTES  (pestaña custom:'expedientes')
+// ───────────────────────────────────────────────────────────────────
+// • El control total de la pestaña es de las ADMINISTRADORAS (permiso 'admin'):
+//   pueden crear, editar TODO y borrar, incluso cargar la salida después de los
+//   10 días (dejando una Observación, por ejemplo "sale tarde").
+// • Un usuario con acceso (lista EXPEDIENTES_ACCESO) puede crear un expediente
+//   nuevo y SOLO puede AGREGAR LA SALIDA dentro de los 10 días corridos desde la
+//   fecha de ENTRADA. Pasados los 10 días sin salida, ya no puede editar.
+// • Las administradoras reciben un AVISO con los expedientes que pasaron los
+//   10 días sin que se les cargara la salida.
+// • Cada fila se toca para desplegar el detalle completo (así se ve todo sin
+//   tener que correr la tabla para el costado en el celular).
+// • Se ve bien en modo claro y oscuro.
+// ═══════════════════════════════════════════════════════════════════
+const EXP_S = 'EXPEDIENTES';
+const EXP_M = 'EXPEDIENTES';
+const EXP_VENTANA_DIAS = 10;
+
+function _expEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _expRows(){ try{ return S.get(EXP_S, EXP_M); }catch(_){ return []; } }
+function _expEsAdmin(){ return !!(CU && CU.permiso === 'admin'); }
+function _expTieneSalida(r){ return !!(r && r.fechaSalida && String(r.fechaSalida).trim()); }
+
+function _expParseFecha(f){
+  if(!f) return null;
+  const m = String(f).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+function _expHoy(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function _expDiasDesde(f){ const d = _expParseFecha(f); if(!d) return null; return Math.floor((_expHoy() - d) / 86400000); }
+function _expVencidoSinSalida(r){
+  if(_expTieneSalida(r)) return false;
+  const dias = _expDiasDesde(r.fecha);
+  return dias !== null && dias > EXP_VENTANA_DIAS;
+}
+// admin → siempre; usuario con acceso → solo dentro de los 10 días.
+function _expEditablePorUsuario(r){
+  if(_expEsAdmin()) return true;
+  if(!_expTieneAcceso()) return false;
+  const dias = _expDiasDesde(r.fecha);
+  if(dias === null) return true;
+  return dias <= EXP_VENTANA_DIAS;
+}
+function _expEstado(r){
+  if(_expTieneSalida(r)) return {txt:'✅ Con salida', cls:'exp-bg-ok'};
+  const dias = _expDiasDesde(r.fecha);
+  if(dias === null) return {txt:'—', cls:'exp-bg-none'};
+  if(dias > EXP_VENTANA_DIAS) return {txt:`⛔ Vencido +${dias-EXP_VENTANA_DIAS}d`, cls:'exp-bg-bad'};
+  const faltan = EXP_VENTANA_DIAS - dias;
+  return {txt:`🕒 Faltan ${faltan}d`, cls:'exp-bg-wait'};
+}
+function _expNumOrden(r){ const n = parseInt(r.numero,10); return isNaN(n) ? (r.numero||'') : String(n).padStart(3,'0'); }
+function _expFechaCorta(f){ const d=_expParseFecha(f); if(!d) return f? _expEsc(f):'—'; const p=x=>String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
+
+async function expProximoNumero(){
+  let lista = _expRows();
+  try{
+    if(typeof _fetchModuloFresco === 'function'){
+      const fresco = await _fetchModuloFresco(EXP_S, EXP_M);
+      if(fresco !== null && typeof _mergeRegistros === 'function'){
+        lista = _mergeRegistros(fresco, _expRows(), null);
+        try{ _S_set_local(EXP_S, EXP_M, lista); }catch(_){}
+      }
+    }
+  }catch(_){}
+  const nums = lista.map(r=>parseInt(r.numero,10)).filter(n=>!isNaN(n));
+  return (nums.length ? Math.max.apply(null, nums) : 0) + 1;
+}
+
+// ─── Estilos propios (claro/oscuro). Se inyectan una sola vez. ───
+function expEnsureEstilos(){
+  if(document.getElementById('expEstilos')) return;
+  const st = document.createElement('style');
+  st.id = 'expEstilos';
+  st.textContent = `
+  .exp-wrap{padding:4px 2px;color:#dbe4f0}
+  .exp-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .exp-title{font-weight:700;color:#e8eef6}
+  .exp-sub{font-size:12px;color:#94a3b8}
+  .exp-search{background:#0f1d33;border:1px solid #1e3a5f;color:#e8eef6;border-radius:9px;padding:8px 11px;font-size:13px;min-width:150px}
+  .exp-search::placeholder{color:#64748b}
+  .exp-btn-new{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .exp-aviso{margin:0 0 12px;padding:11px 14px;border-radius:10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-size:13px;line-height:1.55}
+  .exp-aviso small{color:#fbbf24}
+  .exp-tablewrap{border:1px solid #14253f;border-radius:12px;overflow:hidden}
+  .exp-table{width:100%;border-collapse:collapse;font-size:13px;color:#dbe4f0;table-layout:fixed}
+  .exp-table thead tr{background:#0f1d33}
+  .exp-th{padding:9px 8px;text-align:left;color:#94a3b8;font-weight:600;border-bottom:2px solid #1e3a5f;font-size:12px}
+  .exp-row{border-bottom:1px solid #14253f;cursor:pointer}
+  .exp-row:hover{background:rgba(124,58,237,.07)}
+  .exp-row td{padding:9px 8px;vertical-align:top;word-break:break-word}
+  .exp-num{font-weight:700;color:#c4b5fd}
+  .exp-chev{color:#64748b;font-size:11px;transition:transform .15s}
+  .exp-objeto{min-width:0}
+  .exp-badge{border-radius:7px;padding:3px 8px;font-size:11px;line-height:1.5;display:inline-block;white-space:normal}
+  .exp-bg-ok{background:rgba(52,211,153,.16);color:#34d399}
+  .exp-bg-wait{background:rgba(251,191,36,.16);color:#d97706}
+  .exp-bg-bad{background:rgba(248,113,113,.16);color:#f87171}
+  .exp-bg-none{background:rgba(148,163,184,.14);color:#94a3b8}
+  .exp-lock-row{color:#64748b;font-size:12px}
+  .exp-detalle td{background:rgba(13,22,35,.45);padding:10px 12px 14px}
+  .exp-field{margin:5px 0;padding:8px 10px;background:rgba(124,58,237,.08);border-left:3px solid #7c3aed;border-radius:6px;font-size:13px;white-space:pre-wrap;word-break:break-word}
+  .exp-field b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#a78bfa;margin-bottom:3px}
+  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .exp-foot{margin-top:8px;font-size:11px;color:#64748b}
+  /* Barra de acciones dentro del detalle (siempre visible y tocable en el celu) */
+  .exp-detacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(124,58,237,.3)}
+  .exp-da{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;color:#fff}
+  .exp-da-edit{background:linear-gradient(135deg,#7c3aed,#5b21b6)}
+  .exp-da-sal{background:linear-gradient(135deg,#18a0a8,#0e7490)}
+  .exp-da-del{background:rgba(248,113,113,.18);color:#f87171;border:1px solid rgba(248,113,113,.45)}
+  .exp-da-lock{font-size:12px;color:#64748b;align-self:center}
+  /* Modal */
+  .exp-ov{display:none;position:fixed;inset:0;background:rgba(2,8,20,.72);z-index:9000;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto}
+  .exp-box{background:#0c1830;border:1px solid #1e3a5f;border-radius:16px;max-width:640px;width:100%;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .exp-mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .exp-mh h3{margin:0;color:#e8eef6;font-size:17px}
+  .exp-x{background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1}
+  .exp-sec{font-size:12px;font-weight:700;margin-bottom:8px}
+  .exp-sec-e{color:#7c3aed}
+  .exp-sec-s{color:#0e7490}
+  .exp-lbl{display:block;margin-bottom:11px}
+  .exp-lbl span{display:block;font-size:12px;color:#94a3b8;margin-bottom:4px}
+  .exp-in,.exp-ta{width:100%;background:#0f1d33;border:1px solid #1e3a5f;color:#e8eef6;border-radius:9px;padding:9px 11px;font-size:14px;box-sizing:border-box}
+  .exp-ta{resize:vertical}
+  .exp-divider{margin-top:6px;padding-top:10px;border-top:1px solid #1e3a5f}
+  .exp-mbtns{display:flex;gap:9px;justify-content:flex-end;margin-top:6px}
+  .exp-cancel{background:#1e293b;color:#cbd5e1;border:none;border-radius:9px;padding:9px 16px;font-size:14px;cursor:pointer}
+  .exp-save{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer}
+  .exp-save-s{background:linear-gradient(135deg,#18a0a8,#0e7490)}
+  .exp-hint{font-size:12px;margin-bottom:10px}
+  .exp-hint-amber{color:#d97706}
+  /* ───── MODO CLARO ───── */
+  .light-mode .exp-wrap{color:#243b53}
+  .light-mode .exp-title{color:#15314f}
+  .light-mode .exp-sub{color:#5a7a9a}
+  .light-mode .exp-search{background:#fff;border-color:#c9d6e2;color:#1c3550}
+  .light-mode .exp-search::placeholder{color:#8aa3ba}
+  .light-mode .exp-tablewrap{border-color:#dbe4ee}
+  .light-mode .exp-table{color:#243b53}
+  .light-mode .exp-table thead tr{background:#f1f5f9}
+  .light-mode .exp-th{color:#4a6a88;border-bottom-color:#dbe4ee}
+  .light-mode .exp-row{border-bottom-color:rgba(21,49,79,.08)}
+  .light-mode .exp-row:hover{background:#f3f0fc}
+  .light-mode .exp-num{color:#6d28d9}
+  .light-mode .exp-chev{color:#8aa3ba}
+  .light-mode .exp-bg-ok{background:rgba(16,122,87,.14);color:#0f766e}
+  .light-mode .exp-bg-wait{background:rgba(180,120,10,.16);color:#b45309}
+  .light-mode .exp-bg-bad{background:rgba(190,40,40,.12);color:#b91c1c}
+  .light-mode .exp-bg-none{background:rgba(21,49,79,.08);color:#5a7a9a}
+  .light-mode .exp-lock{color:#94a3b8}
+  .light-mode .exp-detalle td{background:#f5f8fb}
+  .light-mode .exp-field{background:rgba(124,58,237,.06);color:#33506b}
+  .light-mode .exp-field b{color:#6d28d9}
+  .light-mode .exp-da-lock{color:#5a7a9a}
+  .light-mode .exp-foot{color:#5a7a9a}
+  .light-mode .exp-box{background:#fff;border-color:#dbe4ee}
+  .light-mode .exp-mh h3{color:#15314f}
+  .light-mode .exp-x{color:#5a7a9a}
+  .light-mode .exp-lbl span{color:#5a7a9a}
+  .light-mode .exp-in,.light-mode .exp-ta{background:#fff;border-color:#c9d6e2;color:#1c3550}
+  .light-mode .exp-divider{border-top-color:#dbe4ee}
+  .light-mode .exp-cancel{background:#e8eef4;color:#33536f}
+  `;
+  document.head.appendChild(st);
+}
+
+// ─────────────────────────── VISTA / TABLA ───────────────────────────
+function renderExpedientes(){
+  expEnsureEstilos();
+  const esAdmin = _expEsAdmin();
+  const puedeCrear = esAdmin || _expTieneAcceso();
+  let rows = _expRows().slice().sort((a,b)=>(parseInt(a.numero,10)||0)-(parseInt(b.numero,10)||0));
+  const prox = (Math.max(0, ...rows.map(r=>parseInt(r.numero,10)||0))) + 1;
+
+  let aviso = '';
+  if(esAdmin){
+    const venc = rows.filter(_expVencidoSinSalida);
+    if(venc.length){
+      const lista = venc.map(r=>`N° ${_expNumOrden(r)}`).join(' · ');
+      aviso = `<div class="exp-aviso">⛔ <b>${venc.length} expediente${venc.length>1?'s':''} sin salida pasados los ${EXP_VENTANA_DIAS} días:</b> ${lista}
+        <br><small>Cargales la salida (Secretario / Fecha / Destino) tocando ✏️. Podés dejar una Observación tipo "sale tarde".</small></div>`;
+    }
+  }
+
+  const head = `
+    <div class="exp-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="exp-title">📚 Libro de Expedientes</span>
+        <span class="exp-sub">${rows.length} registro${rows.length===1?'':'s'} · próximo N° ${String(prox).padStart(3,'0')}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="expBuscar" class="exp-search" type="text" placeholder="Buscar…" oninput="expFiltrar(this.value)">
+        ${puedeCrear ? `<button class="exp-btn-new" onclick="expNuevo()">+ Nuevo expediente</button>` : ''}
+      </div>
+    </div>`;
+
+  if(!rows.length){
+    return `<div class="exp-wrap">${aviso}${head}
+      <div style="text-align:center;color:#94a3b8;padding:40px 12px">Todavía no hay expedientes cargados.</div></div>`;
+  }
+
+  const filas = rows.map(r=>{
+    const est = _expEstado(r);
+    const editable = _expEditablePorUsuario(r);
+    const imp = r._importado ? ' 📖' : '';
+    const buscable = _expEsc([_expNumOrden(r), r.procedencia, r.expNumero, r.expLetra, r.nota, r.objeto, r.secretario, r.destino, r.observacion].join(' ').toLowerCase());
+
+    // Botones de acción DENTRO del detalle (siempre visibles y tocables en el celu)
+    let acts = '';
+    if(editable){
+      if(esAdmin){
+        acts = `<button class="exp-da exp-da-edit" onclick="event.stopPropagation();expEditarAdmin('${r._id}')">✏️ Editar</button>
+                <button class="exp-da exp-da-del" onclick="event.stopPropagation();expBorrar('${r._id}')">🗑️ Borrar</button>`;
+      }else{
+        acts = `<button class="exp-da exp-da-sal" onclick="event.stopPropagation();expSalida('${r._id}')">📤 Cargar salida</button>`;
+      }
+    }else{
+      acts = `<span class="exp-da-lock">🔒 Fuera del plazo de ${EXP_VENTANA_DIAS} días — avisá a una administradora.</span>`;
+    }
+
+    const campo = (lbl,val)=> (val && String(val).trim()) ? `<div class="exp-field"><b>${lbl}</b>${_expEsc(val)}</div>` : '';
+    const detalle = `
+      <div class="exp-grid">
+        ${campo('Procedencia', r.procedencia)}
+        ${campo('Expediente N°', r.expNumero)}
+        ${campo('Letra', r.expLetra)}
+        ${campo('Telegrama', r.telegrama)}
+        ${campo('Nota', r.nota)}
+      </div>
+      ${campo('Objeto', r.objeto)}
+      <div class="exp-grid">
+        ${campo('Secretario', r.secretario)}
+        ${campo('Fecha de salida', r.fechaSalida ? _expFechaCorta(r.fechaSalida) : '')}
+      </div>
+      ${campo('Destino', r.destino)}
+      ${campo('Observación', r.observacion)}
+      <div class="exp-foot">${r._importado ? '📖 Importado del libro físico · ' : ''}${r._por ? 'Cargado por: '+_expEsc(r._por) : ''}</div>
+      <div class="exp-detacts">${acts}</div>`;
+
+    return `<tbody data-buscar="${buscable}">
+      <tr class="exp-row" onclick="expToggleDetalle('${r._id}')">
+        <td class="exp-num"><span class="exp-chev" id="expchev_${r._id}">▶</span> ${_expNumOrden(r)}${imp}</td>
+        <td>${_expFechaCorta(r.fecha)}</td>
+        <td class="exp-objeto">${_expEsc(r.objeto)||'—'}</td>
+        <td><span class="exp-badge ${est.cls}">${est.txt}</span></td>
+      </tr>
+      <tr class="exp-detalle" id="expdet_${r._id}" style="display:none"><td colspan="4">${detalle}</td></tr>
+    </tbody>`;
+  }).join('');
+
+  return `<div class="exp-wrap">${aviso}${head}
+    <div class="exp-tablewrap">
+      <table class="exp-table">
+        <colgroup><col style="width:19%"><col style="width:16%"><col style="width:41%"><col style="width:24%"></colgroup>
+        <thead><tr>
+          <th class="exp-th">N° Orden</th>
+          <th class="exp-th">Fecha</th>
+          <th class="exp-th">Objeto</th>
+          <th class="exp-th">Salida</th>
+        </tr></thead>
+        ${filas}
+      </table>
+    </div>
+    <div class="exp-foot">Tocá una fila para ver el detalle completo y los botones de Editar / Borrar / Cargar salida. 📖 = importado del libro físico · 🔒 = fuera del plazo de ${EXP_VENTANA_DIAS} días.</div>
+  </div>`;
+}
+
+function expToggleDetalle(id){
+  const det = document.getElementById('expdet_'+id);
+  const chev = document.getElementById('expchev_'+id);
+  if(!det) return;
+  const abierto = det.style.display !== 'none';
+  det.style.display = abierto ? 'none' : 'table-row';
+  if(chev) chev.style.transform = abierto ? '' : 'rotate(90deg)';
+}
+
+function expFiltrar(q){
+  const t = String(q||'').toLowerCase().trim();
+  document.querySelectorAll('.exp-table tbody[data-buscar]').forEach(tb=>{
+    tb.style.display = (!t || tb.getAttribute('data-buscar').includes(t)) ? '' : 'none';
+  });
+}
+
+// ─────────────────────────── MODAL PROPIO ───────────────────────────
+function expEnsureModal(){
+  expEnsureEstilos();
+  if(document.getElementById('expModalOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'expModalOverlay';
+  ov.className = 'exp-ov';
+  ov.addEventListener('click', e=>{ if(e.target===ov) expCerrarModal(); });
+  ov.innerHTML = `<div id="expModalBox" class="exp-box"></div>`;
+  document.body.appendChild(ov);
+}
+function expAbrirModal(html){
+  expEnsureModal();
+  document.getElementById('expModalBox').innerHTML = html;
+  document.getElementById('expModalOverlay').style.display = 'flex';
+}
+function expCerrarModal(){ const ov = document.getElementById('expModalOverlay'); if(ov) ov.style.display = 'none'; }
+function _expCampo(label, id, val, type){
+  const v = _expEsc(val==null?'':val);
+  const input = (type==='textarea')
+    ? `<textarea id="${id}" class="exp-ta" rows="3">${v}</textarea>`
+    : `<input id="${id}" class="exp-in" type="${type||'text'}" value="${v}">`;
+  return `<label class="exp-lbl"><span>${label}</span>${input}</label>`;
+}
+function _expVal(id){ const el=document.getElementById(id); return el? el.value.trim() : ''; }
+
+// — NUEVO —
+async function expNuevo(){
+  expAbrirModal(`<div style="text-align:center;color:#94a3b8;padding:20px">Calculando próximo número…</div>`);
+  let prox = 1;
+  try{ prox = await expProximoNumero(); }catch(_){}
+  const esAdmin = _expEsAdmin();
+  const hoy = new Date(); const f = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+  const salidaBlock = esAdmin ? `
+    <div class="exp-divider">
+      <div class="exp-sec exp-sec-s">SALIDA (opcional)</div>
+      ${_expCampo('Secretario','expf_secretario','','text')}
+      ${_expCampo('Fecha de salida','expf_fechaSalida','','date')}
+      ${_expCampo('Destino (hacia dónde va)','expf_destino','','text')}
+      ${_expCampo('Observación','expf_observacion','','textarea')}
+    </div>` : '';
+  expAbrirModal(`
+    <div class="exp-mh"><h3>📚 Nuevo expediente · N° ${String(prox).padStart(3,'0')}</h3><button class="exp-x" onclick="expCerrarModal()">×</button></div>
+    <input type="hidden" id="expf_numero" value="${prox}">
+    <div class="exp-sec exp-sec-e">ENTRADA</div>
+    ${_expCampo('Fecha','expf_fecha',f,'date')}
+    ${_expCampo('Procedencia','expf_procedencia','','text')}
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">${_expCampo('Expediente N°','expf_expNumero','','text')}</div>
+      <div style="flex:1">${_expCampo('Letra','expf_expLetra','','text')}</div>
+    </div>
+    ${_expCampo('Telegrama','expf_telegrama','','text')}
+    ${_expCampo('Nota','expf_nota','','text')}
+    ${_expCampo('Objeto','expf_objeto','','textarea')}
+    ${salidaBlock}
+    <div class="exp-mbtns"><button class="exp-cancel" onclick="expCerrarModal()">Cancelar</button><button class="exp-save" onclick="expGuardarNuevo()">Guardar</button></div>`);
+}
+async function expGuardarNuevo(){
+  const data = {
+    numero: _expVal('expf_numero'), fecha: _expVal('expf_fecha'),
+    procedencia: _expVal('expf_procedencia'), expNumero: _expVal('expf_expNumero'),
+    expLetra: _expVal('expf_expLetra'), telegrama: _expVal('expf_telegrama'),
+    nota: _expVal('expf_nota'), objeto: _expVal('expf_objeto'),
+    secretario: _expVal('expf_secretario'), fechaSalida: _expVal('expf_fechaSalida'),
+    destino: _expVal('expf_destino'), observacion: _expVal('expf_observacion'),
+  };
+  if(!data.fecha){ alert('Cargá la fecha de entrada.'); return; }
+  try{ if(typeof S.addSafe === 'function') await S.addSafe(EXP_S, EXP_M, data); else S.add(EXP_S, EXP_M, data); }
+  catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  expCerrarModal(); renderTable();
+}
+
+// — EDITAR completo (solo admin) —
+function expEditarAdmin(id){
+  const r = _expRows().find(x=>x._id===id); if(!r) return;
+  const vencido = _expVencidoSinSalida(r);
+  const hint = vencido ? `<div class="exp-hint exp-hint-amber">Este expediente pasó los ${EXP_VENTANA_DIAS} días sin salida. Como administradora podés cargarla igual; conviene aclararlo en Observación (ej. "sale tarde").</div>` : '';
+  expAbrirModal(`
+    <div class="exp-mh"><h3>✏️ Editar N° ${_expNumOrden(r)}</h3><button class="exp-x" onclick="expCerrarModal()">×</button></div>
+    ${hint}
+    <div class="exp-sec exp-sec-e">ENTRADA</div>
+    ${_expCampo('N° de Orden','expf_numero',r.numero,'text')}
+    ${_expCampo('Fecha','expf_fecha',r.fecha,'date')}
+    ${_expCampo('Procedencia','expf_procedencia',r.procedencia,'text')}
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">${_expCampo('Expediente N°','expf_expNumero',r.expNumero,'text')}</div>
+      <div style="flex:1">${_expCampo('Letra','expf_expLetra',r.expLetra,'text')}</div>
+    </div>
+    ${_expCampo('Telegrama','expf_telegrama',r.telegrama,'text')}
+    ${_expCampo('Nota','expf_nota',r.nota,'text')}
+    ${_expCampo('Objeto','expf_objeto',r.objeto,'textarea')}
+    <div class="exp-divider">
+      <div class="exp-sec exp-sec-s">SALIDA</div>
+      ${_expCampo('Secretario','expf_secretario',r.secretario,'text')}
+      ${_expCampo('Fecha de salida','expf_fechaSalida',r.fechaSalida,'date')}
+      ${_expCampo('Destino (hacia dónde va)','expf_destino',r.destino,'text')}
+      ${_expCampo('Observación','expf_observacion',r.observacion,'textarea')}
+    </div>
+    <div class="exp-mbtns"><button class="exp-cancel" onclick="expCerrarModal()">Cancelar</button><button class="exp-save" onclick="expGuardarEdicion('${r._id}')">Guardar</button></div>`);
+}
+async function expGuardarEdicion(id){
+  const data = {
+    numero: _expVal('expf_numero'), fecha: _expVal('expf_fecha'),
+    procedencia: _expVal('expf_procedencia'), expNumero: _expVal('expf_expNumero'),
+    expLetra: _expVal('expf_expLetra'), telegrama: _expVal('expf_telegrama'),
+    nota: _expVal('expf_nota'), objeto: _expVal('expf_objeto'),
+    secretario: _expVal('expf_secretario'), fechaSalida: _expVal('expf_fechaSalida'),
+    destino: _expVal('expf_destino'), observacion: _expVal('expf_observacion'),
+  };
+  try{ if(typeof S.updSafe === 'function') await S.updSafe(EXP_S, EXP_M, id, data); else S.upd(EXP_S, EXP_M, id, data); }
+  catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  expCerrarModal(); renderTable();
+}
+
+// — AGREGAR SALIDA (usuario con acceso, dentro de los 10 días) —
+function expSalida(id){
+  const r = _expRows().find(x=>x._id===id); if(!r) return;
+  if(!_expEditablePorUsuario(r)){
+    alert(`Ya pasaron los ${EXP_VENTANA_DIAS} días para cargar la salida de este expediente. Avisá a una administradora.`);
+    renderTable(); return;
+  }
+  const dias = _expDiasDesde(r.fecha);
+  const restan = dias===null ? null : (EXP_VENTANA_DIAS - dias);
+  const aviso = restan!==null ? `<div class="exp-hint exp-hint-amber">Te queda${restan===1?'':'n'} ${restan} día${restan===1?'':'s'} para cargar la salida.</div>` : '';
+  expAbrirModal(`
+    <div class="exp-mh"><h3>📤 Salida del N° ${_expNumOrden(r)}</h3><button class="exp-x" onclick="expCerrarModal()">×</button></div>
+    ${aviso}
+    <div class="exp-sub" style="margin-bottom:12px;line-height:1.5"><b style="color:#a78bfa">Objeto:</b> ${_expEsc(r.objeto)||'—'}</div>
+    <div class="exp-sec exp-sec-s">SALIDA</div>
+    ${_expCampo('Secretario','expf_secretario',r.secretario,'text')}
+    ${_expCampo('Fecha de salida','expf_fechaSalida',r.fechaSalida,'date')}
+    ${_expCampo('Destino (hacia dónde va)','expf_destino',r.destino,'text')}
+    ${_expCampo('Observación','expf_observacion',r.observacion,'textarea')}
+    <div class="exp-mbtns"><button class="exp-cancel" onclick="expCerrarModal()">Cancelar</button><button class="exp-save exp-save-s" onclick="expGuardarSalida('${r._id}')">Guardar salida</button></div>`);
+}
+async function expGuardarSalida(id){
+  const r = _expRows().find(x=>x._id===id); if(!r) return;
+  if(!_expEditablePorUsuario(r)){
+    alert(`Ya pasaron los ${EXP_VENTANA_DIAS} días para cargar la salida.`);
+    expCerrarModal(); renderTable(); return;
+  }
+  const data = { secretario: _expVal('expf_secretario'), fechaSalida: _expVal('expf_fechaSalida'), destino: _expVal('expf_destino'), observacion: _expVal('expf_observacion') };
+  try{ if(typeof S.updSafe === 'function') await S.updSafe(EXP_S, EXP_M, id, data); else S.upd(EXP_S, EXP_M, id, data); }
+  catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  expCerrarModal(); renderTable();
+}
+
+// — BORRAR (solo admin) —
+async function expBorrar(id){
+  const r = _expRows().find(x=>x._id===id); if(!r) return;
+  if(!confirm(`¿Borrar el expediente N° ${_expNumOrden(r)}? Esta acción no se puede deshacer.`)) return;
+  try{ if(typeof S.delSafe === 'function') await S.delSafe(EXP_S, EXP_M, id); else S.del(EXP_S, EXP_M, id); }
+  catch(e){ alert('No se pudo borrar: '+(e.message||e)); return; }
+  expCerrarModal(); renderTable();
+}
+
+// ─────────────────────── CARGA INICIAL (SEED) ───────────────────────
+async function seedExpedientes(){
+  try{
+    const FLAG = 'suep_exp_seed_v1';
+    if(_expRows().length){ try{ localStorage.setItem(FLAG,'1'); }catch(_){} return; }
+    if(localStorage.getItem(FLAG)==='1'){
+      try{
+        if(typeof _fetchModuloFresco==='function'){
+          const fresco = await _fetchModuloFresco(EXP_S, EXP_M);
+          if(fresco && fresco.length){ _S_set_local(EXP_S, EXP_M, fresco); if(typeof _refrescarSiVisible==='function') _refrescarSiVisible(S.key(EXP_S,EXP_M)); }
+        }
+      }catch(_){}
+      return;
+    }
+    if(typeof _fetchModuloFresco==='function'){
+      const fresco = await _fetchModuloFresco(EXP_S, EXP_M);
+      if(fresco && fresco.length){
+        _S_set_local(EXP_S, EXP_M, fresco);
+        try{ localStorage.setItem(FLAG,'1'); }catch(_){}
+        if(typeof _refrescarSiVisible==='function') _refrescarSiVisible(S.key(EXP_S,EXP_M));
+        return;
+      }
+    }
+    const rows = EXP_SEED.map(d=>{
+      const fecha = d.fecha || '';
+      const anio = (fecha.match(/^(\d{4})/)||[])[1] || '2026';
+      const mes  = (fecha.match(/^\d{4}-(\d{2})/)||[])[1] || '01';
+      const dd   = (fecha.match(/^\d{4}-\d{2}-(\d{2})/)||[])[1] || '01';
+      return { ...d, observacion:'', _id:'expseed'+d.numero, _por:'Importado del libro físico', _sector:EXP_S, _mod:EXP_M, _importado:true, _ts:`${dd}/${mes}/${anio} 09:00` };
+    });
+    _S_set_local(EXP_S, EXP_M, rows);
+    try{ localStorage.setItem(FLAG,'1'); }catch(_){}
+    if(typeof syncToSupabase==='function') syncToSupabase(S.key(EXP_S, EXP_M), rows);
+    if(typeof _refrescarSiVisible==='function') _refrescarSiVisible(S.key(EXP_S,EXP_M));
+    console.log(`✅ Libro de Expedientes: ${rows.length} registros importados.`);
+  }catch(e){ console.warn('seedExpedientes:', e); }
+}
+
+const EXP_SEED = [
+  {"numero": "1", "fecha": "2026-01-06", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Inicia I.S.D. Investigación Cabo 1° Balta Mauro", "secretario": "Of. Ppal Campos", "fechaSalida": "2026-01-30", "destino": "Dirección Personal"},
+  {"numero": "2", "fecha": "2026-01-07", "procedencia": "Div. Ret. Lic. y Seguros", "expNumero": "A456P5", "expLetra": "DRLyS", "telegrama": "", "nota": "Memo", "objeto": "S/Not. Agte Agurto Lucas — Antigüedad Adm. y Lic. Anual Ord.", "secretario": "Sgto Escobar", "fechaSalida": "2026-01-08", "destino": "DRLyS"},
+  {"numero": "3", "fecha": "2026-01-08", "procedencia": "Dpto. Informático", "expNumero": "54/26", "expLetra": "DINF", "telegrama": "", "nota": "Memo", "objeto": "S/Not. Agte Guañaco y Agte Castro — usuario y clave correo institucional", "secretario": "Sgto Escobar", "fechaSalida": "2026-01-09", "destino": "Dpto. Informático"},
+  {"numero": "4", "fecha": "2026-01-12", "procedencia": "Div. Crim. y Med. Legal", "expNumero": "33/26", "expLetra": "DCrimCco", "telegrama": "", "nota": "Memo", "objeto": "S/Not. Cabo Tolosa Leonel — Junta Médica 16/01/26 12:00hs", "secretario": "Sgto Escobar", "fechaSalida": "2026-01-13", "destino": "DcrimCco / Entrada 13/02 - Salida 13/02 Dir. Personal"},
+  {"numero": "5", "fecha": "2026-01-12", "procedencia": "Div. Crim. y Med. Legal", "expNumero": "32/26", "expLetra": "DCrimCco", "telegrama": "", "nota": "Memo", "objeto": "S/Not. Cabo 1° Alfaro Juan — Junta Médica 16/01/26 12:00hs", "secretario": "Sgto Escobar", "fechaSalida": "2026-01-13", "destino": "DcrimCco / Entrada 13/02 Salida 13/02 Dir. Personal — Entrada 05/03 Salida 05/03 Div. Personal"},
+  {"numero": "6", "fecha": "2026-01-20", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Solicitud licencia Lic. Ext. Art. 33 y Art. 222 — Subinspector Sánchez Adriana", "secretario": "Sgto Escobar", "fechaSalida": "2026-01-20", "destino": "Dirección Personal"},
+  {"numero": "7", "fecha": "2026-01-22", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Not. Cabo 1° Brito — Acreditación título obtenido Curso de Defensa Personal", "secretario": "Of. Ppal Figueroa", "fechaSalida": "2026-01-22", "destino": "Dirección Personal"},
+  {"numero": "8", "fecha": "2026-01-26", "procedencia": "Div. Crim. y Med. Legal", "expNumero": "66/26", "expLetra": "DCrimCco", "telegrama": "", "nota": "Memo", "objeto": "S/Informes de estudios complementarios — Cert. de Alta de Médico tratante/especialista — Suboficial Ppal Merino Víctor", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-26", "destino": "DcrimCco / Entrada 24/04/26 - Salida 29/04/26 Dirección Institutos Policiales"},
+  {"numero": "9", "fecha": "2026-01-26", "procedencia": "Div. Crim. y Med. Legal", "expNumero": "67/26", "expLetra": "DCrimCco", "telegrama": "", "nota": "Memo", "objeto": "S/Informes de estudios complementarios — Cert. de Alta de Médico tratante/especialista — Sargento Reynoso Lorena", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-26", "destino": "DcrimCco"},
+  {"numero": "10", "fecha": "2026-01-28", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Chile — Of. Ppal Cumillan Ariel", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-28", "destino": "Dirección Secretaría General"},
+  {"numero": "11", "fecha": "2026-01-24", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Brasil — Of. Ppal Baracco Miguel", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-24", "destino": "Dirección Secretaría General"},
+  {"numero": "12", "fecha": "2026-01-28", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Reserva Lic. Extraordinaria Art. 32° y Art. 222° — Sargento Ayte. Seguel David LP 836.279", "secretario": "Of. Insp. Castillo", "fechaSalida": "2026-01-28", "destino": "Dirección Personal Neuquén"},
+  {"numero": "13", "fecha": "2026-01-28", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Chile — Sgto Díaz Nahir Belén LP 648.714/0", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-24", "destino": "Dirección Secretaría General"},
+  {"numero": "14", "fecha": "2026-01-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Chile — Agte M/C Agurto Rodrigo LP 4400/0", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-30", "destino": "Dirección Secretaría General"},
+  {"numero": "15", "fecha": "2026-01-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Chile — Of. Insp. Daniela Euliarte LP 297.664/0", "secretario": "Agte La Fuente", "fechaSalida": "2026-01-30", "destino": "Dirección Secretaría General"},
+  {"numero": "16", "fecha": "2026-02-02", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Autorización para viajar a Chile — Of. Ppal Campos Yoana LP 145.176/0", "secretario": "Agte La Fuente", "fechaSalida": "2026-02-02", "destino": "Dirección Secretaría General"},
+  {"numero": "17", "fecha": "2026-02-02", "procedencia": "Div. Crim. y Med. Legal C-Co", "expNumero": "85/26", "expLetra": "DCrimCco", "telegrama": "", "nota": "Memo", "objeto": "S/Notificación Cabo 1° Gutiérrez Gustavo LP 442.478/0 — Junta Médica 06/02/26 12:00hs", "secretario": "Agte La Fuente", "fechaSalida": "2026-02-03", "destino": "DcrimCco / Entrada 13/02 Salida 13/02 Dir. Personal"},
+  {"numero": "18", "fecha": "2026-02-11", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "Agte Castro LP 047.84/0 — S/Rec. Antecedentes Administrativos — Lic. Anual Ordinaria", "secretario": "Agte La Fuente", "fechaSalida": "2026-02-11", "destino": "División Ajustes y Liquidación"},
+  {"numero": "19", "fecha": "2026-02-11", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "Cabo 1° Gutiérrez LP 442.438/0 — S/Rec. Lic. Anual Ordinaria", "secretario": "Agte La Fuente", "fechaSalida": "2026-02-11", "destino": "División Ajustes y Liquidación"},
+  {"numero": "20", "fecha": "2026-02-11", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "Cabo 1° Gutiérrez LP 442.438/0 — S/vacante curso Cabo 1° para Sargento", "secretario": "Agte La Fuente", "fechaSalida": "2026-02-11", "destino": "División Subalternos y Asuntos Ngn — E/ Dirección Seguridad"},
+  {"numero": "21", "fecha": "2026-02-12", "procedencia": "DiP", "expNumero": "232/26", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "Notificación sobreviniente Cabo P° Villagra Juan — Disp. n° 07/26 'DiP'", "secretario": "Sgto Bascur", "fechaSalida": "2026-02-13", "destino": "Dirección Institutos"},
+  {"numero": "22", "fecha": "2026-02-18", "procedencia": "DiP", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "Solicitud de permiso para viajar a Chile — Cabo 1° Alfaro", "secretario": "Sgto Bascur", "fechaSalida": "2026-02-23", "destino": "Dirección Secretaría General"},
+  {"numero": "23", "fecha": "2026-02-20", "procedencia": "Div. Criminalística CCO", "expNumero": "95", "expLetra": "DCrimMemo", "telegrama": "", "nota": "Memo", "objeto": "S/Estudios Complementarios Cabo Martín Bastías LP N° 89761", "secretario": "Cmo Velázquez", "fechaSalida": "2026-02-23", "destino": "Div. Criminalística — Entrada 13/03 - Sale 18/03 a Dirección Institutos"},
+  {"numero": "24", "fecha": "2026-02-23", "procedencia": "Dpto. Cont. Continuo", "expNumero": "121", "expLetra": "DECBP", "telegrama": "", "nota": "Nota", "objeto": "S/Copias Parte Diario fecha 22-23/01/26 y 12-13/02 — Rel. Act. Preliminar", "secretario": "Cmo Velázquez", "fechaSalida": "2026-02-23", "destino": "Dpto. Comunicaciones Continuo"},
+  {"numero": "25", "fecha": "2026-03-09", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Nota solicitando vacante curso (Cabo Primero Alfaro Juan)", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-09", "destino": "Dirección Seguridad La Comarca"},
+  {"numero": "26", "fecha": "2026-03-09", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Nota solicitando vacante curso (Cabo Primero Balta Mauro)", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-09", "destino": "Dirección Seguridad La Comarca"},
+  {"numero": "27", "fecha": "2026-03-09", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Nota solicitando vacante curso (Cabo Primero Gareca Luigi)", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-09", "destino": "Dirección Seguridad La Comarca"},
+  {"numero": "28", "fecha": "2026-03-09", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Nota solicitando vacante curso (Cabo Primero Vázquez Mauricio)", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-09", "destino": "Dirección Seguridad La Comarca"},
+  {"numero": "29", "fecha": "2026-03-09", "procedencia": "Div. Criminalística y Med. Legal", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "Citación Junta Médica Cabo 1° Barros Martín LP 89.761/0", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-10", "destino": "Div. Criminalística y Medicina Legal CCO — Entrada 18/03 - Sale 18/03 a Dirección Institutos"},
+  {"numero": "30", "fecha": "2026-03-09", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Carta", "objeto": "Nota cursada Of. Ayte. Quevedo Pablo LP 20.765/0 — S/Lic. Ley 3358 Art. 3 Sec. F", "secretario": "Of. Insp. Cumillan", "fechaSalida": "2026-03-10", "destino": "DPs De Personal Ngn"},
+  {"numero": "31", "fecha": "2026-03-10", "procedencia": "Bombero PU", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "Nota S/Aprobación Diplomado 'DCFyCco'", "secretario": "Of. Insp. Catricura", "fechaSalida": "2026-03-10", "destino": "Dirección Institutos Policiales Ngn"},
+  {"numero": "32", "fecha": "2026-03-11", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "N°72 S/Aprobación Sgto Sánchez Martín — Curso", "secretario": "Catricura", "fechaSalida": "2026-03-11", "destino": "Dirección Institutos Policiales"},
+  {"numero": "33", "fecha": "2026-03-13", "procedencia": "Subdirección", "expNumero": "348", "expLetra": "SAS", "telegrama": "", "nota": "Carta", "objeto": "Expte relacionado Decreto — Cursor LP 209898/0", "secretario": "Cmo Velázquez", "fechaSalida": "2026-03-18", "destino": "Dirección Institutos Policiales"},
+  {"numero": "34", "fecha": "2026-03-18", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/Cobro de Cuota Depósito Adicional — Cabo P° Villegas Jun.", "secretario": "Escobar", "fechaSalida": "2026-03-18", "destino": "Div. Tesorería Ngn"},
+  {"numero": "35", "fecha": "2026-03-18", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Nota", "objeto": "S/vacante curso de Ascensos — Agte Seguro Luis", "secretario": "Escobar", "fechaSalida": "2026-03-18", "destino": "Dirección Institutos"},
+  {"numero": "36", "fecha": "2026-03-20", "procedencia": "DSCom", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "174 'Dcom' Notificación Cabo P° Villagra Franco", "secretario": "Catricura", "fechaSalida": "2026-03-20", "destino": "Dirección La Comarca"},
+  {"numero": "37", "fecha": "2026-03-21", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/105° RAAP — P/Cabo 2do Leonel LP 011.222/0 — Ref. 777/26", "secretario": "Of. Cumillan", "fechaSalida": "2026-03-25", "destino": "Dirección Institutos Policiales — Entrada 17/06/26 Salida 18/06/26"},
+  {"numero": "38", "fecha": "2026-03-26", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Certificado Médico Cabo Bastías Martín — Adj. Original y Copia de raíz 18/3-26/3", "secretario": "Catricura", "fechaSalida": "2026-03-27", "destino": "Div. Cárceles Médicas"},
+  {"numero": "39", "fecha": "2026-03-26", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Certificado Médico Adj. Copia Cabo 2do Leonel", "secretario": "Catricura", "fechaSalida": "2026-03-27", "destino": "Div. Cárceles Médicas"},
+  {"numero": "40", "fecha": "2026-03-27", "procedencia": "Dirección Institutos Policiales", "expNumero": "019", "expLetra": "DiP", "telegrama": "", "nota": "", "objeto": "S/Dirección Interno DSD — Investigado Tronbecno Carlos G. LP 4411B", "secretario": "Sánchez", "fechaSalida": "2026-05-20", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "41", "fecha": "2026-03-27", "procedencia": "Div. Investigaciones CCO", "expNumero": "119", "expLetra": "Disco", "telegrama": "", "nota": "Expte", "objeto": "Informe O/Oficio 684 'DCFyCco' — Repo Disp. 113/26 'Disco' — Provisión Disp.", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Div. Reclutamiento (Selección Ngn.)"},
+  {"numero": "42", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Certificado Médico Cabo Bastías Martín LP 89761/0", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Div. Cárceles Médicas Ngn"},
+  {"numero": "43", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Certificado Médico Cabo 2do Leonel LP 11.222/0", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Div. Cárceles Médicas Ngn"},
+  {"numero": "44", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Carrillo Ociel DNI 40.614.807", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "45", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Román Fernando Ismael DNI 48.390.805", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "46", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Hantipel Paula Alejo Gabriel DNI 41.608.610", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "47", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Figueroa Nicolás Ariel DNI 44.48?.783", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "48", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Escalona Santiago Nicolás DNI 41.273.051", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "49", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Hernández Ignacio Vladimir DNI 48.411.895", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "50", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Almenacid Alan Matías Cipriano DNI 42.519.677", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "51", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Gálvez Oscar Abigail DNI 41.591.732", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "52", "fecha": "2026-03-30", "procedencia": "Div. Criminal. Med. Legal", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "I/Memo N° 231 'Dcrimcco' — Cibrián Buitrez Cabo 2dos Leonel", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Criminalística y Medicina Legal CCO"},
+  {"numero": "53", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Pedernera Joel DNI 45.509.896", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "54", "fecha": "2026-03-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Rodríguez César DNI 45.028.492", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "55", "fecha": "2026-03-31", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Vivero Alejandro DNI 39.866.634", "secretario": "Catricura", "fechaSalida": "2026-04-01", "destino": "Dirección Institutos Policiales"},
+  {"numero": "56", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Permuta sargento Sánchez Martín A. LP 227.252", "secretario": "Castillo", "fechaSalida": "2026-04-06", "destino": "Dirección Institutos Policiales"},
+  {"numero": "57", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Antigüedad para ascensos", "secretario": "Sánchez", "fechaSalida": "2026-04-08", "destino": "Dirección Institutos Policiales"},
+  {"numero": "58", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria del Aspirante Contreras Sergio Rufino DNI 44.481.319", "secretario": "Castillo", "fechaSalida": "2026-04-08", "destino": "Dirección Institutos Policiales"},
+  {"numero": "59", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja voluntaria del Aspirante Pérez Franco Doria DNI 47.590.842", "secretario": "Castillo", "fechaSalida": "2026-04-08", "destino": "Dirección Institutos Policiales"},
+  {"numero": "60", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Brillos Milan DNI 44.314.684", "secretario": "Romero", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Policiales"},
+  {"numero": "61", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Nahuel Nazil DNI 47.722.176", "secretario": "Cumillan", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Policiales"},
+  {"numero": "62", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Sepúlveda Toni Sol DNI 48.672.514", "secretario": "Romero", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Policiales"},
+  {"numero": "63", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Rodríguez Toma José DNI 42.104.537", "secretario": "Romero", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Policiales"},
+  {"numero": "64", "fecha": "2026-04-01", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Iturra Alza Agustín DNI 46.177.181", "secretario": "Romero", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Policiales"},
+  {"numero": "65", "fecha": "2026-04-03", "procedencia": "Comisaría 31", "expNumero": "483", "expLetra": "Cco", "telegrama": "", "nota": "Expte", "objeto": "S/criterios estructurales de Asp. Punta Sufina Ariel Color DNI 44.337.835", "secretario": "Castillo", "fechaSalida": "2026-04-10", "destino": "Comisaría 31"},
+  {"numero": "66", "fecha": "2026-04-08", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. González Neom DNI 45.375.881", "secretario": "Yáñez", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Neuquén"},
+  {"numero": "67", "fecha": "2026-04-08", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Gómez Santiago DNI 43.946.401", "secretario": "Yáñez", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Neuquén"},
+  {"numero": "68", "fecha": "2026-04-08", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Voluntaria Asp. Alvarado Milzon DNI 48.262.683", "secretario": "Romero", "fechaSalida": "2026-04-10", "destino": "Dirección Institutos Neuquén"},
+  {"numero": "69", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Act. Art. 105° RAAP al efecto policial — Otorgado Leonel", "secretario": "Euliarte", "fechaSalida": "2026-04-17", "destino": "Dirección Institutos Neuquén"},
+  {"numero": "70", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Certificados Médicos Cabo Bastías Martín", "secretario": "Catricura", "fechaSalida": "2026-04-15", "destino": "Div. Cárceles Médicas Ngn"},
+  {"numero": "71", "fecha": "2026-04-13", "procedencia": "Sgto Jefatura Policía", "expNumero": "718", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "I/Memo 718 'S/I' Notificación baja 12x24 Of. Quevedo Pablo", "secretario": "Catricura", "fechaSalida": "2026-04-15", "destino": "Dirección Personal Ngn"},
+  {"numero": "72", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/baja Asp. Navarrete González DNI 42.449.556", "secretario": "Romero", "fechaSalida": "2026-04-15", "destino": "Dirección Institutos Ngn"},
+  {"numero": "73", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Usufructo licencia (30 días) Of. Quevedo Pablo", "secretario": "Catricura", "fechaSalida": "2026-04-15", "destino": "Div. Retiros Licencias y Seguros Ngn"},
+  {"numero": "74", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Repte", "objeto": "I/Uso lic. (50 días) Of. Quevedo Pablo", "secretario": "Catricura", "fechaSalida": "2026-04-15", "destino": "Dirección Personal Ngn"},
+  {"numero": "75", "fecha": "2026-04-13", "procedencia": "Div. Crim. y Med. CCO", "expNumero": "122", "expLetra": "", "telegrama": "", "nota": "Tup", "objeto": "Cédula citación Junta Médica — Of. Ppal Merino Víctor LP 564.235/0", "secretario": "Catricura", "fechaSalida": "2026-04-15", "destino": "Div. Criminalística CCO / Entrada 24/04 Dcrimcco / Salida 29/04 Dirección Institutos Policiales"},
+  {"numero": "76", "fecha": "2026-04-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Barrera Nuños Segundo DNI 43.839.519", "secretario": "Romero", "fechaSalida": "2026-04-17", "destino": "Dirección Institutos Ngn"},
+  {"numero": "77", "fecha": "2026-04-16", "procedencia": "Comisaría 18°", "expNumero": "507", "expLetra": "CBGV", "telegrama": "", "nota": "Expte", "objeto": "Baja Tropcoso Mercedes DNI 43.358.404", "secretario": "Muñoz", "fechaSalida": "2026-04-17", "destino": "Dirección Institutos Ngn"},
+  {"numero": "78", "fecha": "2026-04-17", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Solicitud de permiso — Cmo Inspector Blanco Marcos P/Concurrir a Jornada", "secretario": "Catricura", "fechaSalida": "2026-04-22", "destino": "Dirección Institutos Ngn"},
+  {"numero": "79", "fecha": "2026-04-20", "procedencia": "Secc. Armas y Eq. Especiales", "expNumero": "142", "expLetra": "DP", "telegrama": "", "nota": "Memo", "objeto": "Rúbrica de cargos y descargos Patrimoniales 4° Trim.", "secretario": "Escobar", "fechaSalida": "2026-04-20", "destino": "Comisaría 25° Jefatura de los Andes"},
+  {"numero": "80", "fecha": "2026-04-20", "procedencia": "Dirección Institutos Ngn", "expNumero": "424", "expLetra": "DiP", "telegrama": "", "nota": "Expte", "objeto": "Adj. Disp. Interna 22/26 'DiP' Correspondiente a la remisión de Aspirantes 1ª Convocatoria 2026", "secretario": "Muñoz", "fechaSalida": "2026-04-20", "destino": "Notificación y Archivo Vocal"},
+  {"numero": "81", "fecha": "2026-04-20", "procedencia": "Dirección Institutos Ngn", "expNumero": "434", "expLetra": "DiP", "telegrama": "", "nota": "Expte", "objeto": "Confección Adj. Avante 1° Lapdal DNI 40.616.132 — Similar a Gxpte 557/26 'S2s'", "secretario": "Romero", "fechaSalida": "2026-04-22", "destino": "Dirección Institutos Policiales Neuquén — Ingreso 11/05/26 Salida 13/05/26 Dirección Institutos Policiales Neuquén (secretaria Cme Muñoz)"},
+  {"numero": "82", "fecha": "2026-04-20", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Certificado Médico Agte Reyes R. LP 44065/0 (Ascenso) de fecha 20/4/26", "secretario": "Catricura", "fechaSalida": "2026-04-22", "destino": "Div. Cárceles Médicas Neuquén"},
+  {"numero": "83", "fecha": "2026-04-21", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Expte Disciplinario abreviado 96 Inc. A y Ccls. y ss. del RNIyC — Asp. Nazar Flores Jorge F.", "secretario": "Romero", "fechaSalida": "2026-05-20", "destino": "DCFyCCCO Interno Archivo"},
+  {"numero": "84", "fecha": "2026-04-21", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Drran Isabel DNI 41.346.684", "secretario": "Euliarte", "fechaSalida": "2026-04-22", "destino": "Dirección Institutos Neuquén"},
+  {"numero": "85", "fecha": "2026-04-24", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Información Sumaria Disciplinaria A36 RSPP — Of. Superior Yace Luis Juan.", "secretario": "Camillen", "fechaSalida": "2026-05-20", "destino": "Dirección Institutos Ngn — Como Reporte Dirección Asuntos Internos"},
+  {"numero": "86", "fecha": "2026-04-24", "procedencia": "Div. Criminalística CCO", "expNumero": "463", "expLetra": "DCrim", "telegrama": "", "nota": "Expte", "objeto": "Adj. Fje Juicio Memorándum 741 'CFCC'", "secretario": "Blanco", "fechaSalida": "2026-04-24", "destino": "Archivo Legajo Personal (Servicio Policial Trsop Leonel)"},
+  {"numero": "87", "fecha": "2026-04-27", "procedencia": "Dpto. Comando Rad. CCO", "expNumero": "204", "expLetra": "DRECCO", "telegrama": "", "nota": "Oficio", "objeto": "E/Respuesta Adj. 105° RAAP Disp. 38/26 DCRECCO — Gxpte 120/26 DCRECCO", "secretario": "Catricura", "fechaSalida": "2026-04-28", "destino": "Departamento Comando todos elevenos Cutral Có"},
+  {"numero": "88", "fecha": "2026-04-27", "procedencia": "Dirección La Comarca", "expNumero": "318", "expLetra": "DECom", "telegrama": "", "nota": "Memo", "objeto": "Notificación Cabo P° Valenzuela Xrombo — Curso Ascenso (reserva) — Lunes 04/05/26", "secretario": "Catricura", "fechaSalida": "2026-04-29", "destino": "Dirección De la Comarca Cutral Có"},
+  {"numero": "89", "fecha": "2026-04-28", "procedencia": "Div. Medicina Laboral", "expNumero": "536", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "Junta Médica Of. Romero Estefanía — 30/04/26 10:00 Ngn", "secretario": "Catricura", "fechaSalida": "2026-04-29", "destino": "División Medicina Laboral Ngn"},
+  {"numero": "90", "fecha": "2026-04-27", "procedencia": "Direc. Seg. Peltrer", "expNumero": "144", "expLetra": "DeAlt", "telegrama": "", "nota": "Memo", "objeto": "Notificación Curso Ascenso Sobre P° Vázquez — 06/05 — Bottos M. Carrasco L. 4/5/26 07:45", "secretario": "Catricura", "fechaSalida": "2026-04-29", "destino": "Dirección Seguridad Vial del Petter"},
+  {"numero": "91", "fecha": "2026-04-29", "procedencia": "Div. Medicina Laboral", "expNumero": "546", "expLetra": "", "telegrama": "", "nota": "Memo", "objeto": "I/Notificación Cédula Inhamir Romero (Cordón Of. Subof.) Junta Médica 05/05 — 13:10.30", "secretario": "Catricura", "fechaSalida": "2026-04-30", "destino": "Div. Medicina Vial Ngn"},
+  {"numero": "92", "fecha": "2026-04-30", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/baja Voluntaria Of. Nochiz Finasez Andrés DNI 43.703.646", "secretario": "López", "fechaSalida": "2026-05-04", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "93", "fecha": "2026-05-04", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Certificado Médico Bastías Pater (cabo) de Gastrointeritis Reps 48hs", "secretario": "Catricura", "fechaSalida": "2026-05-06", "destino": "Div. Cárceles Médicas Ngn"},
+  {"numero": "94", "fecha": "2026-05-05", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Crmes Tilarro DNI 47.149.447", "secretario": "Quevedo", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "95", "fecha": "2026-05-05", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Cumillán Jian Jose Nicolás DNI 48.674.820", "secretario": "Euliarte", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "96", "fecha": "2026-05-10", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Inostroza Fabián DNI 47.211.710 — por llamado de trabajo en otra institución", "secretario": "Yáñez", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "97", "fecha": "2026-05-10", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Brizos Ismael Ezequiel DNI 46.069.277 — no se adapta al régimen", "secretario": "Romero", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "98", "fecha": "2026-05-11", "procedencia": "Div. Esc. Subalternos", "expNumero": "964", "expLetra": "DetSyn", "telegrama": "", "nota": "Expte", "objeto": "Notificación Desafectación Curso Ascenso 2026 Cabo Técnico Barros Martín LP en Xilo", "secretario": "Catricura", "fechaSalida": "2026-05-13", "destino": "Div. Escuela Suboficiales Neuquén"},
+  {"numero": "99", "fecha": "2026-05-11", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Tillera Rocío Valentín DNI 46.534.176 — No se adapta al régimen", "secretario": "Yáñez", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "100", "fecha": "2026-05-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Nota Personal Sgto Szalbey Martín LP B2552/0 — Sujeto P/Aviso Extraconmto Emergencia", "secretario": "Quevedo", "fechaSalida": "2026-05-13", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "101", "fecha": "2026-05-13", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "Baja Asp. Guerrero Gustavo DNI 43.215.758 — por problemas familiares", "secretario": "Quevedo", "fechaSalida": "2026-05-15", "destino": "Dirección Institutos Policiales Neuquén"},
+  {"numero": "102", "fecha": "2026-05-26", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Sanción Disciplinaria Asp. Villalba Rodríguez Marcos DNI 46.732.424", "secretario": "Yáñez", "fechaSalida": "2026-06-05", "destino": "Archivo Legajo Personal Aspirante"},
+  {"numero": "103", "fecha": "2026-05-26", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Sanción Disciplinaria Asp. Marcial Elvio Corser DNI 47.929.855", "secretario": "Yáñez", "fechaSalida": "2026-06-05", "destino": "Archivo Legajo Personal Aspirante"},
+  {"numero": "104", "fecha": "2026-05-28", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "I/Sanción Disciplinaria Asp. Contreras Jasmín Rocío DNI 43.530.565 y Sáez Marcus DNI 43.891.460", "secretario": "Calderón", "fechaSalida": "", "destino": ""},
+  {"numero": "105", "fecha": "2026-05-30", "procedencia": "Dirección Institutos", "expNumero": "904", "expLetra": "Di", "telegrama": "", "nota": "Expte", "objeto": "S/Notificación Curso Ascenso 1ª Convocatoria — Of. Flores G. y Of. Ppal Cumillan Ariel", "secretario": "Catricura", "fechaSalida": "2026-06-03", "destino": "Dirección Institutos Policiales"},
+  {"numero": "106", "fecha": "2026-06-02", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Agente Reconocimiento en otra Institución de Asociación", "secretario": "Catricura", "fechaSalida": "2026-06-03", "destino": "Div. Licencias Ngn"},
+  {"numero": "107", "fecha": "2026-06-03", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "Expte", "objeto": "S/Paso de los Choferes Of. Subof. Quevedo Pablo", "secretario": "Catricura", "fechaSalida": "2026-06-03", "destino": "Dirección Institutos Policiales"},
+  {"numero": "108", "fecha": "2026-06-03", "procedencia": "Div. Retiros, Lic. y Seg.", "expNumero": "819", "expLetra": "DReys", "telegrama": "", "nota": "Expte", "objeto": "Notificación Antigüedad Adm. Asp. Roje La Fuente Melina LP 37875/0", "secretario": "Catricura", "fechaSalida": "2026-06-05", "destino": "Div. Retiros Licencias y Seguros"},
+  {"numero": "109", "fecha": "2026-06-06", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "Inicio Expte Administrativo Asp. Romero Aldana", "secretario": "Calderón", "fechaSalida": "", "destino": ""},
+  {"numero": "110", "fecha": "2026-06-09", "procedencia": "Dirección Institutos", "expNumero": "980", "expLetra": "DI", "telegrama": "", "nota": "Expte", "objeto": "Notificación Personal Policial — Directiva N° 239 'SAS' — Disp. 07/26 'SAS'", "secretario": "Catricura", "fechaSalida": "2026-06-12", "destino": "Dirección Institutos Policiales Ngn"},
+  {"numero": "111", "fecha": "2026-06-10", "procedencia": "Cnz 7° Plotier", "expNumero": "1521", "expLetra": "C-7", "telegrama": "", "nota": "Expte", "objeto": "I/Baja Asp. Villalba Marcos DNI 46.282.424 por razones horarias y económicas", "secretario": "Cabrera", "fechaSalida": "2026-06-12", "destino": "Dirección Institutos Policiales Ngn"},
+  {"numero": "112", "fecha": "2026-06-18", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "Inicio Expte de cobertura seguro Asp. Nieva Karen", "secretario": "Catricura", "fechaSalida": "", "destino": ""},
+  {"numero": "113", "fecha": "2026-06-18", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "S/Retiro voluntario Cms Velázquez", "secretario": "Catricura", "fechaSalida": "2026-06-23", "destino": "Dirección Institutos Policiales"},
+  {"numero": "114", "fecha": "2026-06-18", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "S/Licencia extraordinaria Cms Velázquez", "secretario": "Catricura", "fechaSalida": "2026-06-23", "destino": "Dirección Institutos Policiales"},
+  {"numero": "115", "fecha": "2026-06-19", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "S/Permuta Of. Inspector Calderas", "secretario": "Bascur", "fechaSalida": "2026-06-23", "destino": "Dirección Institutos Policiales"},
+];// fin módulo expedientes
+// ═══════ FIN MÓDULO LIBRO DE EXPEDIENTES ═══════
 
 // Enganchar el detector después de cada render de tabla
 (function(){
