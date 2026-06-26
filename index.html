@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.15">
+<meta name="app-version" content="1.5.16">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1078,12 +1078,16 @@ async function checkForUpdates(){
     const remota = m[1].trim();
     if(_verMayor(remota, APP_VERSION) === 1){
       _versionRemotaPendiente = remota;
+      // Mostramos igual el cartel manual (sirve de respaldo si la actualización
+      // automática no pudiera aplicarse por caché vieja del dispositivo).
       const banner = document.getElementById('updateBanner');
       if(banner){
         const msg = banner.querySelector('.upd-msg');
         if(msg) msg.innerHTML = '<strong>¡Nueva actualización disponible!</strong> Versión ' + remota + ' lista. Recargá para obtener las últimas mejoras.';
         banner.classList.add('show');
       }
+      // Y la aplicamos SOLA (con tope anti-bucle).
+      if(_puedeAutoActualizar(remota)) _autoAplicarUpdate(remota);
     }
   }catch(e){ /* sin conexión: reintenta en el próximo ciclo */ }
 }
@@ -1108,6 +1112,53 @@ function applyUpdate(){
 function dismissUpdate(){
   document.getElementById('updateBanner').classList.remove('show');
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTUALIZACIÓN AUTOMÁTICA (con protección anti-bucle)
+// ───────────────────────────────────────────────────────────────────
+// Cuando se detecta una versión nueva publicada, la app se actualiza SOLA:
+// limpia la caché del dispositivo y recarga, sin que la persona tenga que tocar
+// nada. IMPORTANTE: esto sólo reemplaza el ARCHIVO de la app en el dispositivo;
+// NO toca, borra ni modifica datos de la base (Supabase) — los registros quedan
+// intactos y se vuelven a leer de la nube como siempre.
+// Para no quedar recargando en círculos si el dispositivo sigue sirviendo la
+// versión vieja desde su propia caché, sólo se intenta un par de veces por cada
+// versión; si aun así no agarra, queda el cartel manual para resolverlo.
+function _leerIntentosUpdate(){ try{ return JSON.parse(localStorage.getItem('suep_upd_try')||'null'); }catch(_){ return null; } }
+function _puedeAutoActualizar(remota){
+  const t = _leerIntentosUpdate();
+  if(!t || t.ver !== remota) return true;             // primera vez para esta versión
+  if((t.n||0) >= 2) return false;                     // ya se intentó 2 veces: no insistir solo
+  if(Date.now() - (t.ts||0) < 90*1000) return false;  // recién se intentó: esperar (evita rebote)
+  return true;
+}
+function _autoAplicarUpdate(remota){
+  // No interrumpir si hay un formulario o ventana abierta (para no perder lo que
+  // se está cargando). En ese caso queda el cartel manual y se aplicará después.
+  const hayAbierto = ['modalOverlay','expModalOverlay'].some(id=>{
+    const el = document.getElementById(id);
+    return el && el.style.display && el.style.display !== 'none';
+  });
+  if(hayAbierto) return;
+  const t = _leerIntentosUpdate();
+  const n = (t && t.ver === remota) ? (t.n||0)+1 : 1;
+  try{ localStorage.setItem('suep_upd_try', JSON.stringify({ ver:remota, n, ts:Date.now() })); }catch(_){}
+  try{ if(typeof syncStatus==='function') syncStatus('⬇️ Actualizando a la versión '+remota+'…', '#7aafd4'); }catch(_){}
+  localStorage.setItem('suep_app_version', remota);
+  setTimeout(()=>{
+    if('caches' in window){
+      caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))).finally(()=> location.reload(true));
+    } else {
+      location.reload(true);
+    }
+  }, 1200); // breve pausa para que se alcance a ver el aviso
+}
+// Al arrancar: si ya llegamos a la versión que intentábamos (o una más nueva),
+// limpiamos el contador anti-bucle para que las próximas actualicen sin trabas.
+try{
+  const _t = _leerIntentosUpdate();
+  if(_t && _t.ver && _verMayor(APP_VERSION, _t.ver) >= 0) localStorage.removeItem('suep_upd_try');
+}catch(_){}
 
 // Para cambiar usuario/contraseña: editá esta lista
 // ══════════════════════════════════════════════
