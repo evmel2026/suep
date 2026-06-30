@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.16">
+<meta name="app-version" content="1.5.19">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -96,7 +96,7 @@ body{font-family:'Exo 2','Segoe UI',system-ui,sans-serif;font-size:14px;backgrou
 /* ═══ MODO CLARO (el modo oscuro azul institucional es el diseño base) ═══ */
 body.light-mode{background:#eef2f7;color:#243b53}
 .light-mode #appScreen{background:#eef2f7}
-.light-mode .sector-header{background:#eef2f7}
+.light-mode .sector-header{background:rgba(238,242,247,.82)}
 .light-mode .sh-text h2{color:#15314f}
 .light-mode .sh-text p{color:#4a6a88}
 /* Sidebar */
@@ -116,7 +116,7 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .light-mode .mod-tab{background:rgba(21,49,79,.07);color:#33536f}
 .light-mode .mod-tab:hover{background:rgba(21,49,79,.14)}
 /* Tabla y tarjetas */
-.light-mode .data-wrap{background:#ffffff;border-color:#dbe4ee;box-shadow:0 2px 10px rgba(21,49,79,.06)}
+.light-mode .data-wrap{background:rgba(255,255,255,.93);border-color:#dbe4ee;box-shadow:0 2px 10px rgba(21,49,79,.06)}
 .light-mode .data-table thead tr{background:#f1f5f9;border-bottom-color:#dbe4ee}
 .light-mode .data-table th{color:#4a6a88}
 .light-mode .data-table td{color:#243b53;border-bottom-color:rgba(21,49,79,.08)}
@@ -200,6 +200,30 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .light-mode .sel-acc-count{color:#4a6a88}
 .light-mode .letter-divider td{background:#eef4fa!important;color:#2a5a8f!important;border-top-color:#d7e2ed}
 
+/* ═══ Minutas — legibilidad en modo claro (estilos inline → forzados con !important) ═══ */
+/* Etiquetas de campos y textos secundarios cian/celeste */
+.light-mode .minuta-panel label{color:#33536f!important}
+.light-mode .minuta-panel button[style*="color:#7aafd4"]{color:#2a5a8f!important}
+/* Encabezado "Minutas cargadas" y contadores */
+.light-mode .minuta-panel div[style*="color:#cbd9e6"]{color:#15314f!important}
+.light-mode .minuta-panel div[style*="color:#7aafd4"]{color:#4a6a88!important}
+.light-mode .minuta-panel span[style*="color:#7aafd4"]{color:#4a6a88!important}
+.light-mode .minuta-panel span[style*="color:#cbd9e6"]{color:#15314f!important}
+.light-mode .minuta-panel span[style*="color:#4a6a88"]{color:#5d7a96!important}
+/* Caja de vista previa de WhatsApp (fondo oscuro → claro) */
+.light-mode .minuta-panel #minutaPreview{color:#1c3550!important}
+.light-mode .minuta-panel div[style*="background:#0b141a"]{background:#f1f8f3!important;border-color:rgba(37,211,102,.4)!important;box-shadow:none!important}
+/* Panel de configuración de firma/WhatsApp */
+.light-mode .minuta-panel #minutaCfg{background:#f4f8fc!important;border-color:#dbe4ee!important}
+/* Tarjetas de minutas guardadas */
+.light-mode .minuta-panel div[style*="background:rgba(255,255,255,.025)"]{background:#ffffff!important;border-color:#dbe4ee!important}
+.light-mode .minuta-panel div[style*="background:rgba(13,22,35,.4)"]{background:#f3f8fc!important;color:#1c3550!important}
+.light-mode .minuta-panel button[style*="color:#cbd9e6"]{color:#2a4a6b!important}
+/* Encabezados de carpeta por fecha */
+.light-mode .minuta-panel div[style*="color:#cfe3f5"]{color:#15314f!important;background:#eef4fa!important;border-color:#d7e2ed!important}
+.light-mode .minuta-panel .df-count{background:rgba(21,49,79,.07)!important;border-color:rgba(21,49,79,.15)!important;color:#33536f!important}
+.light-mode .minuta-panel .df-chev{color:#4a6a88!important}
+
 /* ═══ Acordeones por sección (Recargo / Imaginarias) ═══ */
 .sel-acc-head{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:11px 14px;margin-top:8px;border-radius:10px;border:1px solid rgba(122,175,212,.18);background:rgba(122,175,212,.07);color:#dde9f3;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .sel-acc-head:hover{background:rgba(122,175,212,.14)}
@@ -230,6 +254,32 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .light-mode .print-modal p,.light-mode .print-modal label{color:#4a6a88}
 .light-mode .pa-cancel{background:#eef2f7;color:#33536f}
 .light-mode .print-atajos button{border-color:#c0cfdd;color:#33536f}
+/* ═══ Modo claro: panel de Gestión de Usuarios / Contraseñas ═══ */
+/* (antes quedaba con fondo oscuro y letras blancas en modo claro) */
+.light-mode .pwd-modal{background:#ffffff;border-color:#dbe4ee;box-shadow:0 20px 60px rgba(21,49,79,.18)}
+.light-mode .pwd-head{background:#ffffff;border-bottom-color:#e3eaf2}
+.light-mode .pwd-head h3{color:#15314f}
+.light-mode .pwd-head p{color:#4a6a88}
+.light-mode .pwd-x{background:rgba(21,49,79,.07);color:#3d566e}
+.light-mode .pwd-field label{color:#4a6a88}
+.light-mode .pwd-input{background:#ffffff;border-color:#c9d6e2;color:#1c3550}
+.light-mode .pwd-input:focus{border-color:#3b82f6;background:#ffffff}
+.light-mode .pwd-input::placeholder{color:#8aa3ba}
+.light-mode .pwd-foot{border-top-color:#e3eaf2}
+.light-mode .pwd-info{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.2);color:#33536f}
+.light-mode .pwd-search{background:#ffffff;border-color:#c9d6e2;color:#1c3550}
+.light-mode .pwd-search::placeholder{color:#8aa3ba}
+.light-mode .pwd-user-row{background:#f5f8fb;border-color:#dbe4ee}
+.light-mode .pwd-user-row:hover{background:#eef4fa;border-color:#c0cfdd}
+.light-mode .pwd-user-name{color:#15314f}
+.light-mode .pwd-user-meta{color:#4a6a88}
+.light-mode .pwd-action-btn{background:#eef2f7;border-color:#c0cfdd;color:#33536f}
+.light-mode .pwd-action-btn:hover{background:rgba(59,130,246,.12);border-color:#3b82f6;color:#1d4ed8}
+.light-mode .pwd-btn-cancel{border-color:#c0cfdd;color:#33536f}
+/* ═══ Modo claro: notificaciones (texto que quedaba claro) ═══ */
+.light-mode .n-text{color:#33536f}
+.light-mode .n-time{color:#6b87a3}
+.light-mode .notif-empty{color:#6b87a3}
 @media print{
   body.printing > *:not(#printArea){display:none!important}
   body.printing{background:#fff!important}
@@ -280,6 +330,66 @@ body.light-mode{background:#eef2f7;color:#243b53}
 
 /* ═══ APP ═══ */
 #appScreen{flex-direction:column;background:#111927}
+
+/* ═══ v1.5.17 · MOVIMIENTO EN EL PANEL (escudo girando + fondo animado) ═══ */
+/* Escudo del header girando en horizontal (efecto moneda), suave y lento */
+#appScreen .h-shield{animation:hShieldSpin 14s linear infinite;transform-origin:50% 50%}
+@keyframes hShieldSpin{from{transform:perspective(220px) rotateY(0deg)}to{transform:perspective(220px) rotateY(360deg)}}
+@media(prefers-reduced-motion:reduce){#appScreen .h-shield{animation:none}}
+
+/* Fondo animado estilo IA: "aurora" de gradientes que fluyen y respiran muy
+   despacio, con un brillo sutil que late. Sin cuadrícula. Funciona en claro y
+   oscuro con su propia paleta. */
+.main-content{position:relative;isolation:isolate;overflow:auto}
+.main-content::before{
+  content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(closest-side at 20% 25%, rgba(34,211,238,.16), transparent 70%),
+    radial-gradient(closest-side at 80% 30%, rgba(122,175,212,.16), transparent 70%),
+    radial-gradient(closest-side at 65% 80%, rgba(45,122,143,.18), transparent 70%),
+    radial-gradient(closest-side at 30% 75%, rgba(99,102,241,.13), transparent 70%);
+  background-size:160% 160%,150% 150%,170% 170%,155% 155%;
+  background-repeat:no-repeat;
+  filter:blur(28px) saturate(115%);
+  animation:auroraFlow 30s ease-in-out infinite;
+}
+.main-content::after{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(closest-side at 50% 45%, rgba(34,211,238,.07), transparent 65%);
+  background-size:200% 200%;
+  background-repeat:no-repeat;
+  animation:auroraPulse 11s ease-in-out infinite;
+}
+@keyframes auroraFlow{
+  0%   {background-position:0% 0%,   100% 0%,  60% 100%, 20% 80%}
+  25%  {background-position:30% 40%, 70% 20%,  80% 60%,  10% 50%}
+  50%  {background-position:60% 80%, 20% 60%,  30% 30%,  70% 20%}
+  75%  {background-position:20% 50%, 90% 70%,  50% 90%,  40% 60%}
+  100% {background-position:0% 0%,   100% 0%,  60% 100%, 20% 80%}
+}
+@keyframes auroraPulse{
+  0%,100%{opacity:.45;background-position:50% 50%}
+  50%    {opacity:.9; background-position:55% 45%}
+}
+@media(prefers-reduced-motion:reduce){
+  .main-content::before,.main-content::after{animation:none}
+}
+/* Paleta del fondo IA en MODO CLARO (tonos suaves, no opaca el panel) */
+.light-mode .main-content::before{
+  background:
+    radial-gradient(closest-side at 20% 25%, rgba(34,211,238,.12), transparent 70%),
+    radial-gradient(closest-side at 80% 30%, rgba(45,122,143,.11), transparent 70%),
+    radial-gradient(closest-side at 65% 80%, rgba(99,102,241,.10), transparent 70%),
+    radial-gradient(closest-side at 30% 75%, rgba(14,116,144,.10), transparent 70%);
+  background-size:160% 160%,150% 150%,170% 170%,155% 155%;
+  background-repeat:no-repeat;
+  filter:blur(30px) saturate(112%);
+}
+.light-mode .main-content::after{
+  background:radial-gradient(closest-side at 50% 45%, rgba(34,211,238,.06), transparent 65%);
+  background-size:200% 200%;background-repeat:no-repeat;
+}
 
 /* HEADER */
 .app-header{display:flex;align-items:center;gap:10px;padding:0 14px;height:54px;flex-shrink:0;background:#08111f;box-shadow:0 2px 10px rgba(0,0,0,.3);position:relative;z-index:100}
@@ -381,13 +491,22 @@ body.light-mode{background:#eef2f7;color:#243b53}
 /* Cartel de alerta (números repetidos / expedientes vencidos) legible en claro y oscuro */
 .aviso-alerta{margin:0 2px 10px;padding:10px 14px;border-radius:10px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-size:13px;line-height:1.5}
 .aviso-alerta small{color:#fbbf24}
+/* Cartel informativo (ej: "Nueva minuta") — legible en claro y oscuro */
+.info-banner{background:linear-gradient(135deg,rgba(34,211,238,.10),rgba(34,211,238,.02));border:1px solid rgba(34,211,238,.22);border-radius:14px;padding:14px 16px}
+.info-banner-title{font-size:14px;font-weight:800;color:#e8f1fb;display:flex;align-items:center;gap:8px}
+.info-banner-text{font-size:12px;color:#9fc4e0;margin-top:4px;line-height:1.5}
+.info-banner .ib-ok{color:#16a34a}
+.light-mode .info-banner{background:linear-gradient(135deg,rgba(14,116,144,.10),rgba(14,116,144,.02));border-color:rgba(14,116,144,.30)}
+.light-mode .info-banner-title{color:#0e5566}
+.light-mode .info-banner-text{color:#33536f}
+.light-mode .info-banner .ib-ok{color:#15803d}
 .s-icon{font-size:16px;flex-shrink:0}
 .s-name{flex:1}
 .s-count{font-size:10px;color:#7aafd4;background:rgba(122,175,212,.12);padding:1px 6px;border-radius:10px}
 
 /* MAIN */
 .main-content{flex:1;display:flex;flex-direction:column;overflow:auto;height:100%}
-.sector-header{padding:14px 18px 0;flex-shrink:0;background:#111927}
+.sector-header{padding:14px 18px 0;flex-shrink:0;background:rgba(17,25,39,.85)}
 .sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
 .sh-info{display:flex;align-items:center;gap:10px}
 .sh-icon{font-size:22px}
@@ -433,7 +552,7 @@ body.light-mode{background:#eef2f7;color:#243b53}
 .data-area{flex:1;overflow:auto;padding:0 18px 18px;display:flex;flex-direction:column}
 
 /* TABLE */
-.data-wrap{background:#141e2e;border-radius:14px;border:1px solid rgba(122,175,212,.15);overflow-x:auto;overflow-y:auto;box-shadow:0 2px 10px rgba(0,0,0,.05);max-width:100%;display:flex;flex-direction:column}
+.data-wrap{background:rgba(20,30,46,.92);border-radius:14px;border:1px solid rgba(122,175,212,.15);overflow-x:auto;overflow-y:auto;box-shadow:0 2px 10px rgba(0,0,0,.05);max-width:100%;display:flex;flex-direction:column}
 .data-table{width:100%;border-collapse:collapse;min-width:100%;display:block;overflow-x:auto}
 .data-table thead tr{background:#0d1928;border-bottom:1px solid rgba(122,175,212,.15)}
 .data-table th{padding:11px 15px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#7aafd4;white-space:nowrap}
@@ -563,6 +682,11 @@ textarea.fi{resize:vertical;min-height:72px}
 .padm-search{width:100%;padding:10px 14px 10px 36px;border-radius:10px;border:1px solid rgba(122,175,212,.2);background:rgba(255,255,255,.04);color:#c8dff0;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:14px}
 .padm-search-wrap{position:relative;margin-bottom:4px}
 .padm-search-wrap::before{content:'🔍';position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px}
+.padm-mini-btn{padding:6px 12px;border-radius:8px;border:1px solid rgba(122,175,212,.25);background:rgba(122,175,212,.08);color:#a0bcd4;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.padm-mini-btn:hover{background:rgba(122,175,212,.18);color:#e0ecf5}
+.light-mode .padm-mini-btn{background:#eef2f7;border-color:#c0cfdd;color:#33536f}
+.light-mode .padm-mini-btn:hover{background:#e1ecf7;color:#15314f}
+.light-mode #pf_pestanas_list label,.light-mode #pf_sectores_list label{background:#f1f5f9!important;border-color:#dbe4ee!important;color:#33536f!important}
 
 /* ═════ BANNER DE ACTUALIZACIÓN ═════ */
 #updateBanner{position:fixed;bottom:0;left:0;right:0;z-index:9999;display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:linear-gradient(135deg,#1a3a5c,#0f2540);border-top:2px solid #7aafd4;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
@@ -1819,6 +1943,20 @@ const SECTORS = [
     ]},
   ]},
 
+  // ─── DISPOSICIONES INTERNAS (mismo acceso y lógica que Libro de Expedientes) ───
+  // custom:'disposiciones' → usa la vista propia renderDisposiciones(). restringido:true →
+  // la ven los mismos usuarios que ven el Libro de Expedientes (_expTieneAcceso()).
+  { id:'DISPOSICIONES', name:'Disposiciones Internas', icon:'📑', color:'#0e7490', bg:'#cffafe', custom:'disposiciones', restringido:true, modules:[
+    { id:'DISPOSICIONES', name:'Disposiciones Internas', fields:[
+      {key:'numero',     label:'N° de Disposición', type:'text'},
+      {key:'fecha',      label:'Fecha',             type:'date'},
+      {key:'registra',   label:'Quién registra',    type:'text'},
+      {key:'secretario', label:'Secretario',        type:'text'},
+      {key:'motivo',     label:'Motivo',            type:'textarea'},
+      {key:'entregoCopia', label:'Entregó copia',   type:'select', opts:['Sí','No']},
+    ]},
+  ]},
+
   { id:'NOVEDADES', name:'Novedades', icon:'📢', color:'#6d28d9', bg:'#ede9fe', universal:true, modules:[
     { id:'NOVEDADES_MOD', name:'Novedades', fields:[
       {key:'fecha',       label:'Fecha',        type:'date',     req:true},
@@ -2184,7 +2322,8 @@ function notifGo(id){
     }
     // Verificar que el usuario actual tiene acceso a ese sector
     const veTodo = CU.permiso==='admin' || CU.permiso==='visor' || CU.permiso==='cargar-global';
-    const puedeVer = veTodo || sec.universal || sec.custom || (CU.sectores||[]).includes(n.secId);
+    const oculta = (CU.permiso!=='admin') && Array.isArray(CU.pestanasOcultas) && CU.pestanasOcultas.includes(n.secId);
+    const puedeVer = !oculta && (veTodo || sec.universal || sec.custom || (CU.sectores||[]).includes(n.secId));
     if(!puedeVer){
       alert('No tenés permiso para ver este sector.');
       return;
@@ -2445,6 +2584,10 @@ function buildSidebar(){
   const isCargarGlobal=CU.permiso==='cargar-global';
   const veTodo = isAdmin||isVisor||isCargarGlobal;
   const visible=SECTORS.filter(s=>{
+    // ── v1.5.18: las administradoras pueden OCULTAR pestañas puntuales a un
+    // usuario (lista pestanasOcultas). Eso manda por sobre todo lo demás:
+    // si está oculta, no se muestra aunque sea universal o tenga acceso.
+    if(!isAdmin && Array.isArray(CU.pestanasOcultas) && CU.pestanasOcultas.includes(s.id)) return false;
     // Sectores restringidos (Libro de Expedientes): solo administradoras o lista EXPEDIENTES_ACCESO,
     // sin importar que el rol "vea todo" (visor / cargar-global NO lo ven automáticamente).
     if(s.restringido) return _expTieneAcceso();
@@ -2452,7 +2595,7 @@ function buildSidebar(){
     return (CU.sectores||[]).includes(s.id) || s.universal || s.custom;
   });
   document.getElementById('sectorList').innerHTML=visible.map(s=>{
-    const destacado = (s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES');
+    const destacado = (s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES' || s.id==='DISPOSICIONES');
     return `
     <button class="sector-btn${destacado?' sb-destacado':''}" id="sb_${s.id}" onclick="selectSector('${s.id}')">
       <span class="s-icon">${s.icon}</span>
@@ -2661,6 +2804,13 @@ function renderTable(searchOverride){
     return;
   }
 
+  // ─── Pestaña custom: DISPOSICIONES INTERNAS ───
+  if(CS.custom==='disposiciones'){
+    area.innerHTML = renderDisposiciones();
+    dispEnsureModal();
+    return;
+  }
+
   // ─── Pestañas custom a nivel módulo: Recargo / Imaginarias (selección de aspirantes) ───
   if(CM.custom==='recargo' || CM.custom==='imaginarias'){
     area.innerHTML = renderSeleccionAspirantes(CM.custom);
@@ -2859,6 +3009,44 @@ function renderTable(searchOverride){
       const open = buscando || st.open.has(iso) || (iso===fechas[0] && !st.closed.has(iso));
       return `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${iso}',${open?1:0})">
         <td colspan="${colSpan}"><span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${_fechaCarpetaLabel(iso)} <span class="df-count">${g.length} registro${g.length!==1?'s':''}</span></td>
+      </tr>` + (open ? g.map(rowHTML).join('') : '');
+    }).join('');
+  } else if(CM.id==='INSTRUCTORES' && fields.some(f=>f.key==='seccion')){
+    // ─── Operacional · Instructores: agrupar las notas POR SECCIÓN ───
+    // Las cargas de las distintas secciones venían todas mezcladas. Ahora se
+    // agrupan en carpetas desplegables (Sección 1 … Sección 5) y, dentro de cada
+    // una, ordenadas alfabéticamente por aspirante. Reutiliza el mismo mecanismo
+    // de carpetas (DATE_FOLDERS + toggleDateFolder) usando la sección como clave.
+    const _ordSec = s => {
+      const n = parseInt(String(s||'').replace(/\D/g,''),10);
+      return isNaN(n) ? 999 : n;
+    };
+    const grupos = {};
+    showRows.forEach(r=>{
+      const k = (r.seccion && String(r.seccion).trim()) || 'Sin sección';
+      (grupos[k] = grupos[k] || []).push(r);
+    });
+    const secciones = Object.keys(grupos).sort((a,b)=>{
+      const na=_ordSec(a), nb=_ordSec(b);
+      if(na!==nb) return na-nb;
+      return a.localeCompare(b,'es');
+    });
+    // Ordenar dentro de cada sección por nombre del aspirante
+    const _nombre = r => String(r.aspirante || r.nombre || r.apellidoNombre || '').trim();
+    Object.keys(grupos).forEach(k=>{
+      grupos[k] = grupos[k].slice().sort((a,b)=> _nombre(a).localeCompare(_nombre(b),'es'));
+    });
+    const modKey = CS.id+'|'+CM.id;
+    if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
+    const st = DATE_FOLDERS[modKey];
+    const buscando = palabras.length > 0; // con búsqueda activa se abren todas
+    bodyHTML = secciones.map(sec=>{
+      const g = grupos[sec];
+      // Por defecto abre la primera sección; el usuario puede abrir/cerrar las demás
+      const open = buscando || st.open.has(sec) || (sec===secciones[0] && !st.closed.has(sec));
+      const secSafe = String(sec).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${sec.replace(/'/g,"\\'")}',${open?1:0})">
+        <td colspan="${colSpan}"><span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${secSafe} <span class="df-count">${g.length} aspirante${g.length!==1?'s':''}</span></td>
       </tr>` + (open ? g.map(rowHTML).join('') : '');
     }).join('');
   } else if(CS.id==='SECCIONES_GEN'){
@@ -3395,11 +3583,11 @@ function renderMinuta(){
   const recsTotal = S.get('MINUTAS','MINUTAS_MOD').length;
 
   return `
-  <div class="fade-in" style="padding:4px 2px;max-width:640px;margin:0 auto">
+  <div class="fade-in minuta-panel" style="padding:4px 2px;max-width:640px;margin:0 auto">
 
-    <div style="background:linear-gradient(135deg,rgba(34,211,238,.1),rgba(34,211,238,.02));border:1px solid rgba(34,211,238,.22);border-radius:14px;padding:14px 16px;margin-bottom:16px">
-      <div style="font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">💬 Nueva minuta</div>
-      <div style="font-size:12px;color:#9fc4e0;margin-top:4px;line-height:1.5">Completá los datos (ya vienen cargados) y escribí solo el <strong style="color:${ac}">RELATO</strong>. Después tocá <strong style="color:#4ade80">Guardar y enviar</strong>: queda registrada para todos y se abre WhatsApp con la minuta lista.</div>
+    <div class="info-banner" style="margin-bottom:16px">
+      <div class="info-banner-title">💬 Nueva minuta</div>
+      <div class="info-banner-text">Completá los datos (ya vienen cargados) y escribí solo el <strong style="color:${ac}">RELATO</strong>. Después tocá <strong class="ib-ok">Guardar y enviar</strong>: queda registrada para todos y se abre WhatsApp con la minuta lista.</div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
@@ -4740,31 +4928,35 @@ async function saveRecord(){
   const txtPrev = btnSave ? btnSave.textContent : '';
   if(btnSave){ btnSave.disabled = true; btnSave.textContent = '☁️ GUARDANDO...'; }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // GUARDADO NO BLOQUEANTE (v1.5.17) — FIN DEL "GUARDANDO" ETERNO
+  // ───────────────────────────────────────────────────────────────────
+  // El dato se escribe SIEMPRE primero en el dispositivo (localStorage) de forma
+  // instantánea; la nube viaja por detrás en cola (addSafe/updSafe ya lo hacen).
+  // ANTES hacíamos `await S.addSafe(...)` y recién después cerrábamos el modal: si
+  // la app estaba abierta en el celu y en la compu a la vez, la cola de sincronía
+  // podía quedar esperando y el botón se pegaba en "GUARDANDO...".
+  // AHORA: corremos el guardado local de inmediato, cerramos el modal y refrescamos
+  // SIN esperar a la nube. Si algo del guardado local fallara (ej. sin espacio),
+  // lo capturamos y reponemos el botón. La sincronía con la nube nunca traba la UI.
   try {
-  // ═══ FIX PWA DESKTOP: Timeout de seguridad (30 segundos máximo) ═══
-  const timeoutId = setTimeout(()=>{
-    if(btnSave && btnSave.textContent === "☁️ GUARDANDO..."){
-      btnSave.disabled = false;
-      btnSave.textContent = txtPrev || "GUARDAR REGISTRO";
-      alert("⚠️ El guardado se demoró demasiado. Verifica tu conexión.\n\nTus datos se guardarán cuando se restablezca la conexión.");
-    }
-  }, 30000);
     if(editId) {
       // Obtener datos viejos para el changelog
       const oldRecord = S.get(CS.id,CM.id).find(r=>r._id===editId);
       logEdit(CS.id, CM.id, editId, oldRecord, data, CU?.nombre);
-      // Usa la versión segura si está disponible (fusiona con la nube antes de guardar)
-      if(typeof S.updSafe === 'function') await S.updSafe(CS.id,CM.id,editId,data);
+      // updSafe guarda local YA y encola la nube por detrás (no lo esperamos)
+      if(typeof S.updSafe === 'function'){ S.updSafe(CS.id,CM.id,editId,data); }
       else S.upd(CS.id,CM.id,editId,data);
     } else {
       // ════ CORRECCIÓN 2: Marcar registros como nuevos con timestamp especial ════
       data._ts_new = Date.now(); // Timestamp para identificar registros nuevos
       logEdit(CS.id, CM.id, null, null, data, CU?.nombre); // Registrar que se creó
-      if(typeof S.addSafe === 'function') await S.addSafe(CS.id,CM.id,data);
+      if(typeof S.addSafe === 'function'){ S.addSafe(CS.id,CM.id,data); }
       else S.add(CS.id,CM.id,data);
     }
+    // El registro ya quedó guardado localmente: cerramos y refrescamos enseguida.
     closeModal(); renderTable();
-    clearTimeout(timeoutId);
+    if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
   } catch(err){
     if(btnSave){ btnSave.disabled = false; btnSave.textContent = txtPrev || 'GUARDAR REGISTRO'; }
     if(err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message||''))){
@@ -5594,6 +5786,18 @@ function renderPadmNuevo(userData){
         </div>
       </div>
 
+      <div id="pf_pestanas_wrap" style="margin-top:14px">
+        <div class="padm-field">
+          <label>👁️ Pestañas visibles para este usuario</label>
+          <div style="display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap">
+            <button type="button" class="padm-mini-btn" onclick="marcarTodasPestanas(true)">✓ Mostrar todas</button>
+            <button type="button" class="padm-mini-btn" onclick="marcarTodasPestanas(false)">✕ Ocultar todas</button>
+          </div>
+          <div id="pf_pestanas_list" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px"></div>
+          <small style="color:#5a7a9a;font-size:10px;margin-top:6px;display:block">Destildá una pestaña para ocultársela a este usuario. Tildala para volver a dársela. (Las administradoras siempre ven todo.)</small>
+        </div>
+      </div>
+
       <div id="pf_msg" class="padm-msg"></div>
 
       <div style="display:flex;gap:8px;margin-top:16px">
@@ -5612,6 +5816,33 @@ function renderPadmNuevo(userData){
 
   // Renderizar checkboxes de sectores si corresponde
   renderSectoresCheck(sectoresActuales);
+  // Renderizar lista de pestañas visibles/ocultas para este usuario
+  renderPestanasCheck(u.pestanasOcultas || []);
+}
+
+// ── v1.5.18: control fino de pestañas por usuario ──────────────────────────
+// Lista TODAS las pestañas (sectores) de la app con un tilde. Lo que queda
+// DESTILDADO se guarda en pestanasOcultas y deja de verse para ese usuario.
+function _todasLasPestanas(){
+  // Devuelve [{id, name, icon}] de todos los sectores, en el orden de la app
+  return (typeof SECTORS !== 'undefined' ? SECTORS : []).map(s => ({
+    id: s.id, name: s.name, icon: s.icon || '📄'
+  }));
+}
+function renderPestanasCheck(ocultas){
+  const lista = document.getElementById('pf_pestanas_list');
+  if(!lista) return;
+  const ocultasSet = new Set(ocultas || []);
+  lista.innerHTML = _todasLasPestanas().map(p => {
+    const visible = !ocultasSet.has(p.id);
+    return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(122,175,212,.06);border:1px solid rgba(122,175,212,.14);border-radius:8px;cursor:pointer;font-size:12px;color:#a0bcd4">
+      <input type="checkbox" class="pf-pestana-chk" value="${p.id}" ${visible?'checked':''} style="accent-color:#16a34a">
+      <span>${p.icon} ${p.name}</span>
+    </label>`;
+  }).join('');
+}
+function marcarTodasPestanas(visibles){
+  document.querySelectorAll('#pf_pestanas_list .pf-pestana-chk').forEach(c => { c.checked = !!visibles; });
 }
 
 function renderSectoresCheck(preselect){
@@ -5677,8 +5908,13 @@ function guardarUsuarioPadm(){
     sectores = Array.from(document.querySelectorAll('#pf_sectores_list input[type=checkbox]:checked')).map(c => c.value);
   }
 
+  // Pestañas ocultas: las que quedaron DESTILDADAS en la lista de pestañas visibles
+  const todasPest = _todasLasPestanas().map(p => p.id);
+  const visiblesMarcadas = Array.from(document.querySelectorAll('#pf_pestanas_list .pf-pestana-chk:checked')).map(c => c.value);
+  const pestanasOcultas = todasPest.filter(id => !visiblesMarcadas.includes(id));
+
   // Guardar en dynUsers
-  const campos = { nombre, rol, permiso, sectores };
+  const campos = { nombre, rol, permiso, sectores, pestanasOcultas };
   if(!esEdicion) campos.password = pass;
   saveDynUser(usuario, campos);
 
@@ -7688,6 +7924,331 @@ const EXP_SEED = [
   {"numero": "115", "fecha": "2026-06-19", "procedencia": "Interno", "expNumero": "", "expLetra": "", "telegrama": "", "nota": "", "objeto": "S/Permuta Of. Inspector Calderas", "secretario": "Bascur", "fechaSalida": "2026-06-23", "destino": "Dirección Institutos Policiales"},
 ];// fin módulo expedientes
 // ═══════ FIN MÓDULO LIBRO DE EXPEDIENTES ═══════
+
+// ═══════ INICIO MÓDULO DISPOSICIONES INTERNAS ═══════
+// ───────────────────────────────────────────────────────────────────
+// DISPOSICIONES INTERNAS (pestaña custom:'disposiciones')
+// • Misma lógica de acceso que el Libro de Expedientes: la ven y la cargan
+//   las administradoras y los usuarios de la lista EXPEDIENTES_ACCESO.
+// • Campos: N° de disposición, Fecha, Quién registra, Secretario, Motivo,
+//   Entregó copia (Sí/No) y archivos escaneados adjuntos (PDF / imágenes).
+// • Igual que en Expedientes: pasados los 10 días corridos desde la fecha,
+//   la disposición queda BLOQUEADA para los usuarios con acceso (las
+//   administradoras siempre pueden editar).
+// • Carpetas por mes, detalle desplegable y modo claro/oscuro.
+// ═══════════════════════════════════════════════════════════════════
+const DISP_S = 'DISPOSICIONES';
+const DISP_M = 'DISPOSICIONES';
+const DISP_VENTANA_DIAS = 10;
+let dispTempAtts = []; // adjuntos temporales mientras se carga/edita
+
+function _dispEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _dispRows(){ try{ return S.get(DISP_S, DISP_M); }catch(_){ return []; } }
+function _dispEsAdmin(){ return !!(CU && CU.permiso === 'admin'); }
+
+function _dispParseFecha(f){
+  if(!f) return null;
+  const m = String(f).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+function _dispHoy(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function _dispDiasDesde(f){ const d = _dispParseFecha(f); if(!d) return null; return Math.floor((_dispHoy() - d) / 86400000); }
+function _dispVencida(r){
+  const dias = _dispDiasDesde(r.fecha);
+  return dias !== null && dias > DISP_VENTANA_DIAS;
+}
+// admin → siempre editable; usuario con acceso → solo dentro de los 10 días.
+function _dispEditablePorUsuario(r){
+  if(_dispEsAdmin()) return true;
+  if(!_expTieneAcceso()) return false;
+  const dias = _dispDiasDesde(r.fecha);
+  if(dias === null) return true;
+  return dias <= DISP_VENTANA_DIAS;
+}
+function _dispEstado(r){
+  const dias = _dispDiasDesde(r.fecha);
+  if(dias === null) return {txt:'—', cls:'exp-bg-none'};
+  if(dias > DISP_VENTANA_DIAS) return {txt:`🔒 Bloqueada +${dias-DISP_VENTANA_DIAS}d`, cls:'exp-bg-bad'};
+  const faltan = DISP_VENTANA_DIAS - dias;
+  return {txt:`🕒 Edita ${faltan}d`, cls:'exp-bg-wait'};
+}
+function _dispNum(r){ return r.numero ? _dispEsc(r.numero) : '—'; }
+function _dispFechaCorta(f){ const d=_dispParseFecha(f); if(!d) return f? _dispEsc(f):'—'; const p=x=>String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
+
+// ─── Carpetas por mes (agrupa por la fecha de la disposición) ───
+const DISP_MESES = { abiertos:new Set(), cerrados:new Set(), _reciente:null };
+const _DISP_MESNOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function _dispMesKey(r){ const f=_dispParseFecha(r.fecha); if(!f) return 'Sin fecha'; return f.getFullYear()+'-'+String(f.getMonth()+1).padStart(2,'0'); }
+function _dispMesLabel(k){ if(k==='Sin fecha') return 'Sin fecha'; const p=k.split('-'); const mi=parseInt(p[1],10)-1; return (_DISP_MESNOM[mi]||p[1])+' '+p[0]; }
+function _dispMesAbierto(k){ if(DISP_MESES.abiertos.has(k)) return true; if(DISP_MESES.cerrados.has(k)) return false; return k===DISP_MESES._reciente; }
+function dispToggleMes(k){
+  if(_dispMesAbierto(k)){ DISP_MESES.abiertos.delete(k); DISP_MESES.cerrados.add(k); }
+  else { DISP_MESES.cerrados.delete(k); DISP_MESES.abiertos.add(k); }
+  renderTable();
+}
+
+// ─────────────────────────── VISTA / TABLA ───────────────────────────
+function renderDisposiciones(){
+  expEnsureEstilos(); // reutiliza los estilos del módulo de expedientes
+  const esAdmin = _dispEsAdmin();
+  const puedeCrear = esAdmin || _expTieneAcceso();
+  let rows = _dispRows().slice().sort((a,b)=>{
+    const na = parseInt(String(a.numero||'').replace(/\D/g,''),10);
+    const nb = parseInt(String(b.numero||'').replace(/\D/g,''),10);
+    if(!isNaN(na) && !isNaN(nb) && na!==nb) return na-nb;
+    return String(a.fecha||'').localeCompare(String(b.fecha||''));
+  });
+
+  const head = `
+    <div class="exp-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="exp-title">📑 Disposiciones Internas</span>
+        <span class="exp-sub">${rows.length} registro${rows.length===1?'':'s'}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="dispBuscar" class="exp-search" type="text" placeholder="Buscar…" oninput="dispFiltrar(this.value)">
+        ${puedeCrear ? `<button class="exp-btn-new" style="background:linear-gradient(135deg,#18a0a8,#0e7490)" onclick="dispNueva()">+ Nueva disposición</button>` : ''}
+      </div>
+    </div>`;
+
+  if(!rows.length){
+    return `<div class="exp-wrap">${head}
+      <div style="text-align:center;color:#94a3b8;padding:40px 12px">Todavía no hay disposiciones cargadas.</div></div>`;
+  }
+
+  const filaTbody = r=>{
+    const est = _dispEstado(r);
+    const editable = _dispEditablePorUsuario(r);
+    const atts = Array.isArray(r._attachments) ? r._attachments : [];
+    const buscable = _dispEsc([r.numero, r.registra, r.secretario, r.motivo, r.entregoCopia].join(' ').toLowerCase());
+
+    let acts = '';
+    if(editable){
+      acts = `<button class="exp-da exp-da-edit" style="background:linear-gradient(135deg,#18a0a8,#0e7490)" onclick="event.stopPropagation();dispEditar('${r._id}')">✏️ Editar</button>`;
+      if(esAdmin) acts += `<button class="exp-da exp-da-del" onclick="event.stopPropagation();dispBorrar('${r._id}')">🗑️ Borrar</button>`;
+    }else{
+      acts = `<span class="exp-da-lock">🔒 Pasaron los ${DISP_VENTANA_DIAS} días — avisá a una administradora.</span>`;
+    }
+
+    const campo = (lbl,val)=> (val && String(val).trim()) ? `<div class="exp-field"><b>${lbl}</b>${_dispEsc(val)}</div>` : '';
+    let attsHTML = '';
+    if(atts.length){
+      attsHTML = `<div class="exp-field"><b>Archivos escaneados</b>` + atts.map((a,i)=>{
+        const href = a.url || a.data || '#';
+        const nm = _dispEsc(a.name||('archivo'+(i+1)));
+        return `<div style="margin:3px 0"><a href="${href}" target="_blank" rel="noopener" style="color:#18a0a8;font-weight:600;text-decoration:underline">📄 ${nm}</a></div>`;
+      }).join('') + `</div>`;
+    }
+    const detalle = `
+      <div class="exp-grid">
+        ${campo('N° de Disposición', r.numero)}
+        ${campo('Fecha', r.fecha ? _dispFechaCorta(r.fecha) : '')}
+        ${campo('Quién registra', r.registra)}
+        ${campo('Secretario', r.secretario)}
+      </div>
+      ${campo('Motivo', r.motivo)}
+      ${campo('Entregó copia', r.entregoCopia)}
+      ${attsHTML}
+      <div class="exp-foot">${r._por ? 'Cargado por: '+_dispEsc(r._por) : ''}</div>
+      <div class="exp-detacts">${acts}</div>`;
+
+    const mes = _dispMesKey(r);
+    const oculto = _dispMesAbierto(mes) ? '' : ' style="display:none"';
+    return `<tbody data-buscar="${buscable}" data-mes="${mes}"${oculto}>
+      <tr class="exp-row" onclick="dispToggleDetalle('${r._id}')">
+        <td class="exp-num"><span class="exp-chev" id="dispchev_${r._id}">▶</span> ${_dispNum(r)}${atts.length?' 📎':''}</td>
+        <td>${_dispFechaCorta(r.fecha)}</td>
+        <td class="exp-objeto">${_dispEsc(r.motivo)||'—'}</td>
+        <td><span class="exp-badge ${est.cls}">${est.txt}</span></td>
+      </tr>
+      <tr class="exp-detalle" id="dispdet_${r._id}" style="display:none"><td colspan="4">${detalle}</td></tr>
+    </tbody>`;
+  };
+
+  const grupos = {};
+  rows.forEach(r=>{ const k=_dispMesKey(r); (grupos[k]=grupos[k]||[]).push(r); });
+  const claves = Object.keys(grupos).sort((a,b)=>{ if(a==='Sin fecha')return 1; if(b==='Sin fecha')return -1; return b.localeCompare(a); });
+  DISP_MESES._reciente = claves.find(k=>k!=='Sin fecha') || claves[0] || null;
+  const filas = claves.map(k=>{
+    const g = grupos[k];
+    const abierto = _dispMesAbierto(k);
+    const header = `<tbody class="exp-folder" data-folder="${k}"><tr onclick="dispToggleMes('${k}')">
+      <td colspan="4"><span class="exp-fchev">${abierto?'▾':'▸'}</span> ${abierto?'📂':'📁'} ${_dispMesLabel(k)} <span class="exp-fcount">${g.length}</span></td></tr></tbody>`;
+    return header + g.map(filaTbody).join('');
+  }).join('');
+
+  return `<div class="exp-wrap">${head}
+    <div class="exp-tablewrap">
+      <table class="exp-table">
+        <colgroup><col style="width:20%"><col style="width:16%"><col style="width:40%"><col style="width:24%"></colgroup>
+        <thead><tr>
+          <th class="exp-th">N° Disp.</th>
+          <th class="exp-th">Fecha</th>
+          <th class="exp-th">Motivo</th>
+          <th class="exp-th">Estado</th>
+        </tr></thead>
+        ${filas}
+      </table>
+    </div>
+    <div class="exp-foot">Las disposiciones están en carpetas por mes (tocá el mes para abrir/cerrar). Tocá una fila para ver el detalle, los archivos escaneados y los botones. 📎 = tiene archivos adjuntos · 🔒 = pasaron los ${DISP_VENTANA_DIAS} días.</div>
+  </div>`;
+}
+
+function dispToggleDetalle(id){
+  const det = document.getElementById('dispdet_'+id);
+  const chev = document.getElementById('dispchev_'+id);
+  if(!det) return;
+  const abierto = det.style.display !== 'none';
+  det.style.display = abierto ? 'none' : 'table-row';
+  if(chev) chev.style.transform = abierto ? '' : 'rotate(90deg)';
+}
+
+function dispFiltrar(q){
+  const t = String(q||'').toLowerCase().trim();
+  if(!t){
+    document.querySelectorAll('.exp-table tbody[data-mes]').forEach(tb=>{ tb.style.display = _dispMesAbierto(tb.getAttribute('data-mes')) ? '' : 'none'; });
+    document.querySelectorAll('.exp-table tbody.exp-folder').forEach(h=>{ h.style.display=''; });
+    return;
+  }
+  document.querySelectorAll('.exp-table tbody[data-buscar]').forEach(tb=>{
+    tb.style.display = tb.getAttribute('data-buscar').includes(t) ? '' : 'none';
+  });
+  document.querySelectorAll('.exp-table tbody.exp-folder').forEach(h=>{ h.style.display=''; });
+}
+
+// ─────────────────────────── MODAL PROPIO ───────────────────────────
+function dispEnsureModal(){
+  expEnsureEstilos();
+  if(document.getElementById('dispModalOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'dispModalOverlay';
+  ov.className = 'exp-ov';
+  ov.addEventListener('click', e=>{ if(e.target===ov) dispCerrarModal(); });
+  ov.innerHTML = `<div id="dispModalBox" class="exp-box"></div>`;
+  document.body.appendChild(ov);
+}
+function dispAbrirModal(html){
+  dispEnsureModal();
+  document.getElementById('dispModalBox').innerHTML = html;
+  document.getElementById('dispModalOverlay').style.display = 'flex';
+}
+function dispCerrarModal(){ const ov = document.getElementById('dispModalOverlay'); if(ov) ov.style.display = 'none'; }
+function _dispCampo(label, id, val, type, opts){
+  const v = _dispEsc(val==null?'':val);
+  let input;
+  if(type==='textarea') input = `<textarea id="${id}" class="exp-ta" rows="3">${v}</textarea>`;
+  else if(type==='select'){
+    input = `<select id="${id}" class="exp-in">` + (opts||[]).map(o=>`<option value="${_dispEsc(o)}"${o===val?' selected':''}>${_dispEsc(o)}</option>`).join('') + `</select>`;
+  }
+  else input = `<input id="${id}" class="exp-in" type="${type||'text'}" value="${v}">`;
+  return `<label class="exp-lbl"><span>${label}</span>${input}</label>`;
+}
+function _dispVal(id){ const el=document.getElementById(id); return el? el.value.trim() : ''; }
+
+function _dispRenderAttList(){
+  const cont = document.getElementById('dispAttList');
+  if(!cont) return;
+  if(!dispTempAtts.length){ cont.innerHTML = '<div style="font-size:12px;color:#64748b;padding:4px 0">Sin archivos adjuntos todavía.</div>'; return; }
+  cont.innerHTML = dispTempAtts.map((a,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(24,160,168,.10);border:1px solid rgba(24,160,168,.3);border-radius:8px;margin-top:6px">
+      <span style="flex:1;font-size:13px;word-break:break-word">📄 ${_dispEsc(a.name||('archivo'+(i+1)))}</span>
+      <button type="button" onclick="dispQuitarAtt(${i})" style="border:none;background:rgba(248,113,113,.18);color:#f87171;border-radius:7px;padding:4px 9px;cursor:pointer;font-weight:700">Quitar</button>
+    </div>`).join('');
+}
+function dispQuitarAtt(i){ dispTempAtts.splice(i,1); _dispRenderAttList(); }
+
+async function dispAddAttachments(input){
+  const files = Array.from(input.files || []);
+  input.value = '';
+  for(const file of files){
+    // aceptar PDF e imágenes escaneadas
+    const ok = file.type === 'application/pdf' || file.type.startsWith('image/');
+    if(!ok){ alert(`"${file.name}" no es un PDF ni una imagen. Solo se aceptan archivos escaneados (PDF) o fotos.`); continue; }
+    if(file.type==='application/pdf' && file.size > (typeof ATT_MAX_SIZE!=='undefined'?ATT_MAX_SIZE:2*1024*1024)){
+      alert(`"${file.name}" supera 2 MB. Comprimí el PDF antes de subirlo.`); continue;
+    }
+    try{
+      const att = (typeof processAttachment==='function') ? await processAttachment(file) : null;
+      if(att){ dispTempAtts.push(att); _dispRenderAttList(); }
+    }catch(err){ console.error(err); alert(`No se pudo procesar "${file.name}".`); }
+  }
+}
+
+function _dispFormHTML(r){
+  const esNueva = !r;
+  const hoy = new Date();
+  const f = r ? r.fecha : `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+  const venc = r && _dispVencida(r);
+  const hint = (venc && _dispEsAdmin()) ? `<div class="exp-hint exp-hint-amber">Esta disposición pasó los ${DISP_VENTANA_DIAS} días. Como administradora podés editarla igual.</div>` : '';
+  return `
+    <div class="exp-mh"><h3>${esNueva?'📑 Nueva disposición':'✏️ Editar disposición N° '+_dispNum(r)}</h3><button class="exp-x" onclick="dispCerrarModal()">×</button></div>
+    ${hint}
+    ${_dispCampo('N° de Disposición','dispf_numero', r?r.numero:'', 'text')}
+    ${_dispCampo('Fecha','dispf_fecha', f, 'date')}
+    ${_dispCampo('Quién registra','dispf_registra', r?r.registra:(CU&&CU.nombre)||'', 'text')}
+    ${_dispCampo('Secretario','dispf_secretario', r?r.secretario:'', 'text')}
+    ${_dispCampo('Motivo','dispf_motivo', r?r.motivo:'', 'textarea')}
+    ${_dispCampo('¿Entregó copia?','dispf_entregoCopia', r?(r.entregoCopia||'No'):'No', 'select', ['Sí','No'])}
+    <div class="exp-divider">
+      <div class="exp-sec exp-sec-s">ARCHIVOS ESCANEADOS (PDF o foto)</div>
+      <input type="file" id="dispf_attach" accept="application/pdf,image/*" multiple
+        class="exp-in" style="padding:8px;cursor:pointer" onchange="dispAddAttachments(this)">
+      <small style="display:block;color:#64748b;margin:4px 0 0">Podés adjuntar uno o varios PDF escaneados o fotos. Máx. 2 MB por PDF.</small>
+      <div id="dispAttList" style="margin-top:8px"></div>
+    </div>
+    <div class="exp-mbtns"><button class="exp-cancel" onclick="dispCerrarModal()">Cancelar</button>
+      <button class="exp-save exp-save-s" onclick="dispGuardar('${r?r._id:''}')">Guardar</button></div>`;
+}
+
+function dispNueva(){
+  dispTempAtts = [];
+  dispAbrirModal(_dispFormHTML(null));
+  _dispRenderAttList();
+}
+function dispEditar(id){
+  const r = _dispRows().find(x=>x._id===id); if(!r) return;
+  if(!_dispEditablePorUsuario(r)){
+    alert(`Ya pasaron los ${DISP_VENTANA_DIAS} días para editar esta disposición. Avisá a una administradora.`);
+    return;
+  }
+  dispTempAtts = Array.isArray(r._attachments) ? r._attachments.slice() : [];
+  dispAbrirModal(_dispFormHTML(r));
+  _dispRenderAttList();
+}
+async function dispGuardar(id){
+  const data = {
+    numero: _dispVal('dispf_numero'),
+    fecha: _dispVal('dispf_fecha'),
+    registra: _dispVal('dispf_registra'),
+    secretario: _dispVal('dispf_secretario'),
+    motivo: _dispVal('dispf_motivo'),
+    entregoCopia: _dispVal('dispf_entregoCopia'),
+    _attachments: dispTempAtts.slice(),
+  };
+  if(!data.numero){ alert('Cargá el número de disposición.'); return; }
+  if(!data.fecha){ alert('Cargá la fecha.'); return; }
+  try{
+    if(id){
+      const r = _dispRows().find(x=>x._id===id);
+      if(r && !_dispEditablePorUsuario(r)){ alert(`Ya pasaron los ${DISP_VENTANA_DIAS} días para editar.`); dispCerrarModal(); renderTable(); return; }
+      if(typeof S.updSafe === 'function') await S.updSafe(DISP_S, DISP_M, id, data); else S.upd(DISP_S, DISP_M, id, data);
+    }else{
+      if(typeof S.addSafe === 'function') await S.addSafe(DISP_S, DISP_M, data); else S.add(DISP_S, DISP_M, data);
+    }
+  }catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  dispTempAtts = [];
+  dispCerrarModal(); renderTable();
+}
+async function dispBorrar(id){
+  const r = _dispRows().find(x=>x._id===id); if(!r) return;
+  if(!confirm(`¿Borrar la disposición N° ${_dispNum(r)}? Esta acción no se puede deshacer.`)) return;
+  try{ if(typeof S.delSafe === 'function') await S.delSafe(DISP_S, DISP_M, id); else S.del(DISP_S, DISP_M, id); }
+  catch(e){ alert('No se pudo borrar: '+(e.message||e)); return; }
+  dispCerrarModal(); renderTable();
+}
+// ═══════ FIN MÓDULO DISPOSICIONES INTERNAS ═══════
 
 // Enganchar el detector después de cada render de tabla
 (function(){
