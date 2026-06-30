@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.19">
+<meta name="app-version" content="1.5.20">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4378,7 +4378,7 @@ async function addAttachments(input){
       renderAttList();
     } catch(err){
       console.error('Error procesando archivo:', err);
-      alert(`No se pudo procesar "${file.name}".`);
+      alert(err && err.message ? err.message : `No se pudo procesar "${file.name}".`);
     }
   }
 }
@@ -4416,11 +4416,14 @@ function processAttachment(file){
         fileName = file.name;
       }
 
+      const esImagen = file.type.startsWith('image/');
+
       // ✅ FIX: intentar subir a Supabase Storage (solo con conexión y con tope de 10 segundos)
+      let _upDetalle = '';
       if(typeof clienteS !== 'undefined' && navigator.onLine !== false){
         try{
           const path = `attachments/${Date.now()}_${fileName}`;
-          // ⏱️ Si la conexión está caída/lenta no queda colgado: pasa al plan B (base64)
+          // ⏱️ Si la conexión está caída/lenta no queda colgado: pasa al plan B
           const { error: upErr } = await _conTimeout(clienteS.storage.from('suep-files').upload(path, blob, {
             contentType: blob.type || file.type || 'application/octet-stream',
             upsert: true
@@ -4436,10 +4439,30 @@ function processAttachment(file){
             });
             return;
           }
-        }catch(err){ console.warn('Storage no disponible para adjunto, usando base64', err); }
+          _upDetalle = (upErr && (upErr.message || upErr.error || upErr.statusCode)) ? String(upErr.message || upErr.error || upErr.statusCode) : 'el servidor de archivos rechazó la subida';
+          console.warn('Storage upload error:', upErr);
+        }catch(err){
+          _upDetalle = (err && err.message) ? String(err.message) : 'sin conexión o tardó demasiado';
+          console.warn('Storage no disponible para adjunto', err);
+        }
+      } else {
+        _upDetalle = (typeof clienteS === 'undefined') ? 'la nube no está conectada' : 'el dispositivo está sin internet';
       }
 
-      // Fallback: base64
+      // ✅ FIX CRÍTICO: para PDF/Excel (archivos pesados), NO caer a base64.
+      // Guardar un PDF en base64 dentro del registro rompe el almacenamiento local
+      // del navegador ("exceeded the quota"). Mejor avisar claro y no guardar basura.
+      if(!esImagen){
+        reject(new Error(
+          `No se pudo subir "${fileName}" a la nube (${_upDetalle}).\n\n`+
+          `Los PDF y archivos pesados deben guardarse en la nube, no en el dispositivo. `+
+          `Revisá tu conexión a internet y volvé a intentar. Si el problema sigue, `+
+          `avisá a una administradora: puede ser un tema de configuración del almacenamiento en la nube.`
+        ));
+        return;
+      }
+
+      // Fallback SOLO para imágenes (ya comprimidas, son livianas)
       const reader2 = new FileReader();
       reader2.onerror = () => reject(reader2.error);
       reader2.onload = ev => {
@@ -8172,7 +8195,7 @@ async function dispAddAttachments(input){
     try{
       const att = (typeof processAttachment==='function') ? await processAttachment(file) : null;
       if(att){ dispTempAtts.push(att); _dispRenderAttList(); }
-    }catch(err){ console.error(err); alert(`No se pudo procesar "${file.name}".`); }
+    }catch(err){ console.error(err); alert(err && err.message ? err.message : `No se pudo procesar "${file.name}".`); }
   }
 }
 
