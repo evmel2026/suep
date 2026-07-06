@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.26">
+<meta name="app-version" content="1.5.27">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8140,6 +8140,25 @@ function _dispEstado(r){
   return {txt:`🕒 Edita ${faltan}d`, cls:'exp-bg-wait'};
 }
 function _dispNum(r){ return r.numero ? _dispEsc(r.numero) : '—'; }
+// ─── Correlativo automático (funciona igual que Números Varios) ───
+// El número se sugiere al abrir el formulario y se CONFIRMA al guardar con
+// reserva atómica en Supabase (RPC suep_reservar_numero): si dos personas
+// cargan a la vez, cada una recibe un número distinto. Reinicia cada año.
+function _dispNumInt(v){ const n = parseInt(String(v==null?'':v).replace(/\D/g,''),10); return isNaN(n)?0:n; }
+function _dispFmtNum(n){ return String(n).padStart(3,'0'); }
+function _dispAnioReg(r){
+  if(r && r.fecha){ const m = String(r.fecha).match(/^(\d{4})/); if(m) return +m[1]; }
+  const m = ((r && r._ts) || '').match(/(\d{4})/); return m ? +m[1] : null;
+}
+function _dispProximoNumero(base, anio){
+  const nums = (base || _dispRows()).filter(r=>_dispAnioReg(r)===anio).map(r=>_dispNumInt(r.numero)).filter(n=>n>0);
+  return (nums.length ? Math.max(...nums) : 0) + 1;
+}
+function _dispDesbloquearNumero(){
+  const i = document.getElementById('dispf_numero');
+  if(!i) return;
+  i.removeAttribute('readonly'); i.style.opacity='1'; i.focus(); i.select();
+}
 function _dispFechaCorta(f){ const d=_dispParseFecha(f); if(!d) return f? _dispEsc(f):'—'; const p=x=>String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
 
 // ─── Carpetas por mes (agrupa por la fecha de la disposición) ───
@@ -8350,7 +8369,13 @@ function _dispFormHTML(r){
   return `
     <div class="exp-mh"><h3>${esNueva?'📑 Nueva disposición':'✏️ Editar disposición N° '+_dispNum(r)}</h3><button class="exp-x" onclick="dispCerrarModal()">×</button></div>
     ${hint}
-    ${_dispCampo('N° de Disposición','dispf_numero', r?r.numero:'', 'text')}
+    ${esNueva ? `<label class="exp-lbl"><span>N° de Disposición (correlativo automático)</span>
+      <div style="display:flex;gap:8px">
+        <input id="dispf_numero" class="exp-in" type="text" value="${_dispFmtNum(_dispProximoNumero(null, new Date().getFullYear()))}" readonly style="flex:1;opacity:.8">
+        <button type="button" class="exp-cancel" style="padding:8px 12px;flex-shrink:0" title="Editar el número a mano" onclick="_dispDesbloquearNumero()">✏️</button>
+      </div>
+      <small style="display:block;color:#64748b;margin-top:4px">El número que sigue en el correlativo del año. Se confirma al guardar: si alguien más está cargando a la vez, salta solo al primero libre.</small>
+    </label>` : _dispCampo('N° de Disposición','dispf_numero', r.numero, 'text')}
     ${_dispCampo('Fecha','dispf_fecha', f, 'date')}
     ${_dispCampo('Quién registra','dispf_registra', r?r.registra:(CU&&CU.nombre)||'', 'text')}
     ${_dispCampo('Secretario','dispf_secretario', r?r.secretario:'', 'text')}
@@ -8394,6 +8419,67 @@ async function dispGuardar(id){
   };
   if(!data.numero){ alert('Cargá el número de disposición.'); return; }
   if(!data.fecha){ alert('Cargá la fecha.'); return; }
+
+  // ══ RESERVA SEGURA DEL CORRELATIVO (igual que Números Varios) ══
+  // Solo para disposiciones NUEVAS. Baja la versión fresca de la nube,
+  // pide el próximo número atómico a Supabase y, si no hay internet,
+  // usa el local avisando del riesgo de repetido.
+  if(!id){
+    const inpNum = document.getElementById('dispf_numero');
+    const manual = inpNum && !inpNum.hasAttribute('readonly'); // lo editó con ✏️
+    try{
+      if(typeof syncStatus==='function') syncStatus('🔢 Reservando número...', '#fbbf24');
+      let base = _dispRows();
+      let verificadoNube = false;
+      if(typeof _fetchModuloFresco === 'function'){
+        const fresco = await _fetchModuloFresco(DISP_S, DISP_M);
+        if(fresco !== null && typeof _mergeRegistros === 'function'){
+          base = _mergeRegistros(fresco, _dispRows(), null);
+          try{ _S_set_local(DISP_S, DISP_M, base); }catch(_){}
+          verificadoNube = true;
+        }
+      }
+      const anio = parseInt((String(data.fecha).match(/^(\d{4})/)||[])[1],10) || new Date().getFullYear();
+      const usados = new Set(base.filter(r=>_dispAnioReg(r)===anio).map(r=>_dispNumInt(r.numero)));
+      if(manual){
+        const elegido = _dispNumInt(data.numero);
+        if(elegido && usados.has(elegido)){
+          if(!confirm('⚠️ El número '+data.numero+' ya está usado en '+anio+'.\n\n¿Guardarlo igual? (Aceptar = guardar repetido · Cancelar = volver)')){
+            if(typeof syncStatus==='function') syncStatus('Cancelado', '#7aafd4');
+            return;
+          }
+        }
+      }else{
+        let reservadoOk = false;
+        if(typeof clienteS !== 'undefined' && verificadoNube){
+          try{
+            const contadorKey = 'contador_' + DISP_S + '_' + DISP_M + '_' + anio;
+            const piso = _dispProximoNumero(base, anio);
+            const { data: numReservado, error: errNum } = await _conTimeout(
+              clienteS.rpc('suep_reservar_numero', { p_contador: contadorKey, p_piso: piso }), 8000);
+            if(!errNum && numReservado != null){
+              let n = parseInt(numReservado) || piso;
+              while(usados.has(n)) n++;
+              data.numero = _dispFmtNum(n);
+              reservadoOk = true;
+            }
+          }catch(e){ console.warn('No se pudo reservar número atómico, se usa el local:', e); }
+        }
+        if(!reservadoOk){
+          let n = _dispProximoNumero(base, anio);
+          while(usados.has(n)) n++;
+          data.numero = _dispFmtNum(n);
+        }
+      }
+      if(!verificadoNube){
+        if(!confirm('📴 No se pudo verificar el número '+data.numero+' contra la nube (parece que estás sin conexión).\n\nSi otra persona está cargando al mismo tiempo, el número podría repetirse.\n\n• Aceptar = guardar igual\n• Cancelar = esperar a tener conexión')){
+          if(typeof syncStatus==='function') syncStatus('Cancelado — sin conexión segura', '#fbbf24');
+          return;
+        }
+      }
+    }catch(e){ console.warn('Reserva de número de disposición:', e); }
+  }
+
   try{
     if(id){
       const r = _dispRows().find(x=>x._id===id);
@@ -9188,3 +9274,4 @@ async function licCuposMasivosGuardar(anio){
 </script>
 </body>
 </html>
+
