@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.30">
+<meta name="app-version" content="1.5.31">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8732,6 +8732,12 @@ function _licLaoUsados(lp, anio, exceptoId){
     .filter(r=>r.tipo==='LAO' && String(r.anio)===String(anio) && r._id!==exceptoId)
     .reduce((t,r)=>t+(parseInt(r.dias,10)||0), 0);
 }
+// Días de viaje ya usados en un año (los saca de la etiqueta "Con viaje (N días de viaje)")
+function _licViajeUsado(lp, anio, exceptoId){
+  return _licDePersona(lp)
+    .filter(r=>r.tipo==='LAO' && String(r.anio)===String(anio) && r._id!==exceptoId && /con viaje/i.test(String(r.viaje||'')))
+    .reduce((t,r)=>{ const m = String(r.viaje||'').match(/(\d+)/); return t + (m ? parseInt(m[1],10) : 0); }, 0);
+}
 function _licLaoRestante(lp, anio, exceptoId){
   const cupo = _licCupo(lp, anio);
   if(cupo===null || isNaN(cupo)) return null;
@@ -8976,13 +8982,18 @@ function _licDetalleHTML(p){
   const resumen = [...anios].sort((a,b)=>b-a).map(anio=>{
     const cupo = _licCupo(p.lp, anio);
     const usados = _licLaoUsados(p.lp, anio);
+    // Días de viaje usados en el año: por año se permiten 2 o 4 días de viaje.
+    // Si ya los usó, lo que le resta del año es SIN VIAJE, y así se muestra.
+    const viaje = _licViajeUsado(p.lp, anio);
+    const viajeTxt = viaje > 0 ? ` (con <b>${viaje}</b> día${viaje===1?'':'s'} de viaje)` : '';
     let txt;
     if(cupo===null){
-      txt = `<b>Año ${anio}</b> · Anual Ordinaria: usados <b>${usados}</b> día${usados===1?'':'s'} · <span class="lic-sincupo">cupo sin definir</span>`;
+      txt = `<b>Año ${anio}</b> · Anual Ordinaria: usados <b>${usados}</b> día${usados===1?'':'s'}${viajeTxt} · <span class="lic-sincupo">cupo sin definir</span>`;
     }else{
       const restan = cupo - usados;
       const cls = restan < 0 ? 'lic-neg' : '';
-      txt = `<b>Año ${anio}</b> · Anual Ordinaria: le corresponden <b>${cupo}</b> · usados <b>${usados}</b> · <span class="${cls}">le restan usufructuar <b>${restan}</b> día${Math.abs(restan)===1?'':'s'}</span>`;
+      const sinViaje = (viaje > 0 && restan > 0) ? ' <b>sin viaje</b>' : '';
+      txt = `<b>Año ${anio}</b> · Anual Ordinaria: le corresponden <b>${cupo}</b> · usados <b>${usados}</b>${viajeTxt} · <span class="${cls}">le restan usufructuar <b>${restan}</b> día${Math.abs(restan)===1?'':'s'}${sinViaje}</span>`;
     }
     const btnCupo = esAdmin ? ` <button class="lic-da lic-da-cupo" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();licCupoModal('${p.lp}',${anio})">✏️ cupo</button>` : '';
     return `<div>${txt}${btnCupo}</div>`;
@@ -9094,7 +9105,7 @@ function _licFormHTML(lp, r, soloAut){
       <div style="display:flex;gap:10px">
         <div style="flex:1"><label class="lic-lbl"><span>Cantidad de días</span><input id="licf_dias" class="lic-in" type="number" min="1" value="${r&&r.dias?_licEsc(r.dias):''}" oninput="licActualizarRestante()"></label></div>
         <div style="flex:1"><label class="lic-lbl"><span>¿Con viaje o sin viaje?</span>
-          <select id="licf_viaje" class="lic-sel">
+          <select id="licf_viaje" class="lic-sel" onchange="licActualizarRestante()">
             <option value="" ${!(r&&r.viaje)?'selected':''} disabled>Elegí…</option>
             <option ${r&&r.viaje==='Sin viaje'?'selected':''}>Sin viaje</option>
             <option ${r&&(r.viaje==='Con viaje (2 días de viaje)'||r.viaje==='Con viaje')?'selected':''}>Con viaje (2 días de viaje)</option>
@@ -9169,13 +9180,25 @@ function licActualizarRestante(){
     box.innerHTML = `El cupo del año ${_licEsc(anio)} no está definido. Ya tiene <b>${usados}</b> día${usados===1?'':'s'} usado${usados===1?'':'s'}. Cargá arriba los días que le corresponden para calcular el restante.`;
     return;
   }
+  // Viaje: cuántos días de viaje ya tiene usados este año, y si esta carga suma más
+  const selViaje = document.getElementById('licf_viaje');
+  const viajeYa = _licViajeUsado(lp, anio, id);
+  const mViaje = selViaje && /con viaje/i.test(selViaje.value||'') ? (String(selViaje.value).match(/(\d+)/)||[])[1] : null;
+  let viajeNota = '';
+  if(viajeYa > 0 && mViaje){
+    viajeNota = ` ⚠️ Ya tiene <b>${viajeYa}</b> día${viajeYa===1?'':'s'} de viaje usados en ${_licEsc(anio)} y esta carga suma <b>${mViaje}</b> más.`;
+  }else if(viajeYa > 0){
+    viajeNota = ` Ya usó <b>${viajeYa}</b> día${viajeYa===1?'':'s'} de viaje en ${_licEsc(anio)}: lo que le queda del año es <b>sin viaje</b>.`;
+  }else if(mViaje){
+    viajeNota = ` Con esta carga usa <b>${mViaje}</b> días de viaje del año.`;
+  }
   const restante = cupo - usados - dias;
   if(restante < 0){
     box.className = 'lic-restante lic-r-warn';
-    box.innerHTML = `⚠️ Se pasa del cupo: le corresponden <b>${cupo}</b>, ya usó <b>${usados}</b> y con estos <b>${dias}</b> quedaría en <b>${restante}</b>. Revisá los días antes de guardar.`;
+    box.innerHTML = `⚠️ Se pasa del cupo: le corresponden <b>${cupo}</b>, ya usó <b>${usados}</b> y con estos <b>${dias}</b> quedaría en <b>${restante}</b>. Revisá los días antes de guardar.${viajeNota}`;
   }else{
-    box.className = 'lic-restante';
-    box.innerHTML = `✅ Año ${_licEsc(anio)}: le corresponden <b>${cupo}</b> días, usó <b>${usados}</b>${dias?`, está tomando <b>${dias}</b>`:''} → le restan usufructuar <b>${restante}</b> día${restante===1?'':'s'}.`;
+    box.className = (viajeYa > 0 && mViaje) ? 'lic-restante lic-r-info' : 'lic-restante';
+    box.innerHTML = `✅ Año ${_licEsc(anio)}: le corresponden <b>${cupo}</b> días, usó <b>${usados}</b>${dias?`, está tomando <b>${dias}</b>`:''} → le restan usufructuar <b>${restante}</b> día${restante===1?'':'s'}${viajeYa>0||mViaje?'':''}.${viajeNota}`;
   }
 }
 
@@ -9324,7 +9347,6 @@ async function licCuposMasivosGuardar(anio){
 </script>
 </body>
 </html>
-
 
 
 
