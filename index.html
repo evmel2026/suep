@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.27">
+<meta name="app-version" content="1.5.30">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8618,6 +8618,37 @@ function _licMesDeAut(r){
 function _licAutsDelMes(lp, mesKey, exceptoId){
   return _licDePersona(lp).filter(r=>r.tipo==='AUT_12' && r._id!==exceptoId && _licMesDeAut(r)===mesKey).length;
 }
+// ─── RECORDATORIO DE PRESENTACIÓN (solo administradoras) ───
+// Cartel que avisa cuando un efectivo que está de licencia tiene la fecha
+// "Hasta" encima: hoy o dentro de los próximos días. Se presenta a trabajar
+// el día siguiente al "Hasta" de su licencia.
+const LIC_AVISO_DIAS = 3; // avisar cuando falten 3 días o menos para terminar
+function _licHoy0(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function _licParseF(f){
+  const m = String(f||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return null;
+  const d = new Date(+m[1], +m[2]-1, +m[3]);
+  return isNaN(d.getTime()) ? null : d;
+}
+function _licDDMM(d){ const p=x=>String(x).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1); }
+function _licProximosAPresentarse(){
+  const hoy = _licHoy0();
+  const out = [];
+  _licRows().forEach(r=>{
+    const hasta = _licParseF(r.hasta);
+    if(!hasta) return;                                   // sin fecha de fin, no hay aviso
+    const diff = Math.round((hasta - hoy) / 86400000);   // días que faltan para terminar
+    if(diff < 0 || diff > LIC_AVISO_DIAS) return;        // ya terminó o falta mucho
+    const desde = _licParseF(r.desde);
+    if(desde && desde > hoy) return;                     // todavía no empezó la licencia
+    const p = _licPersona(r.lp); if(!p) return;
+    const presenta = new Date(hasta); presenta.setDate(presenta.getDate() + 1);
+    out.push({ p, r, diff, hasta, presenta });
+  });
+  out.sort((a,b)=>a.diff-b.diff);
+  return out;
+}
+
 // Efectivos que superaron el tope en el mes en curso (para el cartel admin)
 function _licExcedidosMesActual(){
   const mes = _licMesKeyHoy();
@@ -8765,6 +8796,10 @@ function licEnsureEstilos(){
   .light-mode .lic-cm-list{border-color:#e2e8f0}
   .light-mode .lic-cm-row{border-bottom-color:#eef2f7}
   .light-mode .lic-cm-nom small{color:#64748b}
+  .lic-record{margin:0 0 12px;padding:11px 14px;border-radius:12px;background:rgba(251,191,36,.10);border:1px solid rgba(251,191,36,.4);color:#fbbf24;font-size:13px;line-height:1.6}
+  .lic-record b{color:#fde68a}
+  .light-mode .lic-record{background:rgba(180,83,9,.06);border-color:rgba(180,83,9,.3);color:#92400e}
+  .light-mode .lic-record b{color:#b45309}
   .lic-aviso{margin:0 0 12px;padding:11px 14px;border-radius:12px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-size:13px;line-height:1.6}
   .lic-aviso small{color:#fbbf24}
   .lic-aut-ok{color:#67e8f9}
@@ -8840,10 +8875,21 @@ function renderLicencias(){
   // Cartel para las ADMINISTRADORAS: quiénes superaron el tope mensual
   let aviso = '';
   if(nivel === 'admin'){
+    // 🔔 Recordatorio: efectivos de licencia próximos a presentarse
+    const prox = _licProximosAPresentarse();
+    if(prox.length){
+      const items = prox.map(x=>{
+        const cuando = x.diff===0
+          ? `termina <b>HOY</b> → se presenta <b>mañana ${_licDDMM(x.presenta)}</b>`
+          : `termina el <b>${_licDDMM(x.hasta)}</b> (en ${x.diff} día${x.diff===1?'':'s'}) → se presenta el <b>${_licDDMM(x.presenta)}</b>`;
+        return `<div style="margin-top:3px">• <b>${_licEsc(x.p.nombre)}</b> — ${_licEsc(_licTipoLabel(x.r.tipo))}: ${cuando}</div>`;
+      }).join('');
+      aviso += `<div class="lic-record">🔔 <b>Próximos a presentarse</b> (licencias que terminan en ${LIC_AVISO_DIAS} días o menos):${items}</div>`;
+    }
     const exc = _licExcedidosMesActual();
     if(exc.length){
       const lista = exc.map(x=>`<b>${_licEsc(x.p.nombre)}</b> (${x.cant} de ${LIC_AUT_MAX_MES})`).join(' · ');
-      aviso = `<div class="lic-aviso">⚠️ <b>Superaron el máximo de ${LIC_AUT_MAX_MES} autorizaciones (Art. 12) en ${_licMesLabel(_licMesKeyHoy())}:</b><br>${lista}
+      aviso += `<div class="lic-aviso">⚠️ <b>Superaron el máximo de ${LIC_AUT_MAX_MES} autorizaciones (Art. 12) en ${_licMesLabel(_licMesKeyHoy())}:</b><br>${lista}
         <br><small>La carga no se bloquea y el jefe que cargó NO ve este aviso: es información solo de administradoras.</small></div>`;
     }
   }
@@ -9029,7 +9075,11 @@ function _licFormHTML(lp, r, soloAut){
   const p = _licPersona(lp) || {nombre:'—', jerarquia:'', lp};
   const esLao = r ? r.tipo==='LAO' : false;
   const anioAct = _licAnioActual();
-  const anios = [anioAct-1, anioAct, anioAct+1];
+  // Años elegibles: desde 2024 hasta el año que viene, porque hay efectivos
+  // que todavía gozan licencias de años anteriores (ej. Anual Ordinaria 2024).
+  // No se muestran años más viejos para evitar confusiones.
+  const anios = []; for(let a = anioAct + 1; a >= 2024; a--) anios.push(a);
+  if(r && r.anio && !anios.includes(parseInt(r.anio,10))) anios.push(parseInt(r.anio,10));
   const anioSel = r && r.anio ? String(r.anio) : String(anioAct);
   const titulo = soloAut ? '🪪 Dar autorización (Art. 12)' : (r?'✏️ Editar licencia':'🏖️ Cargar licencia');
   // OJO: el tope mensual de autorizaciones es información SOLO de las
@@ -9274,4 +9324,7 @@ async function licCuposMasivosGuardar(anio){
 </script>
 </body>
 </html>
+
+
+
 
