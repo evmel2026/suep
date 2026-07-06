@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.20">
+<meta name="app-version" content="1.5.26">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -843,6 +843,123 @@ textarea.fi{resize:vertical;min-height:72px}
   .modal{max-height:90vh;overflow-y:auto}
   .fm{margin:6px 0;padding:8px}
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUEP NEO — modernización visual v1.5.24
+   • HEADER HERO por sector, color dinámico --sec, chips en el menú,
+     paneles de vidrio en modo oscuro. (Idéntico a lo que ya aprobó Mely.)
+   • v1.5.24: MODO CLARO reparado — fondos en propiedades separadas
+     (background-color / background-image) para que ningún navegador
+     descarte la regla, paneles claros SÓLIDOS (sin transparencia) y
+     colores de texto explícitos. El modo oscuro no cambia.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{--sec:#7aafd4}
+
+/* — Trama de puntos ambiental — */
+#appScreen::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(122,175,212,.10) 1px,rgba(122,175,212,0) 1.3px);
+  background-size:26px 26px;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 120px,#000 70%,rgba(0,0,0,0));
+  mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 120px,#000 70%,rgba(0,0,0,0));}
+
+/* — Barra superior (siempre oscura: sus textos son blancos) — */
+.app-header{background:rgba(8,17,31,.74);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);box-shadow:0 2px 18px rgba(0,0,0,.35)}
+.app-header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 40%,rgba(122,175,212,0) 90%);pointer-events:none}
+
+/* — Menú lateral: chips de ícono + píldora activa — */
+.sidebar{background:rgba(10,18,31,.78);backdrop-filter:blur(18px) saturate(1.15);-webkit-backdrop-filter:blur(18px) saturate(1.15);border-right:1px solid rgba(122,175,212,.14)}
+.sb-label{letter-spacing:3px;color:rgba(199,154,58,.8)}
+.sector-btn{position:relative;border-radius:12px;padding:7px 9px;transition:background .18s,transform .18s,box-shadow .18s}
+.sector-btn .s-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.14);border-radius:10px;font-size:16px;flex-shrink:0;transition:transform .18s}
+.sector-btn:hover{transform:translateX(3px)}
+.sector-btn:hover .s-icon{transform:scale(1.08)}
+.sector-btn:active{transform:scale(.97)}
+.sector-btn.active{box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.16)}
+.sector-btn.active .s-icon{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.25)}
+.sector-btn.active::before{content:'';position:absolute;left:-6px;top:9px;bottom:9px;width:3.5px;border-radius:4px;background-image:linear-gradient(180deg,#c79a3a,var(--sec))}
+.sector-btn.sb-destacado .s-icon{background:rgba(199,154,58,.14);border-color:rgba(199,154,58,.3)}
+.s-count{background:rgba(122,175,212,.16);border:1px solid rgba(122,175,212,.18);border-radius:12px;padding:2px 7px}
+
+/* — HEADER HERO: banner en el color del sector — */
+.sector-header{background:transparent;padding-top:12px}
+.sh-top{background-color:var(--sec);background-image:linear-gradient(120deg,rgba(255,255,255,.14),rgba(6,12,22,.45));border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:0 12px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.18);position:relative;overflow:hidden}
+.sh-top::after{content:'';position:absolute;right:-30px;top:-40px;width:150px;height:150px;border-radius:50%;background-image:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,0) 65%);pointer-events:none}
+.sh-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:14px;font-size:24px;flex-shrink:0}
+.sh-info{display:flex;align-items:center;gap:12px;min-width:0}
+.sh-text h2{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.4);letter-spacing:.3px}
+.sh-text p{color:rgba(255,255,255,.9);text-shadow:0 1px 4px rgba(0,0,0,.35);letter-spacing:2px;text-transform:uppercase;font-size:10px}
+.sh-top .export-btn{border-color:rgba(255,255,255,.45);background:rgba(0,0,0,.18);color:#fff}
+.sh-top .add-btn{box-shadow:0 6px 16px rgba(0,0,0,.35)}
+
+/* — Pestañas de módulo: segmentadas — */
+.mod-tabs{background:rgba(13,25,40,.55);border:1px solid rgba(122,175,212,.12);border-radius:13px;padding:4px}
+.mod-tab{border-radius:9px;border:none}
+.mod-tab.active{box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.sub-tab{border-radius:20px}
+.mod-tab:active,.sub-tab:active,.add-btn:active,.export-btn:active{transform:scale(.96)}
+
+/* — Panel de datos: vidrio + hilo superior en el color del sector — */
+.data-wrap{position:relative;border-radius:18px;border:1px solid rgba(122,175,212,.16);border-top:none;
+  background-color:rgba(15,26,42,.80);
+  background-image:linear-gradient(90deg,#c79a3a,var(--sec) 55%,rgba(122,175,212,0) 95%);
+  background-size:100% 2.5px;background-position:top;background-repeat:no-repeat;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 16px 38px rgba(0,0,0,.35)}
+.data-table thead tr{background:rgba(9,18,32,.85)}
+.data-table th{color:#9dc3de;letter-spacing:2px}
+.data-table tbody tr{transition:background .15s,box-shadow .15s}
+.data-table tbody tr:hover{box-shadow:inset 3px 0 0 var(--sec)}
+.rec-count{letter-spacing:1px;text-transform:uppercase;font-size:10px;font-weight:700}
+
+/* — Modales / notificaciones / login: hilo superior — */
+.notif-panel{border-radius:18px;background-color:rgba(12,23,38,.94);background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(122,175,212,0));background-size:100% 2px;background-position:top;background-repeat:no-repeat}
+.modal{background-color:#0d1928;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(122,175,212,0));background-size:100% 2.5px;background-position:top;background-repeat:no-repeat}
+.login-card{background-color:rgba(5,15,35,.82);background-image:linear-gradient(90deg,#c79a3a,#7aafd4 60%,rgba(122,175,212,0));background-size:100% 2.5px;background-position:top;background-repeat:no-repeat}
+
+/* — Bienvenida — */
+.welcome-state svg{filter:drop-shadow(0 6px 22px rgba(122,175,212,.4))}
+.welcome-state p{font-weight:800;letter-spacing:.5px;font-size:16px}
+
+/* — Accesibilidad — */
+.sector-btn:focus-visible,.mod-tab:focus-visible,.sub-tab:focus-visible,.add-btn:focus-visible,.export-btn:focus-visible{outline:2px solid var(--sec);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+  .sector-btn,.sector-btn:hover,.sector-btn:active,.sector-btn .s-icon,.sector-btn:hover .s-icon,
+  .add-btn:active,.export-btn:active,.mod-tab:active,.sub-tab:active{transform:none;transition:none}
+  .sh-top::after{display:none}
+}
+
+/* ═══ MODO CLARO (reparado en v1.5.24): superficies SÓLIDAS y texto oscuro ═══ */
+.light-mode #appScreen::before{background-image:radial-gradient(rgba(74,128,168,.12) 1px,rgba(74,128,168,0) 1.3px)}
+/* Barra superior: se mantiene OSCURA (sus textos e íconos son blancos) */
+.light-mode .app-header{background:#0a1524;box-shadow:0 2px 16px rgba(21,49,79,.25)}
+/* Menú lateral blanco sólido con textos oscuros */
+.light-mode .sidebar{background:#ffffff;border-right-color:#dbe4ee;backdrop-filter:none;-webkit-backdrop-filter:none}
+.light-mode .sb-label{color:#a07a24}
+.light-mode .sector-btn{color:#3d566e}
+.light-mode .sector-btn .s-icon{background:#eef3f8;border-color:#d7e2ec}
+.light-mode .sector-btn.active{box-shadow:0 8px 20px rgba(21,49,79,.2),inset 0 0 0 1px rgba(255,255,255,.4)}
+.light-mode .s-count{background:#eef3f8;border-color:#d7e2ec;color:#3f6285}
+/* Banner hero: sigue en el color del sector, texto blanco con sombra */
+.light-mode .sector-header{background:transparent}
+.light-mode .sh-top{box-shadow:0 12px 26px rgba(21,49,79,.22),inset 0 1px 0 rgba(255,255,255,.3)}
+.light-mode .sh-text h2{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+.light-mode .sh-text p{color:rgba(255,255,255,.95);text-shadow:0 1px 4px rgba(0,0,0,.4)}
+/* Pestañas de módulo sobre blanco sólido */
+.light-mode .mod-tabs{background:#ffffff;border-color:#dbe4ee}
+.light-mode .mod-tab{color:#33536f}
+/* Panel de datos blanco SÓLIDO, texto oscuro, hilo en el color del sector */
+.light-mode .data-wrap{background-color:#ffffff;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 55%,rgba(74,128,168,0) 95%);border-color:#dbe4ee;box-shadow:0 16px 32px rgba(21,49,79,.12);backdrop-filter:none;-webkit-backdrop-filter:none}
+.light-mode .data-table thead tr{background:#f1f5f9}
+.light-mode .data-table th{color:#3f6285}
+.light-mode .data-table td{color:#1c3550}
+.light-mode .data-table tbody tr:hover{box-shadow:inset 3px 0 0 var(--sec)}
+.light-mode .rec-count{color:#3f6285}
+.light-mode .empty-state,.light-mode .welcome-state{color:#4a6a88}
+/* Notificaciones y modales blancos sólidos con texto oscuro */
+.light-mode .notif-panel{background-color:#ffffff;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(74,128,168,0))}
+.light-mode .modal{background-color:#ffffff;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(74,128,168,0))}
+
 </style>
 </head>
 <body>
@@ -1899,17 +2016,6 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'NUMEROS_VARIOS', name:'Números Varios', icon:'🔢', color:'#475569', bg:'#e2e8f0', universal:true, modules:[
-    { id:'NUMEROS_VARIOS', name:'Números Varios', groupByMonth:true, fields:[
-      {key:'numero',  label:'Número',            type:'text', req:true, auto:'yearly', start:1094},
-      {key:'destino', label:'Destino',           type:'text', req:true},
-      {key:'asunto',  label:'Asunto',            type:'text', req:true},
-      {key:'persona', label:'Persona que envía', type:'text'},
-      {key:'dosier',  label:'¿Va por dosier?',   type:'select', opts:['Sí','No']},
-      {key:'obs',     label:'Observaciones',     type:'textarea'},
-    ]},
-  ]},
-
   { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', universal:true, custom:'minuta', modules:[
     { id:'MINUTAS_MOD', name:'Minutas', fields:[
       {key:'fecha',         label:'Fecha',          type:'date',     req:true},
@@ -1918,6 +2024,20 @@ const SECTORS = [
       {key:'asunto',        label:'Asunto',         type:'text',     req:true},
       {key:'relato',        label:'Relato',         type:'textarea', req:true},
       {key:'informa',       label:'Informa',        type:'text',     req:true},
+    ]},
+  ]},
+
+  // v1.5.21: Números Varios pasa a estar DEBAJO de Minutas, así las pestañas
+  // resaltadas con estrella (Números Varios, Expedientes, Disposiciones) quedan
+  // una abajo de la otra en el menú lateral.
+  { id:'NUMEROS_VARIOS', name:'Números Varios', icon:'🔢', color:'#475569', bg:'#e2e8f0', universal:true, modules:[
+    { id:'NUMEROS_VARIOS', name:'Números Varios', groupByMonth:true, fields:[
+      {key:'numero',  label:'Número',            type:'text', req:true, auto:'yearly', start:1094},
+      {key:'destino', label:'Destino',           type:'text', req:true},
+      {key:'asunto',  label:'Asunto',            type:'text', req:true},
+      {key:'persona', label:'Persona que envía', type:'text'},
+      {key:'dosier',  label:'¿Va por dosier?',   type:'select', opts:['Sí','No']},
+      {key:'obs',     label:'Observaciones',     type:'textarea'},
     ]},
   ]},
 
@@ -1954,6 +2074,18 @@ const SECTORS = [
       {key:'secretario', label:'Secretario',        type:'text'},
       {key:'motivo',     label:'Motivo',            type:'textarea'},
       {key:'entregoCopia', label:'Entregó copia',   type:'select', opts:['Sí','No']},
+    ]},
+  ]},
+
+  // ─── LICENCIAS (v1.5.21) ───
+  // custom:'licencias' → usa la vista propia renderLicencias() con el organigrama
+  // jerárquico embebido (LIC_PERSONAL). Por ahora la ven todos los usuarios;
+  // los roles específicos se van a definir más adelante.
+  { id:'LICENCIAS', name:'Licencias', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
+    { id:'LICENCIAS', name:'Licencias', fields:[
+      {key:'lp',   label:'LP',               type:'text'},
+      {key:'tipo', label:'Tipo de licencia', type:'text'},
+      {key:'obs',  label:'Observaciones',    type:'textarea'},
     ]},
   ]},
 
@@ -2637,6 +2769,9 @@ function selectSector(id){
   document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
   const ab=document.getElementById(`sb_${id}`);
   if(ab){ab.classList.add('active');ab.style.background=sec.color;ab.style.color='#fff';}
+  // SUEP NEO v1.5.22: el color del sector tiñe toda la interfaz (header hero,
+  // hilo superior del panel de datos, tabs) vía la variable CSS --sec.
+  try{ document.documentElement.style.setProperty('--sec', sec.color); }catch(_){}
   document.getElementById('sectorHeader').style.display='block';
   document.getElementById('shIcon').textContent=sec.icon;
   document.getElementById('shName').textContent=sec.name;
@@ -2808,6 +2943,13 @@ function renderTable(searchOverride){
   if(CS.custom==='disposiciones'){
     area.innerHTML = renderDisposiciones();
     dispEnsureModal();
+    return;
+  }
+
+  // ─── Pestaña custom: LICENCIAS (v1.5.21) ───
+  if(CS.custom==='licencias'){
+    area.innerHTML = renderLicencias();
+    licEnsureModal();
     return;
   }
 
@@ -8272,6 +8414,769 @@ async function dispBorrar(id){
   dispCerrarModal(); renderTable();
 }
 // ═══════ FIN MÓDULO DISPOSICIONES INTERNAS ═══════
+
+// ═══════════════════════════════════════════════════════════════════
+// LICENCIAS  (pestaña custom:'licencias')  —  v1.5.22
+// ───────────────────────────────────────────────────────────────────
+// PERMISOS DE LA PESTAÑA:
+// • ADMINISTRADORAS (permiso 'admin' → Eliana y Mely): cargan TODO tipo de
+//   licencia a cualquier efectivo, editan, borran y definen los cupos anuales.
+// • JEFES (Blanco, Muñoz y Sánchez): VEN TODO el listado, pero solo pueden
+//   CARGAR AUTORIZACIONES (Art. 12) al personal que les compete según el
+//   organigrama (los efectivos que están DEBAJO de ellos en el orden
+//   jerárquico). No editan, no borran, no tocan cupos.
+// • RESTO DE USUARIOS: solo ven SU PROPIA ficha — cuántos días de Anual
+//   Ordinaria les restan usufructuar y sus licencias cargadas. No ven nada
+//   de sus compañeros y no pueden cargar.
+// El resto de la lógica (cupos, cálculo de restante, menú de tipos) se
+// mantiene igual que en v1.5.21.
+// ═══════════════════════════════════════════════════════════════════
+const LIC_S = 'LICENCIAS';
+const LIC_M = 'LICENCIAS';
+const LIC_CUPOS_M = 'CUPOS';
+
+// Organigrama jerárquico (LISTADO PERSONAL POLICIAL 2026). NO cambiar el orden.
+const LIC_PERSONAL = [
+  {n:1,  nombre:'BLANCO MARCOS ANTONIO',              jerarquia:'COMISARIO INSPECTOR',   lp:'108208'},
+  {n:2,  nombre:'MUÑOZ ELIAS MIGUEL',                 jerarquia:'COMISARIO',             lp:'607131'},
+  {n:3,  nombre:'VELAZQUEZ ELIANA',                   jerarquia:'COMISARIO',             lp:'935228'},
+  {n:4,  nombre:'SANCHEZ ADRIANA MARIA LUJAN',        jerarquia:'COMISARIO',             lp:'818289'},
+  {n:5,  nombre:'BARACCO MIGUEL ANGEL',               jerarquia:'SUBCOMISARIO',          lp:'4448'},
+  {n:6,  nombre:'CUMILLAN ARIEL OSVALDO',             jerarquia:'OFICIAL PRINCIPAL',     lp:'249057'},
+  {n:7,  nombre:'CATRICURA JUANA ABIGAIL',            jerarquia:'OFICIAL PRINCIPAL',     lp:'185547'},
+  {n:8,  nombre:'CALDERON NAHUEL',                    jerarquia:'OFICIAL INSPECTOR',     lp:'6136'},
+  {n:9,  nombre:'EULIARTE DANIELA',                   jerarquia:'OFICIAL INSPECTOR',     lp:'297664'},
+  {n:10, nombre:'CASTILLO MICAELA FLORENCIA',         jerarquia:'OFICIAL INSPECTOR',     lp:'10991'},
+  {n:11, nombre:'YAÑEZ JUAN LUCAS',                   jerarquia:'OFICIAL INSPECTOR',     lp:'15618'},
+  {n:12, nombre:'ROMERO YOSELI ESTEFANIA',            jerarquia:'OFICIAL SUBINSPECTOR',  lp:'20458'},
+  {n:13, nombre:'QUEVEDO PABLO EZEQUIEL',             jerarquia:'OFICIAL SUBINSPECTOR',  lp:'20763'},
+  {n:14, nombre:'MERINO VICTOR JESUS',                jerarquia:'SUB-OFICIAL PRINCIPAL', lp:'564235'},
+  {n:15, nombre:'SEGUEL DAVID ERNESTO',               jerarquia:'SARGENTO AYUDANTE',     lp:'836279'},
+  {n:16, nombre:'OSES NOELIA BELEN',                  jerarquia:'SARGENTO PRIMERO',      lp:'648714'},
+  {n:17, nombre:'RAMIREZ JUAN JOSE',                  jerarquia:'SARGENTO PRIMERO',      lp:'379429'},
+  {n:18, nombre:'BASCUR SERGIO LEONARDO',             jerarquia:'SARGENTO',              lp:'88595'},
+  {n:19, nombre:'MARTINEZ BADAGNANI GUILLERMO ARIEL', jerarquia:'SARGENTO',              lp:'129105'},
+  {n:20, nombre:'LOPEZ MARIELA SUSANA',               jerarquia:'SARGENTO',              lp:'523361'},
+  {n:21, nombre:'ESCOBAR GIULIANA AYELEN',            jerarquia:'SARGENTO',              lp:'286605'},
+  {n:22, nombre:'SANHUEZA MARTIN ALEJANDRO',          jerarquia:'SARGENTO',              lp:'827252'},
+  {n:23, nombre:'RIQUELME WALTER ALBERTO',            jerarquia:'SARGENTO',              lp:'761198'},
+  {n:24, nombre:'VILLAGRA JUAN PABLO',                jerarquia:'SARGENTO',              lp:'942031'},
+  {n:25, nombre:'ALFARO JUAN ATILIO',                 jerarquia:'CABO PRIMERO',          lp:'20023'},
+  {n:26, nombre:'BALTA MAURO JONATAN',                jerarquia:'CABO PRIMERO',          lp:'74086'},
+  {n:27, nombre:'GARECA LUIGI MARTIN',                jerarquia:'CABO PRIMERO',          lp:'6557'},
+  {n:28, nombre:'GUTIERREZ GUSTAVO IGNACIO',          jerarquia:'CABO PRIMERO',          lp:'442438'},
+  {n:29, nombre:'QUINTANA GLORIA MARGARITA',          jerarquia:'CABO PRIMERO',          lp:'4457'},
+  {n:30, nombre:'VALENZUELA FRANCO EMANUEL',          jerarquia:'CABO PRIMERO',          lp:'6479'},
+  {n:31, nombre:'VAZQUEZ MAURICIO EDUARDO',           jerarquia:'CABO PRIMERO',          lp:'6471'},
+  {n:32, nombre:'BASTIAS HECTOR MARTIN',              jerarquia:'CABO DE POLICIA',       lp:'89761'},
+  {n:33, nombre:'TOLOSA LEONEL NICOLAS',              jerarquia:'CABO DE POLICIA',       lp:'11222'},
+  {n:34, nombre:'PEREZ CLAUDIO ALEXIS',               jerarquia:'CABO',                  lp:'9581'},
+  {n:35, nombre:'LA FUENTE MELINA AILEN',             jerarquia:'AGENTE NUEVO CUADRO',   lp:'37875'},
+  {n:36, nombre:'AGURTO LUCAS RODRIGO',               jerarquia:'AGENTE NUEVO CUADRO',   lp:'44065'},
+  {n:37, nombre:'CASTRO MAXIMILIANO KALIL',           jerarquia:'AGENTE NUEVO CUADRO',   lp:'47841'},
+  {n:38, nombre:'GUAÑACO JUAN IGNACIO',               jerarquia:'AGENTE NUEVO CUADRO',   lp:'47894'},
+  {n:39, nombre:'PELLIZA AIXA SOFIA BEATRIZ',         jerarquia:'AGENTE NUEVO CUADRO',   lp:'49248'},
+];
+
+// ─── QUIÉN AUTORIZA A QUIÉN (definido por Mely) ───
+// Cada jefe carga SOLO Autorizaciones (Art. 12) sobre SU personal:
+// • BLANCO   → Baracco y Quintana.
+// • VELÁZQUEZ (además de administradora) → La Fuente, Bascur, Pérez y Bastías.
+// • SÁNCHEZ  → Escobar, Villagra, Alfaro, Gareca, Gutiérrez, Valenzuela,
+//              Tolosa, Agurto, Castro y Guañaco.
+// • MUÑOZ    → todo el RESTO del personal (se calcula solo: los que no están
+//              en las otras listas ni son jefes/administradoras).
+// • CATRICURA → puede cargar los mismos autorizados que Blanco y Muñoz
+//              (la unión de ambas listas), excepto a sí misma.
+const LIC_AUTORIZA = {
+  'marcos.blanco': ['4448','4457'],                                   // Baracco, Quintana
+  'eliana.velazquez': ['37875','88595','9581','89761'],               // La Fuente, Bascur, Pérez, Bastías
+  'adriana.sanchez': ['286605','942031','20023','6557','442438',      // Escobar, Villagra, Alfaro, Gareca, Gutiérrez
+                      '6479','11222','44065','47841','47894'],        // Valenzuela, Tolosa, Agurto, Castro, Guañaco
+};
+// LPs de los cuatro jefes (nadie autoriza a un jefe desde esta pestaña)
+const LIC_LP_JEFES = ['108208','607131','935228','818289'];
+// Muñoz: el resto del personal
+LIC_AUTORIZA['elias.munoz'] = LIC_PERSONAL
+  .map(p=>p.lp)
+  .filter(lp => !LIC_LP_JEFES.includes(lp) &&
+                !LIC_AUTORIZA['marcos.blanco'].includes(lp) &&
+                !LIC_AUTORIZA['eliana.velazquez'].includes(lp) &&
+                !LIC_AUTORIZA['adriana.sanchez'].includes(lp));
+// La Oficial CATRICURA también puede cargar los autorizados que cargan
+// el Comisario Inspector Blanco y el Comisario Muñoz (la unión de ambas
+// listas), sin poder autorizarse a sí misma. El resto no cambia.
+LIC_AUTORIZA['juana.catricura'] = [...LIC_AUTORIZA['marcos.blanco'], ...LIC_AUTORIZA['elias.munoz']]
+  .filter(lp => lp !== '185547');
+// Usuarios con rol de "jefe" en esta pestaña (Velázquez ya es admin, así que
+// su lista solo documenta a quiénes autoriza ella; como admin puede todo)
+const LIC_JEFES = { 'marcos.blanco':1, 'elias.munoz':1, 'adriana.sanchez':1, 'juana.catricura':1 };
+
+// ─── TOPE MENSUAL DE AUTORIZACIONES (Art. 12) ───
+// Cada efectivo puede tomarse como MÁXIMO 2 autorizados por mes. Si se pasa,
+// NO se bloquea la carga (el jefe puede cargarla igual) y el control es
+// SECRETO: SOLO las administradoras ven el cartel de alerta, el contador
+// mensual en la ficha y el aviso al guardar. Ni el jefe que carga ni el
+// resto del personal se enteran del tope desde la app.
+const LIC_AUT_MAX_MES = 2;
+const _LIC_MESNOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function _licMesKeyHoy(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function _licMesLabel(k){ const p=String(k).split('-'); const mi=parseInt(p[1],10)-1; return (_LIC_MESNOM[mi]||p[1])+' '+p[0]; }
+// Mes al que corresponde una autorización: la fecha "Desde" si la tiene,
+// si no, la fecha en que se cargó (_ts, formato dd/mm/aaaa).
+function _licMesDeAut(r){
+  if(r.desde){ const m=String(r.desde).match(/^(\d{4})-(\d{2})/); if(m) return m[1]+'-'+m[2]; }
+  if(r._ts){ const m=String(r._ts).match(/^(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]; }
+  return null;
+}
+function _licAutsDelMes(lp, mesKey, exceptoId){
+  return _licDePersona(lp).filter(r=>r.tipo==='AUT_12' && r._id!==exceptoId && _licMesDeAut(r)===mesKey).length;
+}
+// Efectivos que superaron el tope en el mes en curso (para el cartel admin)
+function _licExcedidosMesActual(){
+  const mes = _licMesKeyHoy();
+  return LIC_PERSONAL
+    .map(p=>({p, cant:_licAutsDelMes(p.lp, mes)}))
+    .filter(x=>x.cant > LIC_AUT_MAX_MES);
+}
+
+// Usuario de login → LP en el organigrama (para la vista personal del resto)
+const LIC_USUARIO_LP = {
+  'marcos.blanco':'108208','elias.munoz':'607131','eliana.velazquez':'935228',
+  'adriana.sanchez':'818289','miguel.baracco':'4448','ariel.cumillan':'249057',
+  'juana.catricura':'185547','nahuel.calderon':'6136','daniela.euliarte':'297664',
+  'micaela.castillo':'10991','juan.yanez':'15618','yoseli.romero':'20458',
+  'pablo.quevedo':'20763','victor.merino':'564235','david.seguel':'836279',
+  'noelia.oses':'648714','juan.ramirez':'379429','sergio.bascur':'88595',
+  'guillermo.badagnani':'129105','mariela.lopez':'523361','giuliana.escobar':'286605',
+  'martin.sanhueza':'827252','walter.riquelme':'761198','juan.villagra':'942031',
+  'juan.alfaro':'20023','mauro.balta':'74086','luigi.gareca':'6557',
+  'gustavo.gutierrez':'442438','gloria.quintana':'4457','franco.valenzuela':'6479',
+  'mauricio.vazquez':'6471','hector.bastias':'89761','leonel.tolosa':'11222',
+  'claudio.perez':'9581','melina.lafuente':'37875','lucas.agurto':'44065',
+  'maximiliano.castro':'47841','juan.guanaco':'47894','aixa.pelliza':'49248',
+};
+
+// Menú desplegable de tipos de licencia
+const LIC_TIPOS = [
+  {grupo:'Licencia Anual Ordinaria', items:[
+    {id:'LAO', label:'Licencia Anual Ordinaria'},
+  ]},
+  {grupo:'Licencia Extraordinaria', items:[
+    {id:'EXT_32B', label:'Licencia Extraordinaria — Art. 32 b (Cuidado familiar o razón de familia)'},
+    {id:'EXT_37B', label:'Licencia Extraordinaria — Art. 37 b (Fallecimiento familiar)'},
+    {id:'EXT_MAT', label:'Licencia Extraordinaria — Art. 32 a, 34, 35 (Lic. matrimonio)'},
+  ]},
+  {grupo:'Licencia Especial', items:[
+    {id:'ESP_24A', label:'Licencia Especial — Art. 24 a (Razón de salud)'},
+  ]},
+  {grupo:'ART', items:[
+    {id:'ART_30', label:'ART — Art. 30'},
+  ]},
+  {grupo:'Autorizaciones', items:[
+    {id:'AUT_12', label:'Autorizaciones — Art. 12'},
+  ]},
+];
+function _licTipoLabel(id){
+  for(const g of LIC_TIPOS){ const it = g.items.find(i=>i.id===id); if(it) return it.label; }
+  return id || '—';
+}
+
+// ─── Helpers ───
+function _licEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _licRows(){ try{ return S.get(LIC_S, LIC_M); }catch(_){ return []; } }
+function _licCupos(){ try{ return S.get(LIC_S, LIC_CUPOS_M); }catch(_){ return []; } }
+function _licDePersona(lp){ return _licRows().filter(r=>String(r.lp)===String(lp)); }
+function _licAnioActual(){ return new Date().getFullYear(); }
+function _licPersona(lp){ return LIC_PERSONAL.find(x=>String(x.lp)===String(lp)) || null; }
+
+// Nivel de acceso del usuario logueado en ESTA pestaña
+function _licNivel(){
+  if(!CU) return 'propio';
+  if(CU.permiso === 'admin') return 'admin';
+  if(LIC_JEFES[CU.usuario]) return 'jefe';
+  return 'propio';
+}
+function _licMiLP(){ return CU ? (LIC_USUARIO_LP[CU.usuario] || null) : null; }
+// ¿Le compete al jefe logueado este efectivo? (está en SU lista de autorización)
+function _licCompete(lp){
+  if(_licNivel() !== 'jefe') return false;
+  const lista = LIC_AUTORIZA[CU.usuario] || [];
+  return lista.includes(String(lp));
+}
+
+// Cupo anual (días de Anual Ordinaria que le corresponden a un efectivo en un año)
+function _licCupo(lp, anio){
+  const c = _licCupos().find(x=>String(x.lp)===String(lp) && String(x.anio)===String(anio));
+  return c ? parseInt(c.dias,10) : null;
+}
+function _licLaoUsados(lp, anio, exceptoId){
+  return _licDePersona(lp)
+    .filter(r=>r.tipo==='LAO' && String(r.anio)===String(anio) && r._id!==exceptoId)
+    .reduce((t,r)=>t+(parseInt(r.dias,10)||0), 0);
+}
+function _licLaoRestante(lp, anio, exceptoId){
+  const cupo = _licCupo(lp, anio);
+  if(cupo===null || isNaN(cupo)) return null;
+  return cupo - _licLaoUsados(lp, anio, exceptoId);
+}
+function _licFechaCorta(f){
+  if(!f) return '';
+  const m = String(f).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return _licEsc(f);
+  return `${m[3]}/${m[2]}/${String(m[1]).slice(2)}`;
+}
+
+// ─── Estilos propios (claro/oscuro). Se inyectan una sola vez. ───
+function licEnsureEstilos(){
+  if(document.getElementById('licEstilos')) return;
+  const st = document.createElement('style');
+  st.id = 'licEstilos';
+  st.textContent = `
+  .lic-wrap{padding:4px 2px;color:#dbe4f0}
+  .lic-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .lic-title{font-weight:700;color:#e8eef6}
+  .lic-sub{font-size:12px;color:#94a3b8}
+  .lic-search{background:#0f1d33;border:1px solid #1e3a5f;color:#e8eef6;border-radius:9px;padding:8px 11px;font-size:13px;min-width:150px}
+  .lic-search::placeholder{color:#64748b}
+  .lic-tablewrap{border:1px solid #14253f;border-radius:12px;overflow:hidden}
+  .lic-table{width:100%;border-collapse:collapse;font-size:13px;color:#dbe4f0;table-layout:fixed}
+  .lic-table thead tr{background:#0f1d33}
+  .lic-th{padding:9px 8px;text-align:left;color:#94a3b8;font-weight:600;border-bottom:2px solid #1e3a5f;font-size:12px}
+  .lic-row{border-bottom:1px solid #14253f;cursor:pointer}
+  .lic-row:hover{background:rgba(180,83,9,.08)}
+  .lic-row td{padding:9px 8px;vertical-align:top;word-break:break-word}
+  .lic-num{font-weight:700;color:#fbbf24}
+  .lic-chev{color:#64748b;font-size:11px}
+  .lic-jer{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .lic-badge{border-radius:7px;padding:3px 8px;font-size:11px;display:inline-block;background:rgba(251,191,36,.14);color:#d97706;white-space:nowrap}
+  .lic-badge-0{background:rgba(148,163,184,.12);color:#94a3b8}
+  .lic-det td{background:rgba(15,29,51,.55);padding:12px 14px}
+  .lic-resumen{margin:0 0 10px;padding:9px 12px;border-radius:9px;background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.25);font-size:12px;line-height:1.7;color:#a7f3d0}
+  .lic-resumen b{color:#34d399}
+  .lic-resumen .lic-sincupo{color:#fbbf24}
+  .lic-resumen .lic-neg{color:#f87171;font-weight:700}
+  .lic-card{border:1px solid #1e3a5f;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:rgba(15,29,51,.6)}
+  .lic-card-tipo{font-weight:700;font-size:13px;color:#e8eef6;line-height:1.4}
+  .lic-card-meta{font-size:12px;color:#9fc4e0;margin-top:3px;line-height:1.6}
+  .lic-card-obs{font-size:12px;color:#cbd5e1;margin-top:5px;line-height:1.5;white-space:pre-wrap}
+  .lic-card-foot{font-size:11px;color:#64748b;margin-top:6px}
+  .lic-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .lic-btn-new{background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .lic-btn-aut{background:linear-gradient(135deg,#0e7490,#155e75)}
+  .lic-da{border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:600;cursor:pointer}
+  .lic-da-edit{background:rgba(59,130,246,.15);color:#60a5fa}
+  .lic-da-del{background:rgba(248,113,113,.14);color:#f87171}
+  .lic-da-cupo{background:rgba(52,211,153,.14);color:#34d399}
+  .lic-foot{font-size:11px;color:#64748b;margin-top:10px;line-height:1.6}
+  .lic-cm-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .lic-cm-list{max-height:52vh;overflow-y:auto;border:1px solid #1e3a5f;border-radius:10px;padding:6px}
+  .lic-cm-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 8px;border-bottom:1px solid #14253f}
+  .lic-cm-row:last-child{border-bottom:none}
+  .lic-cm-nom{font-size:12.5px;line-height:1.45}
+  .lic-cm-nom small{color:#94a3b8}
+  .lic-cm-in{width:76px;flex-shrink:0;text-align:center}
+  .light-mode .lic-cm-list{border-color:#e2e8f0}
+  .light-mode .lic-cm-row{border-bottom-color:#eef2f7}
+  .light-mode .lic-cm-nom small{color:#64748b}
+  .lic-aviso{margin:0 0 12px;padding:11px 14px;border-radius:12px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-size:13px;line-height:1.6}
+  .lic-aviso small{color:#fbbf24}
+  .lic-aut-ok{color:#67e8f9}
+  .lic-aut-excedido{color:#f87171;font-weight:800}
+  .light-mode .lic-aviso{background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.3);color:#b91c1c}
+  .light-mode .lic-aviso small{color:#b45309}
+  .light-mode .lic-aut-ok{color:#0e7490}
+  .light-mode .lic-aut-excedido{color:#dc2626}
+  .lic-propio-card{border:1px solid rgba(251,191,36,.3);border-radius:14px;padding:16px;background:rgba(15,29,51,.6);max-width:640px;margin:0 auto}
+  .lic-propio-nom{font-size:16px;font-weight:800;color:#e8eef6}
+  .lic-propio-jer{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:2px 0 12px}
+  /* Modal */
+  .lic-ov{position:fixed;inset:0;background:rgba(4,10,20,.72);display:none;align-items:center;justify-content:center;z-index:300;padding:14px}
+  .lic-box{background:#0d1a2e;border:1px solid #1e3a5f;border-radius:16px;padding:18px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;color:#dbe4f0}
+  .lic-mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .lic-mh h3{margin:0;font-size:15px;color:#e8eef6;line-height:1.4}
+  .lic-x{background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1}
+  .lic-lbl{display:block;margin-bottom:10px}
+  .lic-lbl span{display:block;font-size:12px;color:#94a3b8;margin-bottom:4px}
+  .lic-in,.lic-sel,.lic-ta{width:100%;background:#0f1d33;border:1px solid #1e3a5f;color:#e8eef6;border-radius:9px;padding:9px 11px;font-size:13px;box-sizing:border-box;font-family:inherit}
+  .lic-ta{resize:vertical}
+  .lic-fijo{padding:9px 11px;border-radius:9px;background:rgba(14,116,144,.14);border:1px solid rgba(14,116,144,.4);color:#67e8f9;font-size:13px;font-weight:600}
+  .lic-lao{border:1px dashed rgba(251,191,36,.4);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(251,191,36,.05)}
+  .lic-lao-t{font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;letter-spacing:.5px}
+  .lic-restante{margin-top:2px;padding:8px 11px;border-radius:9px;font-size:12.5px;line-height:1.5;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#34d399}
+  .lic-restante.lic-r-warn{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.35);color:#f87171}
+  .lic-restante.lic-r-info{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);color:#fbbf24}
+  .lic-mbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  .lic-cancel{background:rgba(148,163,184,.12);color:#cbd5e1;border:none;border-radius:9px;padding:9px 16px;font-size:13px;cursor:pointer}
+  .lic-save{background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  /* Modo claro */
+  .light-mode .lic-wrap{color:#1e293b}
+  .light-mode .lic-title{color:#0f172a}
+  .light-mode .lic-sub{color:#64748b}
+  .light-mode .lic-search{background:#fff;border-color:#cbd5e1;color:#0f172a}
+  .light-mode .lic-tablewrap{border-color:#e2e8f0}
+  .light-mode .lic-table{color:#1e293b}
+  .light-mode .lic-table thead tr{background:#f1f5f9}
+  .light-mode .lic-th{color:#475569;border-bottom-color:#cbd5e1}
+  .light-mode .lic-row{border-bottom-color:#e2e8f0}
+  .light-mode .lic-row:hover{background:rgba(180,83,9,.06)}
+  .light-mode .lic-num{color:#b45309}
+  .light-mode .lic-jer{color:#64748b}
+  .light-mode .lic-det td{background:#f8fafc}
+  .light-mode .lic-resumen{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.25);color:#166534}
+  .light-mode .lic-resumen b{color:#15803d}
+  .light-mode .lic-resumen .lic-sincupo{color:#b45309}
+  .light-mode .lic-resumen .lic-neg{color:#dc2626}
+  .light-mode .lic-card,.light-mode .lic-propio-card{background:#fff;border-color:#e2e8f0}
+  .light-mode .lic-card-tipo,.light-mode .lic-propio-nom{color:#0f172a}
+  .light-mode .lic-card-meta{color:#475569}
+  .light-mode .lic-card-obs{color:#334155}
+  .light-mode .lic-box{background:#fff;border-color:#e2e8f0;color:#1e293b}
+  .light-mode .lic-mh h3{color:#0f172a}
+  .light-mode .lic-in,.light-mode .lic-sel,.light-mode .lic-ta{background:#fff;border-color:#cbd5e1;color:#0f172a}
+  .light-mode .lic-lbl span{color:#475569}
+  .light-mode .lic-foot{color:#94a3b8}
+  `;
+  document.head.appendChild(st);
+}
+
+// ─── Vista principal (según el nivel de acceso) ───
+function renderLicencias(){
+  licEnsureEstilos();
+  const nivel = _licNivel();
+
+  // RESTO DE USUARIOS → solo ven SU ficha
+  if(nivel === 'propio') return _licVistaPropia();
+
+  // ADMIN y JEFES → ven todo el listado
+  const rows = _licRows();
+
+  // Cartel para las ADMINISTRADORAS: quiénes superaron el tope mensual
+  let aviso = '';
+  if(nivel === 'admin'){
+    const exc = _licExcedidosMesActual();
+    if(exc.length){
+      const lista = exc.map(x=>`<b>${_licEsc(x.p.nombre)}</b> (${x.cant} de ${LIC_AUT_MAX_MES})`).join(' · ');
+      aviso = `<div class="lic-aviso">⚠️ <b>Superaron el máximo de ${LIC_AUT_MAX_MES} autorizaciones (Art. 12) en ${_licMesLabel(_licMesKeyHoy())}:</b><br>${lista}
+        <br><small>La carga no se bloquea y el jefe que cargó NO ve este aviso: es información solo de administradoras.</small></div>`;
+    }
+  }
+
+  const head = `
+    <div class="lic-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="lic-title">🏖️ Licencias del Personal</span>
+        <span class="lic-sub">${LIC_PERSONAL.length} efectivos · ${rows.length} licencia${rows.length===1?'':'s'} cargada${rows.length===1?'':'s'}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${nivel==='admin' ? `<button class="lic-btn-new" style="padding:8px 13px;font-size:12px" onclick="licCuposMasivos(${_licAnioActual()})">📋 Cupos anuales</button>` : ''}
+        <input id="licBuscar" class="lic-search" type="text" placeholder="Buscar nombre, jerarquía o LP…" oninput="licFiltrar(this.value)">
+      </div>
+    </div>`;
+
+  const filas = LIC_PERSONAL.map(p=>{
+    const lics = _licDePersona(p.lp);
+    const buscable = _licEsc((p.nombre+' '+p.jerarquia+' '+p.lp).toLowerCase());
+    const badge = lics.length
+      ? `<span class="lic-badge">${lics.length} lic.</span>`
+      : `<span class="lic-badge lic-badge-0">Sin licencias</span>`;
+    return `<tbody data-buscar="${buscable}">
+      <tr class="lic-row" onclick="licToggleDetalle('${p.lp}')">
+        <td class="lic-num"><span class="lic-chev" id="licchev_${p.lp}">▶</span> ${p.n}</td>
+        <td><div style="font-weight:600">${_licEsc(p.nombre)}</div><div class="lic-jer">${_licEsc(p.jerarquia)}</div></td>
+        <td>${_licEsc(p.lp)}</td>
+        <td>${badge}</td>
+      </tr>
+      <tr class="lic-det" id="licdet_${p.lp}" style="display:none"><td colspan="4">${_licDetalleHTML(p)}</td></tr>
+    </tbody>`;
+  }).join('');
+
+  const foot = nivel==='admin'
+    ? 'Tocá una fila para ver el detalle del efectivo, cargarle licencias y definir su cupo anual de Anual Ordinaria. El listado sigue el orden jerárquico del organigrama oficial.'
+    : 'Tocá una fila para ver el detalle. Podés cargar <b>Autorizaciones (Art. 12)</b> únicamente al personal a tu cargo (el botón aparece solo en sus fichas). El resto de las licencias las cargan las administradoras.';
+
+  return `<div class="lic-wrap">${aviso}${head}
+    <div class="lic-tablewrap">
+      <table class="lic-table">
+        <colgroup><col style="width:11%"><col style="width:49%"><col style="width:18%"><col style="width:22%"></colgroup>
+        <thead><tr>
+          <th class="lic-th">N°</th>
+          <th class="lic-th">Apellido y Nombre / Jerarquía</th>
+          <th class="lic-th">LP</th>
+          <th class="lic-th">Licencias</th>
+        </tr></thead>
+        ${filas}
+      </table>
+    </div>
+    <div class="lic-foot">${foot}</div>
+  </div>`;
+}
+
+// Vista personal: el efectivo ve solo lo suyo (cuánta licencia le queda)
+function _licVistaPropia(){
+  const lp = _licMiLP();
+  if(!lp){
+    return `<div class="lic-wrap"><div class="lic-propio-card" style="text-align:center;color:#94a3b8">
+      Tu usuario no figura en el organigrama de Licencias.<br>Avisale a una administradora para que te sume.</div></div>`;
+  }
+  const p = _licPersona(lp);
+  return `<div class="lic-wrap">
+    <div class="lic-propio-card">
+      <div class="lic-propio-nom">${_licEsc(p.nombre)}</div>
+      <div class="lic-propio-jer">${_licEsc(p.jerarquia)} · LP ${_licEsc(p.lp)}</div>
+      ${_licDetalleHTML(p)}
+    </div>
+    <div class="lic-foot" style="max-width:640px;margin:10px auto 0;text-align:center">Acá ves tus días de Licencia Anual Ordinaria (cuántos te corresponden, cuántos usaste y cuántos te restan usufructuar) y tus licencias cargadas. Las cargas las hacen las administradoras.</div>
+  </div>`;
+}
+
+// Detalle de una persona: resumen de Anual Ordinaria por año + tarjetas.
+// Las acciones disponibles dependen del nivel del usuario logueado.
+function _licDetalleHTML(p){
+  const nivel = _licNivel();
+  const esAdmin = nivel==='admin';
+  const lics = _licDePersona(p.lp).slice().sort((a,b)=>String(b.desde||b._ts||'').localeCompare(String(a.desde||a._ts||'')));
+
+  const anios = new Set([_licAnioActual()]);
+  lics.forEach(r=>{ if(r.tipo==='LAO' && r.anio) anios.add(parseInt(r.anio,10)); });
+  _licCupos().forEach(c=>{ if(String(c.lp)===String(p.lp)) anios.add(parseInt(c.anio,10)); });
+
+  const resumen = [...anios].sort((a,b)=>b-a).map(anio=>{
+    const cupo = _licCupo(p.lp, anio);
+    const usados = _licLaoUsados(p.lp, anio);
+    let txt;
+    if(cupo===null){
+      txt = `<b>Año ${anio}</b> · Anual Ordinaria: usados <b>${usados}</b> día${usados===1?'':'s'} · <span class="lic-sincupo">cupo sin definir</span>`;
+    }else{
+      const restan = cupo - usados;
+      const cls = restan < 0 ? 'lic-neg' : '';
+      txt = `<b>Año ${anio}</b> · Anual Ordinaria: le corresponden <b>${cupo}</b> · usados <b>${usados}</b> · <span class="${cls}">le restan usufructuar <b>${restan}</b> día${Math.abs(restan)===1?'':'s'}</span>`;
+    }
+    const btnCupo = esAdmin ? ` <button class="lic-da lic-da-cupo" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();licCupoModal('${p.lp}',${anio})">✏️ cupo</button>` : '';
+    return `<div>${txt}${btnCupo}</div>`;
+  }).join('');
+
+  // Autorizaciones (Art. 12) del mes contra el tope: dato SOLO ADMIN.
+  // Ni los jefes ni el propio efectivo ven este contador.
+  let lineaAut = '';
+  if(esAdmin){
+    const autsMes = _licAutsDelMes(p.lp, _licMesKeyHoy());
+    const excedido = autsMes > LIC_AUT_MAX_MES;
+    lineaAut = `<div>🪪 Autorizaciones (Art. 12) en ${_licMesLabel(_licMesKeyHoy())}: <span class="${excedido?'lic-aut-excedido':'lic-aut-ok'}"><b>${autsMes}</b> de ${LIC_AUT_MAX_MES} permitidas${excedido?' — ⚠️ SE PASÓ DEL MÁXIMO':''}</span></div>`;
+  }
+
+  const tarjetas = lics.length ? lics.map(r=>{
+    const esLao = r.tipo==='LAO';
+    const rango = (r.desde || r.hasta) ? `📆 ${_licFechaCorta(r.desde)||'…'} → ${_licFechaCorta(r.hasta)||'…'}` : '';
+    const metaLao = esLao ? `🗓️ Año ${_licEsc(r.anio||'—')} · ${_licEsc(r.dias||'—')} día${r.dias==='1'?'':'s'} · ${_licEsc(r.viaje||'—')}` : '';
+    const acts = esAdmin ? `<div class="lic-acts">
+        <button class="lic-da lic-da-edit" onclick="event.stopPropagation();licEditar('${r._id}')">✏️ Editar</button>
+        <button class="lic-da lic-da-del" onclick="event.stopPropagation();licBorrar('${r._id}')">🗑️ Borrar</button>
+      </div>` : '';
+    return `<div class="lic-card">
+      <div class="lic-card-tipo">${_licEsc(_licTipoLabel(r.tipo))}</div>
+      <div class="lic-card-meta">${[metaLao, rango].filter(Boolean).join(' · ')}</div>
+      ${r.obs ? `<div class="lic-card-obs">📝 ${_licEsc(r.obs)}</div>` : ''}
+      <div class="lic-card-foot">${r._por ? 'Cargada por: '+_licEsc(r._por) : ''}${r._ts ? ' · '+_licEsc(r._ts) : ''}</div>
+      ${acts}
+    </div>`;
+  }).join('') : `<div style="color:#94a3b8;font-size:13px;padding:6px 2px">Este efectivo todavía no tiene licencias cargadas.</div>`;
+
+  let btnNueva = '';
+  if(esAdmin){
+    btnNueva = `<button class="lic-btn-new" style="margin-top:6px" onclick="event.stopPropagation();licNueva('${p.lp}')">+ Cargar licencia</button>`;
+  }else if(nivel==='jefe' && _licCompete(p.lp)){
+    btnNueva = `<button class="lic-btn-new lic-btn-aut" style="margin-top:6px" onclick="event.stopPropagation();licNueva('${p.lp}', true)">+ Dar autorización (Art. 12)</button>`;
+  }
+
+  return `<div class="lic-resumen">${resumen}${lineaAut}</div>${tarjetas}${btnNueva}`;
+}
+
+function licToggleDetalle(lp){
+  const det = document.getElementById('licdet_'+lp);
+  const ch  = document.getElementById('licchev_'+lp);
+  if(!det) return;
+  const abierto = det.style.display !== 'none';
+  det.style.display = abierto ? 'none' : '';
+  if(ch) ch.textContent = abierto ? '▶' : '▼';
+}
+
+function licFiltrar(q){
+  q = (q||'').trim().toLowerCase();
+  document.querySelectorAll('.lic-table tbody[data-buscar]').forEach(tb=>{
+    tb.style.display = (!q || tb.getAttribute('data-buscar').includes(q)) ? '' : 'none';
+  });
+}
+
+// ─── Modal ───
+function licEnsureModal(){
+  licEnsureEstilos();
+  if(document.getElementById('licModalOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'licModalOverlay';
+  ov.className = 'lic-ov';
+  ov.addEventListener('click', e=>{ if(e.target===ov) licCerrarModal(); });
+  ov.innerHTML = `<div id="licModalBox" class="lic-box"></div>`;
+  document.body.appendChild(ov);
+}
+function licAbrirModal(html){
+  licEnsureModal();
+  document.getElementById('licModalBox').innerHTML = html;
+  document.getElementById('licModalOverlay').style.display = 'flex';
+}
+function licCerrarModal(){ const ov = document.getElementById('licModalOverlay'); if(ov) ov.style.display = 'none'; }
+function _licVal(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function _licSelectTipos(sel){
+  const opts = LIC_TIPOS.map(g=>`<optgroup label="${_licEsc(g.grupo)}">${
+    g.items.map(i=>`<option value="${i.id}" ${i.id===sel?'selected':''}>${_licEsc(i.label)}</option>`).join('')
+  }</optgroup>`).join('');
+  return `<label class="lic-lbl"><span>Tipo de licencia</span>
+    <select id="licf_tipo" class="lic-sel" onchange="licTipoCambio()">
+      <option value="" ${!sel?'selected':''} disabled>Elegí el tipo…</option>${opts}
+    </select></label>`;
+}
+
+// Formulario (alta o edición). r = registro existente o null.
+// soloAut = true → modo JEFE: el tipo queda fijo en Autorizaciones (Art. 12).
+function _licFormHTML(lp, r, soloAut){
+  const p = _licPersona(lp) || {nombre:'—', jerarquia:'', lp};
+  const esLao = r ? r.tipo==='LAO' : false;
+  const anioAct = _licAnioActual();
+  const anios = [anioAct-1, anioAct, anioAct+1];
+  const anioSel = r && r.anio ? String(r.anio) : String(anioAct);
+  const titulo = soloAut ? '🪪 Dar autorización (Art. 12)' : (r?'✏️ Editar licencia':'🏖️ Cargar licencia');
+  // OJO: el tope mensual de autorizaciones es información SOLO de las
+  // administradoras. El formulario del jefe NO muestra contadores ni avisos.
+  const tipoBlock = soloAut
+    ? `<input type="hidden" id="licf_tipo" value="AUT_12">
+       <label class="lic-lbl"><span>Tipo de licencia</span><div class="lic-fijo">Autorizaciones — Art. 12</div></label>`
+    : _licSelectTipos(r?r.tipo:'');
+  const laoBlock = soloAut ? '' : `
+    <div id="licf_laoBlock" class="lic-lao" style="display:${esLao?'block':'none'}">
+      <div class="lic-lao-t">DETALLE DE LA ANUAL ORDINARIA</div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label class="lic-lbl"><span>Cantidad de días</span><input id="licf_dias" class="lic-in" type="number" min="1" value="${r&&r.dias?_licEsc(r.dias):''}" oninput="licActualizarRestante()"></label></div>
+        <div style="flex:1"><label class="lic-lbl"><span>¿Con viaje o sin viaje?</span>
+          <select id="licf_viaje" class="lic-sel">
+            <option value="" ${!(r&&r.viaje)?'selected':''} disabled>Elegí…</option>
+            <option ${r&&r.viaje==='Sin viaje'?'selected':''}>Sin viaje</option>
+            <option ${r&&(r.viaje==='Con viaje (2 días de viaje)'||r.viaje==='Con viaje')?'selected':''}>Con viaje (2 días de viaje)</option>
+            <option ${r&&r.viaje==='Con viaje (4 días de viaje)'?'selected':''}>Con viaje (4 días de viaje)</option>
+          </select></label></div>
+      </div>
+      <label class="lic-lbl"><span>Año</span>
+        <select id="licf_anio" class="lic-sel" onchange="licActualizarRestante()">
+          ${anios.map(a=>`<option ${String(a)===anioSel?'selected':''}>${a}</option>`).join('')}
+        </select></label>
+      <div id="licf_cupoWrap" style="display:none">
+        <label class="lic-lbl"><span>Días que le corresponden en el año (cupo — no está definido todavía)</span>
+        <input id="licf_cupo" class="lic-in" type="number" min="1" oninput="licActualizarRestante()"></label>
+      </div>
+      <div id="licf_restante" class="lic-restante lic-r-info">Elegí el año y la cantidad de días para calcular cuánto le resta usufructuar.</div>
+    </div>`;
+  return `
+    <div class="lic-mh"><h3>${titulo}<br><small style="font-weight:400;color:#94a3b8">${_licEsc(p.jerarquia)} ${_licEsc(p.nombre)} · LP ${_licEsc(p.lp)}</small></h3><button class="lic-x" onclick="licCerrarModal()">×</button></div>
+    <input type="hidden" id="licf_lp" value="${_licEsc(lp)}">
+    <input type="hidden" id="licf_id" value="${r?r._id:''}">
+    <input type="hidden" id="licf_soloAut" value="${soloAut?'1':''}">
+    ${tipoBlock}
+    ${laoBlock}
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label class="lic-lbl"><span>Desde (opcional)</span><input id="licf_desde" class="lic-in" type="date" value="${r&&r.desde?_licEsc(r.desde):''}"></label></div>
+      <div style="flex:1"><label class="lic-lbl"><span>Hasta (opcional)</span><input id="licf_hasta" class="lic-in" type="date" value="${r&&r.hasta?_licEsc(r.hasta):''}"></label></div>
+    </div>
+    <label class="lic-lbl"><span>Observaciones</span><textarea id="licf_obs" class="lic-ta" rows="3">${r&&r.obs?_licEsc(r.obs):''}</textarea></label>
+    <div class="lic-mbtns"><button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button><button class="lic-save" onclick="licGuardar()">Guardar</button></div>`;
+}
+
+function licNueva(lp, soloAut){
+  const nivel = _licNivel();
+  if(nivel==='propio'){ alert('No tenés permisos para cargar licencias.'); return; }
+  if(nivel==='jefe'){
+    if(!_licCompete(lp)){ alert('Solo podés dar autorizaciones al personal a tu cargo.'); return; }
+    soloAut = true; // los jefes SOLO cargan Autorizaciones (Art. 12)
+  }
+  licAbrirModal(_licFormHTML(lp, null, !!soloAut));
+  if(!soloAut) licActualizarRestante();
+}
+function licEditar(id){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden editar licencias.'); return; }
+  const r = _licRows().find(x=>x._id===id); if(!r) return;
+  licAbrirModal(_licFormHTML(r.lp, r, false));
+  licActualizarRestante();
+}
+
+function licTipoCambio(){
+  const esLao = _licVal('licf_tipo')==='LAO';
+  const bl = document.getElementById('licf_laoBlock');
+  if(bl) bl.style.display = esLao ? 'block' : 'none';
+  if(esLao) licActualizarRestante();
+}
+
+function licActualizarRestante(){
+  const box = document.getElementById('licf_restante'); if(!box) return;
+  const lp   = _licVal('licf_lp');
+  const anio = _licVal('licf_anio') || String(_licAnioActual());
+  const id   = _licVal('licf_id') || null;
+  const dias = parseInt(_licVal('licf_dias'),10) || 0;
+  const cupoWrap = document.getElementById('licf_cupoWrap');
+  let cupo = _licCupo(lp, anio);
+  if(cupo===null){
+    if(cupoWrap) cupoWrap.style.display = 'block';
+    const manual = parseInt(_licVal('licf_cupo'),10);
+    if(!isNaN(manual) && manual>0) cupo = manual;
+  }else if(cupoWrap){ cupoWrap.style.display = 'none'; }
+  const usados = _licLaoUsados(lp, anio, id);
+  if(cupo===null){
+    box.className = 'lic-restante lic-r-info';
+    box.innerHTML = `El cupo del año ${_licEsc(anio)} no está definido. Ya tiene <b>${usados}</b> día${usados===1?'':'s'} usado${usados===1?'':'s'}. Cargá arriba los días que le corresponden para calcular el restante.`;
+    return;
+  }
+  const restante = cupo - usados - dias;
+  if(restante < 0){
+    box.className = 'lic-restante lic-r-warn';
+    box.innerHTML = `⚠️ Se pasa del cupo: le corresponden <b>${cupo}</b>, ya usó <b>${usados}</b> y con estos <b>${dias}</b> quedaría en <b>${restante}</b>. Revisá los días antes de guardar.`;
+  }else{
+    box.className = 'lic-restante';
+    box.innerHTML = `✅ Año ${_licEsc(anio)}: le corresponden <b>${cupo}</b> días, usó <b>${usados}</b>${dias?`, está tomando <b>${dias}</b>`:''} → le restan usufructuar <b>${restante}</b> día${restante===1?'':'s'}.`;
+  }
+}
+
+async function licGuardar(){
+  const nivel = _licNivel();
+  if(nivel==='propio'){ alert('No tenés permisos para cargar licencias.'); return; }
+  const id      = _licVal('licf_id') || null;
+  const lp      = _licVal('licf_lp');
+  const soloAut = _licVal('licf_soloAut')==='1';
+  let tipo      = _licVal('licf_tipo');
+  if(nivel==='jefe'){
+    if(id){ alert('Solo las administradoras pueden editar licencias.'); return; }
+    if(!_licCompete(lp)){ alert('Solo podés dar autorizaciones al personal a tu cargo.'); return; }
+    tipo = 'AUT_12'; // fuera lo que fuera, los jefes solo cargan Autorizaciones
+  }
+  if(!tipo){ alert('Elegí el tipo de licencia.'); return; }
+  const data = { lp, tipo, desde:_licVal('licf_desde'), hasta:_licVal('licf_hasta'), obs:_licVal('licf_obs') };
+  if(tipo==='LAO' && !soloAut){
+    data.dias  = _licVal('licf_dias');
+    data.viaje = _licVal('licf_viaje');
+    data.anio  = _licVal('licf_anio') || String(_licAnioActual());
+    if(!data.dias || parseInt(data.dias,10)<=0){ alert('Cargá la cantidad de días de la Anual Ordinaria.'); return; }
+    if(!data.viaje){ alert('Indicá si es con viaje o sin viaje.'); return; }
+    const cupoManual = parseInt(_licVal('licf_cupo'),10);
+    if(_licCupo(lp, data.anio)===null && !isNaN(cupoManual) && cupoManual>0){
+      try{
+        if(typeof S.addSafe === 'function') await S.addSafe(LIC_S, LIC_CUPOS_M, {lp, anio:data.anio, dias:String(cupoManual)});
+        else S.add(LIC_S, LIC_CUPOS_M, {lp, anio:data.anio, dias:String(cupoManual)});
+      }catch(_){}
+    }
+  }else{
+    data.dias=''; data.viaje=''; data.anio='';
+  }
+  try{
+    if(id){ if(typeof S.updSafe === 'function') await S.updSafe(LIC_S, LIC_M, id, data); else S.upd(LIC_S, LIC_M, id, data); }
+    else  { if(typeof S.addSafe === 'function') await S.addSafe(LIC_S, LIC_M, data); else S.add(LIC_S, LIC_M, data); }
+  }catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  // El control del tope es SOLO para las administradoras: si una admin carga
+  // y detecta exceso, se le avisa a ella. Al jefe que carga NO se le muestra
+  // nada (el cartel queda únicamente en la vista admin).
+  if(tipo==='AUT_12' && nivel==='admin'){
+    try{
+      const mes = _licMesDeAut(data) || _licMesKeyHoy();
+      const cant = _licAutsDelMes(lp, mes);
+      if(cant > LIC_AUT_MAX_MES){
+        const per = _licPersona(lp);
+        alert(`⚠️ ATENCIÓN (solo administradoras): ${per?per.nombre:'el efectivo'} queda con ${cant} autorizaciones en ${_licMesLabel(mes)} (máximo permitido: ${LIC_AUT_MAX_MES}).`);
+      }
+    }catch(_){}
+  }
+  licCerrarModal(); renderTable();
+  setTimeout(()=>{ try{ if(_licNivel()!=='propio') licToggleDetalle(lp); }catch(_){} }, 60);
+}
+
+async function licBorrar(id){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden borrar licencias.'); return; }
+  const r = _licRows().find(x=>x._id===id); if(!r) return;
+  if(!confirm('¿Borrar esta licencia? Esta acción no se puede deshacer.')) return;
+  try{ if(typeof S.delSafe === 'function') await S.delSafe(LIC_S, LIC_M, id); else S.del(LIC_S, LIC_M, id); }
+  catch(e){ alert('No se pudo borrar: '+(e.message||e)); return; }
+  renderTable();
+  setTimeout(()=>{ try{ licToggleDetalle(r.lp); }catch(_){} }, 60);
+}
+
+// ─── Cupo anual (solo administradoras) ───
+function licCupoModal(lp, anio){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden definir cupos.'); return; }
+  const p = _licPersona(lp) || {nombre:'—', lp};
+  const actual = _licCupo(lp, anio);
+  licAbrirModal(`
+    <div class="lic-mh"><h3>✏️ Cupo Anual Ordinaria · ${anio}<br><small style="font-weight:400;color:#94a3b8">${_licEsc(p.nombre)} · LP ${_licEsc(p.lp)}</small></h3><button class="lic-x" onclick="licCerrarModal()">×</button></div>
+    <label class="lic-lbl"><span>Días que le corresponden en ${anio}</span>
+    <input id="licf_cupoDias" class="lic-in" type="number" min="1" value="${actual!==null?actual:''}"></label>
+    <div class="lic-mbtns"><button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button><button class="lic-save" onclick="licCupoGuardar('${_licEsc(lp)}','${anio}')">Guardar</button></div>`);
+}
+async function licCupoGuardar(lp, anio){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden definir cupos.'); return; }
+  const dias = parseInt(_licVal('licf_cupoDias'),10);
+  if(isNaN(dias) || dias<=0){ alert('Cargá una cantidad de días válida.'); return; }
+  const existente = _licCupos().find(x=>String(x.lp)===String(lp) && String(x.anio)===String(anio));
+  try{
+    if(existente){ if(typeof S.updSafe === 'function') await S.updSafe(LIC_S, LIC_CUPOS_M, existente._id, {dias:String(dias)}); else S.upd(LIC_S, LIC_CUPOS_M, existente._id, {dias:String(dias)}); }
+    else{ if(typeof S.addSafe === 'function') await S.addSafe(LIC_S, LIC_CUPOS_M, {lp, anio:String(anio), dias:String(dias)}); else S.add(LIC_S, LIC_CUPOS_M, {lp, anio:String(anio), dias:String(dias)}); }
+  }catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
+  licCerrarModal(); renderTable();
+  setTimeout(()=>{ try{ licToggleDetalle(lp); }catch(_){} }, 60);
+}
+// ─── Cupos anuales MASIVOS (solo administradoras) ───
+// Cada efectivo goza de una cantidad distinta de días de Anual Ordinaria
+// según sus años de servicio. Este panel permite cargar/ajustar en una sola
+// pantalla los días que le corresponden a cada uno para el año elegido.
+function licCuposMasivos(anio){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden definir cupos.'); return; }
+  anio = parseInt(anio,10) || _licAnioActual();
+  const filas = LIC_PERSONAL.map(p=>{
+    const cupo = _licCupo(p.lp, anio);
+    const usados = _licLaoUsados(p.lp, anio);
+    return `<div class="lic-cm-row">
+      <div class="lic-cm-nom"><b>${p.n}.</b> ${_licEsc(p.nombre)}<br><small>${_licEsc(p.jerarquia)} · LP ${_licEsc(p.lp)}${usados?` · usados: ${usados}`:''}</small></div>
+      <input type="number" min="0" class="lic-in lic-cm-in" id="liccm_${p.lp}" value="${cupo!==null?cupo:''}" placeholder="días">
+    </div>`;
+  }).join('');
+  licAbrirModal(`
+    <div class="lic-mh"><h3>📋 Cupos de Anual Ordinaria · ${anio}</h3><button class="lic-x" onclick="licCerrarModal()">×</button></div>
+    <div class="lic-cm-nav">
+      <button class="lic-cancel" style="padding:6px 12px" onclick="licCuposMasivos(${anio-1})">◀ ${anio-1}</button>
+      <span style="font-weight:700">${anio}</span>
+      <button class="lic-cancel" style="padding:6px 12px" onclick="licCuposMasivos(${anio+1})">${anio+1} ▶</button>
+    </div>
+    <div class="lic-restante lic-r-info" style="margin-bottom:10px">Cada efectivo goza de una cantidad distinta de días según sus años de servicio. Cargá los días que le corresponden a cada uno en ${anio}; los que dejes vacíos quedan sin definir. Podés actualizar esto cada año cuando cambie la antigüedad.</div>
+    <div class="lic-cm-list">${filas}</div>
+    <div class="lic-mbtns"><button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button><button class="lic-save" onclick="licCuposMasivosGuardar(${anio})">Guardar todos</button></div>`);
+}
+async function licCuposMasivosGuardar(anio){
+  if(_licNivel()!=='admin') return;
+  let cambios = 0;
+  for(const p of LIC_PERSONAL){
+    const el = document.getElementById('liccm_'+p.lp);
+    if(!el) continue;
+    const v = el.value.trim();
+    if(v==='') continue;                       // vacío = no tocar
+    const dias = parseInt(v,10);
+    if(isNaN(dias) || dias<0) continue;
+    const actual = _licCupo(p.lp, anio);
+    if(actual!==null && actual===dias) continue; // sin cambios
+    const existente = _licCupos().find(x=>String(x.lp)===String(p.lp) && String(x.anio)===String(anio));
+    try{
+      if(existente){ if(typeof S.updSafe==='function') await S.updSafe(LIC_S, LIC_CUPOS_M, existente._id, {dias:String(dias)}); else S.upd(LIC_S, LIC_CUPOS_M, existente._id, {dias:String(dias)}); }
+      else{ if(typeof S.addSafe==='function') await S.addSafe(LIC_S, LIC_CUPOS_M, {lp:p.lp, anio:String(anio), dias:String(dias)}); else S.add(LIC_S, LIC_CUPOS_M, {lp:p.lp, anio:String(anio), dias:String(dias)}); }
+      cambios++;
+    }catch(e){ alert('No se pudo guardar el cupo de '+p.nombre+': '+(e.message||e)); return; }
+  }
+  licCerrarModal(); renderTable();
+  if(cambios) alert('✅ Se guardaron '+cambios+' cupo'+(cambios===1?'':'s')+' para el año '+anio+'.');
+}
+// ═══════ FIN MÓDULO LICENCIAS ═══════
+
 
 // Enganchar el detector después de cada render de tabla
 (function(){
