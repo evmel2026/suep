@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.37">
+<meta name="app-version" content="1.5.42">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -560,6 +560,22 @@ body.light-mode{background:#eef2f7;color:#243b53}
 }
 .export-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;border:1.5px solid rgba(122,175,212,.35);background:rgba(122,175,212,.1);color:#7aafd4;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
 .export-btn:hover{background:rgba(122,175,212,.2);border-color:#7aafd4;transform:translateY(-1px)}
+/* Modo selección para imprimir/PDF (v1.5.38) */
+.sel-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin:0 2px 10px;border-radius:12px;background:rgba(122,175,212,.12);border:1.5px solid rgba(122,175,212,.35)}
+.sel-bar-l,.sel-bar-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sel-info{font-size:13px;color:#cbd9e6}
+.sel-info b{color:#7aafd4;font-size:15px}
+.sel-mini{padding:7px 12px;border-radius:9px;border:1.5px solid rgba(122,175,212,.35);background:rgba(122,175,212,.1);color:#cbd9e6;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.sel-go{padding:8px 14px;border-radius:9px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.sel-go:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.4)}
+.sel-cancel{padding:8px 12px;border-radius:9px;border:1.5px solid rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.sel-cell{text-align:center;width:38px}
+.sel-cell input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:#2563eb}
+.sel-activar{display:flex;align-items:center;gap:6px;padding:9px 15px;border-radius:10px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.sel-activar:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.45)}
+tr.sel-on>td{background:rgba(37,99,235,.14)!important}
+.light-mode .sel-info,.light-mode .sel-mini{color:#2a4a6b}
+.light-mode tr.sel-on>td{background:rgba(37,99,235,.1)!important}
 .add-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;font-family:inherit}
 .add-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 
@@ -2127,7 +2143,7 @@ const SECTORS = [
   // custom:'licencias' → usa la vista propia renderLicencias() con el organigrama
   // jerárquico embebido (LIC_PERSONAL). Por ahora la ven todos los usuarios;
   // los roles específicos se van a definir más adelante.
-  { id:'LICENCIAS', name:'Licencias', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
+  { id:'LICENCIAS', name:'Licencias y Autorizaciones', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
     { id:'LICENCIAS', name:'Licencias', fields:[
       {key:'lp',   label:'LP',               type:'text'},
       {key:'tipo', label:'Tipo de licencia', type:'text'},
@@ -2999,10 +3015,53 @@ function puedeBorrarRec(r){
 }
 
 // ══════════════════════════════════════════════
+// MODO SELECCIÓN (para imprimir / bajar PDF solo lo elegido)  v1.5.38
+// ══════════════════════════════════════════════
+// SEL_MODE: si está activo, en la tabla aparece un checkbox por fila.
+// SEL_IDS: set con los _id tildados del módulo actual.
+let SEL_MODE = false;
+let SEL_IDS = new Set();
+let SEL_LAST_MOD = null; // último módulo renderizado, para limpiar la selección al cambiar
+
+function toggleSelMode(){
+  SEL_MODE = !SEL_MODE;
+  if(!SEL_MODE) SEL_IDS.clear();
+  renderTable();
+}
+function selToggle(id, ev){
+  if(ev) ev.stopPropagation();
+  if(SEL_IDS.has(id)) SEL_IDS.delete(id); else SEL_IDS.add(id);
+  _selRefreshBar();
+  const cb = document.getElementById('selcb_'+id);
+  if(cb) cb.checked = SEL_IDS.has(id);
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if(tr) tr.classList.toggle('sel-on', SEL_IDS.has(id));
+}
+// Marca/desmarca todos los registros que se están viendo (respeta la búsqueda actual)
+function selTodos(){
+  const visibles = _selVisibleIds();
+  const todosTildados = visibles.length && visibles.every(id=>SEL_IDS.has(id));
+  if(todosTildados) visibles.forEach(id=>SEL_IDS.delete(id));
+  else visibles.forEach(id=>SEL_IDS.add(id));
+  renderTable();
+}
+// IDs de las filas visibles en pantalla (las que tienen data-id)
+function _selVisibleIds(){
+  return Array.from(document.querySelectorAll('#dataArea tr[data-id]')).map(tr=>tr.getAttribute('data-id'));
+}
+function _selRefreshBar(){
+  const c = document.getElementById('selCount');
+  if(c) c.textContent = SEL_IDS.size;
+}
+
+// ══════════════════════════════════════════════
 // TABLA
 // ══════════════════════════════════════════════
 function renderTable(searchOverride){
   if(!CS||!CM)return;
+  // Al cambiar de módulo, salgo del modo selección y limpio los tildados (v1.5.38)
+  const _modKeyActual = CS.id+'|'+CM.id;
+  if(SEL_LAST_MOD !== _modKeyActual){ SEL_MODE=false; SEL_IDS.clear(); SEL_LAST_MOD=_modKeyActual; }
   const rows=S.get(CS.id,CM.id);
   const fields=CM.fields;
   // ════ CORRECCIÓN 4: Permisos de edición según rol ════
@@ -3040,6 +3099,8 @@ function renderTable(searchOverride){
   if(CS.custom==='licencias'){
     area.innerHTML = renderLicencias();
     licEnsureModal();
+    // Enfoco el buscador para poder tipear el nombre al toque (v1.5.38)
+    setTimeout(()=>{ const b=document.getElementById('licBuscar'); if(b && window.matchMedia && !window.matchMedia('(hover: none)').matches) b.focus(); }, 60);
     return;
   }
 
@@ -3128,7 +3189,7 @@ function renderTable(searchOverride){
   const canCargar = CU.permiso==='cargar' || CU.permiso==='cargar-global';
   const showActions = canEditAll || hasAnyAtt || canCargar;
   // Total de columnas (incluye campos visibles + Exámenes + Cargado por + Fecha + Acciones)
-  const colSpan = cols.length + 2 + (isReclu ? 1 : 0) + (showActions ? 1 : 0);
+  const colSpan = cols.length + 2 + (isReclu ? 1 : 0) + (showActions ? 1 : 0) + (SEL_MODE ? 1 : 0);
 
   // ════ CORRECCIÓN 2: Calcular si un registro es "nuevo" (dentro de 5 minutos) ════
   const ahora = Date.now();
@@ -3170,7 +3231,13 @@ function renderTable(searchOverride){
             </td></tr>`;
           }
 
-          return `<tr class="clickable-row ${rowClass}" data-id="${r._id}" onclick="viewDetail('${r._id}')" style="cursor:pointer" title="Tocá para ver el detalle completo">
+          // Modo selección: primera columna extra con el checkbox (v1.5.41)
+          const rowClickAttr = SEL_MODE ? `onclick="selToggle('${r._id}',event)"` : `onclick="viewDetail('${r._id}')"`;
+          const selCell = SEL_MODE
+            ? `<td class="sel-cell" onclick="selToggle('${r._id}',event)"><input type="checkbox" id="selcb_${r._id}" ${SEL_IDS.has(r._id)?'checked':''} onclick="selToggle('${r._id}',event)"></td>`
+            : '';
+          return `<tr class="clickable-row ${rowClass} ${SEL_MODE&&SEL_IDS.has(r._id)?'sel-on':''}" data-id="${r._id}" ${rowClickAttr} style="cursor:pointer" title="${SEL_MODE?'Tocá para seleccionar':'Tocá para ver el detalle completo'}">
+          ${selCell}
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
           ${examCell}
           <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
@@ -3300,10 +3367,29 @@ function renderTable(searchOverride){
     bodyHTML = showRows.map(rowHTML).join('');
   }
 
-  area.innerHTML=`${orgToggleBar}${edfBar}${searchBar}
+  // ─── Barra de selección para imprimir/PDF/Excel (v1.5.41) ───
+  const selBar = SEL_MODE
+    ? `<div class="sel-bar">
+        <div class="sel-bar-l">
+          <button class="sel-mini" onclick="selTodos()">☑️ Todos / ninguno</button>
+          <span class="sel-info"><b id="selCount">${SEL_IDS.size}</b> seleccionado(s)</span>
+        </div>
+        <div class="sel-bar-r">
+          <button class="sel-go" onclick="exportExcel()">📥 Excel</button>
+          <button class="sel-go" onclick="exportPDFSel()">📄 PDF</button>
+          <button class="sel-go" onclick="imprimirSel()">🖨️ Imprimir</button>
+          <button class="sel-cancel" onclick="toggleSelMode()">✕ Salir</button>
+        </div>
+      </div>`
+    : `<div style="display:flex;justify-content:flex-end;padding:0 2px 8px">
+        <button class="sel-activar" onclick="toggleSelMode()" title="Elegir registros para imprimir o bajar en PDF/Excel">🖨️ Elegir qué imprimir / bajar</button>
+      </div>`;
+
+  area.innerHTML=`${orgToggleBar}${edfBar}${searchBar}${selBar}
     <div class="data-wrap fade-in">
     <table class="data-table">
       <thead><tr>
+        ${SEL_MODE?'<th class="sel-cell">✓</th>':''}
         ${cols.map(f=>`<th>${f.label}</th>`).join('')}
         ${isReclu?'<th>Exámenes</th>':''}
         <th>Cargado por</th><th>Fecha</th>
@@ -5451,10 +5537,48 @@ function closeSidebar(){sbOpen=false;document.getElementById('sidebar').classLis
 // ══════════════════════════════════════════════
 // EXPORTAR EXCEL
 // ══════════════════════════════════════════════
+// Devuelve las filas del módulo actual ORDENADAS igual que se ven en pantalla,
+// para que las descargas (Excel/PDF) no salgan en cualquier orden. (v1.5.41)
+function _rowsOrdenadosParaExport(){
+  let rows = S.get(CS.id, CM.id).slice();
+  // Disposiciones y Expedientes: orden por N° y, si empatan o falta, por fecha
+  if(CS.custom==='disposiciones' || CS.custom==='expedientes'){
+    rows.sort((a,b)=>{
+      const na = parseInt(String(a.numero||'').replace(/\D/g,''),10);
+      const nb = parseInt(String(b.numero||'').replace(/\D/g,''),10);
+      if(!isNaN(na) && !isNaN(nb) && na!==nb) return na-nb;
+      return String(a.fecha||'').localeCompare(String(b.fecha||''));
+    });
+    return rows;
+  }
+  // Módulos con número correlativo anual: ordenar por ese número
+  const campoNum = (CM.fields||[]).find(f=>f.auto==='yearly');
+  if(campoNum){
+    const _n = r => { const v = parseInt(String(r[campoNum.key]||'').replace(/\D/g,''),10); return isNaN(v)?Infinity:v; };
+    rows.sort((a,b)=> _n(a)-_n(b));
+    return rows;
+  }
+  // Si hay un campo fecha, ordenar cronológicamente (más viejo → más nuevo)
+  const dateField = (CM.fields||[]).find(f=>f.type==='date');
+  if(dateField){
+    rows.sort((a,b)=> String(a[dateField.key]||'').localeCompare(String(b[dateField.key]||'')));
+    return rows;
+  }
+  return rows;
+}
+
 function exportExcel(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
-  const rows = S.get(CS.id, CM.id);
+  let rows = _rowsOrdenadosParaExport();
   if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
+  // Si hay registros tildados en modo selección, exporto SOLO esos (v1.5.40)
+  const haySeleccion = SEL_IDS && SEL_IDS.size > 0;
+  if(SEL_MODE && !haySeleccion){ alert('No tildaste ningún registro. Marcá al menos uno o salí del modo selección para bajar todo.'); return; }
+  if(haySeleccion){
+    rows = rows.filter(r=>SEL_IDS.has(r._id));
+    if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
+  }
+  const sufijoSel = haySeleccion ? '_seleccion' : '';
 
   // Armar encabezados con los labels del módulo
   const fields = CM.fields;
@@ -5490,7 +5614,7 @@ function exportExcel(){
   // Nombre del archivo: SECTOR_MODULO_FECHA.xlsx (sin emojis ni caracteres raros)
   const limpiar = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
   const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
-  const filename = `SUEP_${limpiar(CS.name)}_${limpiar(CM.name)}_${fecha}.xlsx`;
+  const filename = `SUEP_${limpiar(CS.name)}_${limpiar(CM.name)}${sufijoSel}_${fecha}.xlsx`;
   XLSX.writeFile(wb, filename);
 }
 
@@ -5528,12 +5652,20 @@ function exportSeleccionExcel(tipo, fechaISO){
 // ══════════════════════════════════════════════
 function exportPDF(){
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
-  const rows = S.get(CS.id, CM.id);
+  let rows = _rowsOrdenadosParaExport();
   if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
   if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
     alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
     return;
   }
+  // Si hay registros tildados, exporto SOLO esos (v1.5.40)
+  const haySeleccion = SEL_IDS && SEL_IDS.size > 0;
+  if(SEL_MODE && !haySeleccion){ alert('Estás en modo selección pero no tildaste ningún registro.\n\nMarcá los que querés, o tocá "✕ Salir" para bajar el PDF completo.'); return; }
+  if(haySeleccion){
+    rows = rows.filter(r=>SEL_IDS.has(r._id));
+    if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
+  }
+  const sufijoSel = haySeleccion ? '_seleccion' : '';
 
   // Excluimos imágenes (no se muestran como texto en la tabla)
   const fields = CM.fields.filter(f => f.type !== 'image');
@@ -5558,7 +5690,7 @@ function exportPDF(){
   doc.text(`${CS.name} · ${CM.name}`, 40, 36);
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}`, 40, 50);
+  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''}${haySeleccion?' seleccionado'+(rows.length!==1?'s':''):''}`, 40, 50);
 
   doc.autoTable({
     head: [headers],
@@ -5572,7 +5704,69 @@ function exportPDF(){
 
   const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
   const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
-  doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_${fechaArch}.pdf`);
+  doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}${sufijoSel}_${fechaArch}.pdf`);
+}
+
+// ─── PDF de SOLO los registros tildados (v1.5.38) ───
+// Reutiliza toda la lógica de exportPDF pero filtrando por SEL_IDS.
+function exportPDFSel(){
+  if(!SEL_IDS.size){ alert('No tildaste ningún registro. Marcá al menos uno.'); return; }
+  if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
+  if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
+    alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet e intentá de nuevo.');
+    return;
+  }
+  const rows = _rowsOrdenadosParaExport().filter(r=>SEL_IDS.has(r._id));
+  if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
+
+  const fields = CM.fields.filter(f => f.type !== 'image');
+  const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Adjuntos'];
+  const body = rows.map(r=>{
+    const atts = r._attachments || [];
+    const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}` : '';
+    return [...fields.map(f=>String(r[f.key]||'')), r._por||'', r._ts||'', attDesc];
+  });
+
+  const { jsPDF } = window.jspdf;
+  const orientation = headers.length > 6 ? 'landscape' : 'portrait';
+  const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' });
+  const fechaTxt = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
+  doc.setFontSize(14); doc.setTextColor(8, 17, 31);
+  doc.text(`${CS.name} · ${CM.name}`, 40, 36);
+  doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+  doc.text(`SUEP — Generado el ${fechaTxt} · ${rows.length} registro${rows.length!==1?'s':''} seleccionado${rows.length!==1?'s':''}`, 40, 50);
+  doc.autoTable({
+    head: [headers], body: body, startY: 62,
+    styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak', valign: 'top' },
+    headStyles: { fillColor: [13, 25, 40], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [240, 245, 250] },
+    margin: { left: 40, right: 40 }
+  });
+  const limpiarPdf = txt => txt.replace(/[^\w\sÀ-ÿ-]/g,'').trim().replace(/\s+/g,'_');
+  const fechaArch = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+  doc.save(`SUEP_${limpiarPdf(CS.name)}_${limpiarPdf(CM.name)}_seleccion_${fechaArch}.pdf`);
+}
+
+// ─── Imprimir SOLO los registros tildados (v1.5.38) ───
+function imprimirSel(){
+  if(!SEL_IDS.size){ alert('No tildaste ningún registro. Marcá al menos uno.'); return; }
+  if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
+  const rows = _rowsOrdenadosParaExport().filter(r=>SEL_IDS.has(r._id));
+  if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
+  const cols = CM.fields.filter(f=>f.type!=='image');
+
+  let out = `<div class="pr-head">
+    <h1>SUEP — Escuela de Policía · DCFyCCCO</h1>
+    <div class="pr-sub">${esc(CS.name)} · ${esc(CM.name)} — ${rows.length} registro${rows.length!==1?'s':''} seleccionado${rows.length!==1?'s':''} · Generado por ${esc(CU.nombre)} el ${ahora}</div>
+  </div>`;
+  out += `<table><thead><tr>${cols.map(f=>`<th>${esc(f.label)}</th>`).join('')}<th>Cargado por</th><th>Carga</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>${cols.map(f=>`<td>${esc(r[f.key])||'—'}</td>`).join('')}<td>${esc(r._por)||'—'}</td><td>${esc(r._ts)||'—'}</td></tr>`).join('')}</tbody></table>`;
+
+  document.getElementById('printArea').innerHTML = out;
+  document.body.classList.add('printing');
+  setTimeout(()=>{ window.print(); }, 150);
 }
 
 
@@ -9085,6 +9279,13 @@ function licEnsureEstilos(){
   .lic-jer{font-size:11px;color:#94a3b8;text-transform:uppercase}
   .lic-badge{border-radius:7px;padding:3px 8px;font-size:11px;display:inline-block;background:rgba(251,191,36,.14);color:#d97706;white-space:nowrap}
   .lic-badge-0{background:rgba(148,163,184,.12);color:#94a3b8}
+  .lic-badge-ok{background:rgba(34,197,94,.16);color:#22c55e;font-weight:700}
+  .lic-badge-low{background:rgba(251,191,36,.18);color:#f59e0b;font-weight:700}
+  .lic-badge-neg{background:rgba(248,113,113,.18);color:#ef4444;font-weight:700}
+  .lic-badge-sc{background:rgba(148,163,184,.12);color:#94a3b8;font-style:italic}
+  .light-mode .lic-badge-ok{color:#16a34a}
+  .light-mode .lic-badge-low{color:#d97706}
+  .light-mode .lic-badge-neg{color:#dc2626}
   .lic-vermas{font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;margin-left:2px}
   .light-mode .lic-vermas{color:#b45309}
   .lic-ficha{margin-top:2px}
@@ -9149,9 +9350,11 @@ function licEnsureEstilos(){
   .lic-restante{margin-top:2px;padding:8px 11px;border-radius:9px;font-size:12.5px;line-height:1.5;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#34d399}
   .lic-restante.lic-r-warn{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.35);color:#f87171}
   .lic-restante.lic-r-info{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);color:#fbbf24}
-  .lic-mbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  .lic-mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
   .lic-cancel{background:rgba(148,163,184,.12);color:#cbd5e1;border:none;border-radius:9px;padding:9px 16px;font-size:13px;cursor:pointer}
   .lic-save{background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .lic-save-otra{background:rgba(180,83,9,.14);color:#d97706;border:1.5px solid rgba(180,83,9,.4);border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  .lic-save-otra:hover{background:rgba(180,83,9,.22)}
   /* Modo claro */
   .light-mode .lic-wrap{color:#1e293b}
   .light-mode .lic-title{color:#0f172a}
@@ -9219,7 +9422,7 @@ function renderLicencias(){
   const head = `
     <div class="lic-head">
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="lic-title">🏖️ Licencias del Personal</span>
+        <span class="lic-title">🏖️ Licencias y Autorizaciones del Personal</span>
         <span class="lic-sub">${LIC_PERSONAL.length} efectivos · ${rows.length} licencia${rows.length===1?'':'s'} cargada${rows.length===1?'':'s'}</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -9228,10 +9431,21 @@ function renderLicencias(){
       </div>
     </div>`;
 
+  const anioAct = _licAnioActual();
   const filas = LIC_PERSONAL.map(p=>{
     const lics = _licDePersona(p.lp);
     const buscable = _licEsc((p.nombre+' '+p.jerarquia+' '+p.lp).toLowerCase());
-    const badge = lics.length
+    // Saldo de Anual Ordinaria del año en curso: se muestra directo en el listado
+    // así se ve de un vistazo cuántos días le quedan (pedido de Mely, v1.5.38).
+    const rest = _licLaoRestante(p.lp, anioAct);
+    let saldoBadge = '';
+    if(rest===null){
+      saldoBadge = `<span class="lic-badge lic-badge-sc" title="Falta definir el cupo anual">sin cupo ${anioAct}</span>`;
+    }else{
+      const cls = rest<=0 ? 'lic-badge-neg' : (rest<=5 ? 'lic-badge-low' : 'lic-badge-ok');
+      saldoBadge = `<span class="lic-badge ${cls}" title="Días de Anual Ordinaria ${anioAct} que le restan usufructuar">${rest} día${rest===1?'':'s'} rest.</span>`;
+    }
+    const cantBadge = lics.length
       ? `<span class="lic-badge">${lics.length} lic.</span>`
       : `<span class="lic-badge lic-badge-0">Sin licencias</span>`;
     return `<tbody data-buscar="${buscable}">
@@ -9239,7 +9453,7 @@ function renderLicencias(){
         <td class="lic-num">${p.n}</td>
         <td><div style="font-weight:600">${_licEsc(p.nombre)}</div><div class="lic-jer">${_licEsc(p.jerarquia)}</div></td>
         <td>${_licEsc(p.lp)}</td>
-        <td>${badge} <span class="lic-vermas">ver ›</span></td>
+        <td style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">${saldoBadge}${cantBadge} <span class="lic-vermas">›</span></td>
       </tr>
     </tbody>`;
   }).join('');
@@ -9458,7 +9672,11 @@ function _licFormHTML(lp, r, soloAut){
       <div style="flex:1"><label class="lic-lbl"><span>Hasta (opcional)</span><input id="licf_hasta" class="lic-in" type="date" value="${r&&r.hasta?_licEsc(r.hasta):''}"></label></div>
     </div>
     <label class="lic-lbl"><span>Observaciones</span><textarea id="licf_obs" class="lic-ta" rows="3">${r&&r.obs?_licEsc(r.obs):''}</textarea></label>
-    <div class="lic-mbtns"><button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button><button class="lic-save" onclick="licGuardar()">Guardar</button></div>`;
+    <div class="lic-mbtns">
+      <button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button>
+      ${r ? '' : `<button class="lic-save-otra" onclick="licGuardar(true)" title="Guarda y deja el formulario abierto para cargar otra licencia a este mismo efectivo">💾 Guardar y cargar otra</button>`}
+      <button class="lic-save" onclick="licGuardar()">Guardar</button>
+    </div>`;
 }
 
 function licNueva(lp, soloAut){
@@ -9529,7 +9747,7 @@ function licActualizarRestante(){
   }
 }
 
-async function licGuardar(){
+async function licGuardar(seguirCargando){
   const nivel = _licNivel();
   if(nivel==='propio'){ alert('No tenés permisos para cargar licencias.'); return; }
   const id      = _licVal('licf_id') || null;
@@ -9576,7 +9794,16 @@ async function licGuardar(){
       }
     }catch(_){}
   }
-  licCerrarModal(); renderTable();
+  renderTable();
+  if(seguirCargando){
+    // Guarda y deja el formulario listo para otra licencia del mismo efectivo (v1.5.38)
+    try{
+      document.getElementById('licModalBox').innerHTML = _licFormHTML(lp, null, soloAut);
+      const t = document.getElementById('licf_tipo'); if(t && t.focus) t.focus();
+    }catch(_){ licCerrarModal(); }
+    return;
+  }
+  licCerrarModal();
   setTimeout(()=>{ try{ if(_licNivel()!=='propio') licToggleDetalle(lp); }catch(_){} }, 60);
 }
 
