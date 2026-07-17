@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.42">
+<meta name="app-version" content="1.5.44">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2148,6 +2148,24 @@ const SECTORS = [
       {key:'lp',   label:'LP',               type:'text'},
       {key:'tipo', label:'Tipo de licencia', type:'text'},
       {key:'obs',  label:'Observaciones',    type:'textarea'},
+    ],
+      // v1.5.43 — Columnas para Excel / PDF / Imprimir. El registro guarda el LP
+      // y el código del tipo (LAO, AUT_12…); en el papel queremos ver el nombre
+      // y el tipo en castellano, más las fechas y los días.
+      exportFields:[
+      {key:'lp',    label:'LP',      type:'text'},
+      {label:'Jerarquía', type:'text', calc:r=>{ const p=(typeof _licPersona==='function')?_licPersona(r.lp):null; return p?p.jerarquia:''; }},
+      {label:'Apellido y Nombre', type:'text', calc:r=>{ const p=(typeof _licPersona==='function')?_licPersona(r.lp):null; return p?p.nombre:('LP '+(r.lp||'')); }},
+      {label:'Tipo de licencia', type:'text', calc:r=>{ try{ return _licTipoLabel(r.tipo)||r.tipo||''; }catch(_){ return r.tipo||''; } }},
+      {label:'Duración', type:'text', calc:r=> r.tipo==='AUT_12' ? (String(r.dur)==='48'?'48 hs':'24 hs') : ''},
+      {key:'desde', label:'Desde',   type:'date'},
+      {key:'hasta', label:'Hasta (último día)', type:'text'},
+      {label:'Se presenta', type:'text', calc:r=>{
+        try{ const d=_licFechaPresenta(r); return d?_licISO(d):''; }catch(_){ return r.presenta||''; } }},
+      {key:'dias',  label:'Días',    type:'text'},
+      {key:'viaje', label:'Viaje',   type:'text'},
+      {key:'anio',  label:'Año',     type:'text'},
+      {key:'obs',   label:'Observaciones', type:'textarea'},
     ]},
   ]},
 
@@ -2642,6 +2660,13 @@ function iniciarSesion(user, esRestauracion){
       localStorage.setItem('suep_acceso_actual', accId);
       // ✅ FIX: sincronizar registro de accesos a Supabase
       if(typeof syncToSupabase === 'function') syncToSupabase('suep_accesos', accesos.slice(0,150));
+      // ✅ v1.5.43: además del log (que se recorta a 150), dejamos el ingreso
+      // asentado en la tabla propia que lee CENTINELA. Fire-and-forget: si falla
+      // la nube, el login sigue normal.
+      try{
+        if(typeof _centinelaRegistrarIngreso === 'function') _centinelaRegistrarIngreso(user);
+        if(typeof _centinelaSincronizarPadron === 'function') _centinelaSincronizarPadron();
+      }catch(_){}
       migratePanol();
       seedOrganigrama();
       seedExpedientes(); // carga inicial del Libro de Expedientes (solo si está vacío) — fire-and-forget
@@ -3951,9 +3976,12 @@ function renderMinuta(){
     </div>
     <button onclick="minutaGuardar()" style="width:100%;background:none;color:#7aafd4;border:1px dashed rgba(122,175,212,.3);border-radius:10px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:22px">💾 Solo guardar en el registro (sin enviar)</button>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 10px;flex-wrap:wrap">
       <div style="font-size:13px;font-weight:800;color:#cbd9e6">🗂️ Minutas cargadas</div>
-      <div style="font-size:11px;color:#7aafd4">${recsTotal} registro${recsTotal!==1?'s':''}</div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="font-size:11px;color:#7aafd4">${recsTotal} registro${recsTotal!==1?'s':''}</div>
+        ${recsTotal ? xselBotonHTML() : ''}
+      </div>
     </div>
     <div style="position:relative;margin-bottom:4px">
       <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
@@ -5537,6 +5565,24 @@ function closeSidebar(){sbOpen=false;document.getElementById('sidebar').classLis
 // ══════════════════════════════════════════════
 // EXPORTAR EXCEL
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// COLUMNAS PARA BAJAR / IMPRIMIR  (v1.5.43)
+// ══════════════════════════════════════════════
+// Por defecto se usan los campos del formulario (CM.fields). Un módulo puede
+// definir CM.exportFields para mostrar columnas distintas o calculadas —por
+// ejemplo Licencias, que guarda el LP y en el papel queremos ver el NOMBRE—.
+// Cada campo puede traer calc:(r)=>valor en vez de key.
+function _xFields(){
+  const f = (CM && (CM.exportFields || CM.fields)) || [];
+  return f.filter(x => x.type !== 'image');
+}
+function _xVal(f, r){
+  try{
+    const v = (typeof f.calc === 'function') ? f.calc(r) : r[f.key];
+    return (v === null || v === undefined) ? '' : String(v);
+  }catch(_){ return ''; }
+}
+
 // Devuelve las filas del módulo actual ORDENADAS igual que se ven en pantalla,
 // para que las descargas (Excel/PDF) no salgan en cualquier orden. (v1.5.41)
 function _rowsOrdenadosParaExport(){
@@ -5552,14 +5598,14 @@ function _rowsOrdenadosParaExport(){
     return rows;
   }
   // Módulos con número correlativo anual: ordenar por ese número
-  const campoNum = (CM.fields||[]).find(f=>f.auto==='yearly');
+  const campoNum = (CM.exportFields||CM.fields||[]).find(f=>f.auto==='yearly');
   if(campoNum){
     const _n = r => { const v = parseInt(String(r[campoNum.key]||'').replace(/\D/g,''),10); return isNaN(v)?Infinity:v; };
     rows.sort((a,b)=> _n(a)-_n(b));
     return rows;
   }
   // Si hay un campo fecha, ordenar cronológicamente (más viejo → más nuevo)
-  const dateField = (CM.fields||[]).find(f=>f.type==='date');
+  const dateField = (CM.exportFields||CM.fields||[]).find(f=>f.type==='date');
   if(dateField){
     rows.sort((a,b)=> String(a[dateField.key]||'').localeCompare(String(b[dateField.key]||'')));
     return rows;
@@ -5581,7 +5627,7 @@ function exportExcel(){
   const sufijoSel = haySeleccion ? '_seleccion' : '';
 
   // Armar encabezados con los labels del módulo
-  const fields = CM.fields;
+  const fields = _xFields();
   const headers = fields.map(f=>f.label);
   headers.push('Cargado por','Fecha de carga','Archivos adjuntos');
 
@@ -5590,7 +5636,7 @@ function exportExcel(){
     const atts = r._attachments || [];
     const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}: ${atts.map(a=>a.name).join(', ')}` : '';
     return [
-      ...fields.map(f=>r[f.key]||''),
+      ...fields.map(f=>_xVal(f,r)),
       r._por||'', r._ts||'', attDesc
     ];
   })];
@@ -5668,14 +5714,14 @@ function exportPDF(){
   const sufijoSel = haySeleccion ? '_seleccion' : '';
 
   // Excluimos imágenes (no se muestran como texto en la tabla)
-  const fields = CM.fields.filter(f => f.type !== 'image');
+  const fields = _xFields();
   const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Adjuntos'];
 
   const body = rows.map(r=>{
     const atts = r._attachments || [];
     const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}` : '';
     return [
-      ...fields.map(f=>String(r[f.key]||'')),
+      ...fields.map(f=>_xVal(f,r)),
       r._por||'', r._ts||'', attDesc
     ];
   });
@@ -5719,12 +5765,12 @@ function exportPDFSel(){
   const rows = _rowsOrdenadosParaExport().filter(r=>SEL_IDS.has(r._id));
   if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
 
-  const fields = CM.fields.filter(f => f.type !== 'image');
+  const fields = _xFields();
   const headers = [...fields.map(f=>f.label), 'Cargado por', 'Fecha de carga', 'Adjuntos'];
   const body = rows.map(r=>{
     const atts = r._attachments || [];
     const attDesc = atts.length ? `${atts.length} archivo${atts.length>1?'s':''}` : '';
-    return [...fields.map(f=>String(r[f.key]||'')), r._por||'', r._ts||'', attDesc];
+    return [...fields.map(f=>_xVal(f,r)), r._por||'', r._ts||'', attDesc];
   });
 
   const { jsPDF } = window.jspdf;
@@ -5755,18 +5801,275 @@ function imprimirSel(){
   if(!rows.length){alert('No se encontraron los registros seleccionados.');return;}
   const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
-  const cols = CM.fields.filter(f=>f.type!=='image');
+  const cols = _xFields();
 
   let out = `<div class="pr-head">
     <h1>SUEP — Escuela de Policía · DCFyCCCO</h1>
     <div class="pr-sub">${esc(CS.name)} · ${esc(CM.name)} — ${rows.length} registro${rows.length!==1?'s':''} seleccionado${rows.length!==1?'s':''} · Generado por ${esc(CU.nombre)} el ${ahora}</div>
   </div>`;
   out += `<table><thead><tr>${cols.map(f=>`<th>${esc(f.label)}</th>`).join('')}<th>Cargado por</th><th>Carga</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr>${cols.map(f=>`<td>${esc(r[f.key])||'—'}</td>`).join('')}<td>${esc(r._por)||'—'}</td><td>${esc(r._ts)||'—'}</td></tr>`).join('')}</tbody></table>`;
+    <tbody>${rows.map(r=>`<tr>${cols.map(f=>`<td>${esc(_xVal(f,r))||'—'}</td>`).join('')}<td>${esc(r._por)||'—'}</td><td>${esc(r._ts)||'—'}</td></tr>`).join('')}</tbody></table>`;
 
   document.getElementById('printArea').innerHTML = out;
   document.body.classList.add('printing');
   setTimeout(()=>{ window.print(); }, 150);
+}
+
+
+// ══════════════════════════════════════════════
+// PADRÓN Y ÚLTIMO ACCESO — lo que lee CENTINELA  (v1.5.43)
+// ══════════════════════════════════════════════
+// PROBLEMA QUE RESUELVE:
+// El log 'suep_accesos' se guarda capado a los últimos 150 registros
+// (accesos.slice(0,150)). Con ~30 usuarios eso son pocos días: el que entra
+// poco se cae del array y CENTINELA lo mostraba como "nunca ingresó", y el que
+// nunca entró directamente no figuraba en ningún lado. Además, si alguien tocaba
+// "🗑️ Limpiar", la purga borraba el historial para todos.
+//
+// SOLUCIÓN: dos tablas propias en Supabase, chiquitas y que NUNCA se truncan:
+//   • suep_usuarios      → el padrón (una fila por usuario del sistema).
+//   • suep_ultimo_acceso → una fila por usuario con su último ingreso real.
+// CENTINELA tiene que leer de ahí (padrón LEFT JOIN último acceso), no del log.
+// El log 'suep_accesos' sigue igual: es el historial de sesiones, no el padrón.
+
+// Sube el padrón completo (no depende de que la persona haya entrado alguna vez).
+// Se manda como mucho una vez cada 12 h por dispositivo para no gastar egress.
+async function _centinelaSincronizarPadron(){
+  if(typeof clienteS === 'undefined' || navigator.onLine === false) return;
+  try{
+    const ULT = 'suep_padron_ult_push';
+    const prev = parseInt(localStorage.getItem(ULT)||'0', 10) || 0;
+    if(Date.now() - prev < 12*60*60*1000) return;
+    const filas = USERS.map(u=>({
+      usuario: u.usuario,
+      nombre:  u.nombre,
+      rol:     u.rol || '',
+      permiso: u.permiso || '',
+      sectores: (u.sectores||[]).join(' · '),
+      activo:  true,
+      actualizado: new Date().toISOString()
+    }));
+    const { error } = await _conTimeout(
+      clienteS.from('suep_usuarios').upsert(filas, { onConflict:'usuario' }), 8000);
+    if(error){ console.warn('CENTINELA: no se pudo subir el padrón', error.message||error); return; }
+    localStorage.setItem(ULT, String(Date.now()));
+  }catch(e){ console.warn('CENTINELA: padrón', e); }
+}
+
+// Marca el ingreso del usuario. Es un upsert por usuario: siempre queda el
+// último, no se pierde nunca aunque el log de sesiones se recorte o se limpie.
+async function _centinelaRegistrarIngreso(user){
+  if(typeof clienteS === 'undefined' || navigator.onLine === false) return;
+  try{
+    const sector = user.permiso==='admin' ? 'Administradora'
+      : user.permiso==='visor' ? 'Visor'
+      : user.permiso==='cargar-global' ? 'Ver todo + Agregar'
+      : (user.sectores||[]).join(' · ') || 'Cargador';
+    // RPC: hace el upsert y suma 1 al contador de ingresos en una sola operación
+    const { error } = await _conTimeout(clienteS.rpc('suep_registrar_ingreso', {
+      p_usuario: user.usuario,
+      p_nombre:  user.nombre,
+      p_rol:     user.rol || '',
+      p_sector:  sector,
+      p_dispositivo: (typeof DEVICE_ID !== 'undefined' ? DEVICE_ID : null)
+    }), 8000);
+    if(error){
+      // Si todavía no está creada la función, caemos a un upsert común
+      console.warn('CENTINELA: RPC suep_registrar_ingreso falló, uso upsert', error.message||error);
+      await _conTimeout(clienteS.from('suep_ultimo_acceso').upsert([{
+        usuario: user.usuario, nombre: user.nombre, rol: user.rol||'', sector,
+        ultimo_ingreso: new Date().toISOString(),
+        dispositivo: (typeof DEVICE_ID !== 'undefined' ? DEVICE_ID : null)
+      }], { onConflict:'usuario' }), 8000);
+    }
+  }catch(e){ console.warn('CENTINELA: último acceso', e); }
+}
+
+
+// ══════════════════════════════════════════════
+// SELECTOR DE IMPRESIÓN PARA PESTAÑAS CON VISTA PROPIA  (v1.5.43)
+// ══════════════════════════════════════════════
+// Minutas, Libro de Expedientes, Disposiciones Internas y Licencias no usan la
+// tabla común (tienen su propio diseño con carpetas y desplegables), así que no
+// les entraba la barra de "Elegir qué imprimir". En vez de meterles checkbox a
+// cada diseño —que rompería los toggles de carpetas— abrimos este panel aparte:
+// lista los registros, se tildan los que se quieren y salen por los MISMOS
+// botones de Excel / PDF / Imprimir que el resto de la app (usa SEL_IDS).
+let XSEL_FILTRO = '';
+
+function xselEsc(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Texto corto que se muestra al lado del tilde para reconocer el registro
+function xselResumen(r){
+  const fs = _xFields();
+  const partes = [];
+  for(const f of fs){
+    const v = _xVal(f, r).trim();
+    if(!v) continue;
+    partes.push(v.length > 60 ? v.slice(0,60)+'…' : v);
+    if(partes.length >= 3) break;
+  }
+  if(!partes.length) partes.push('(registro sin datos)');
+  return partes;
+}
+
+function xselCrear(){
+  if(document.getElementById('xselOverlay')) return;
+  const st = document.createElement('style');
+  st.textContent = `
+    #xselOverlay{position:fixed;inset:0;z-index:9600;background:rgba(4,10,20,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:14px}
+    #xselBox{width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;background:#0d1623;border:1px solid rgba(122,175,212,.22);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+    .xsel-head{padding:14px 16px 10px;border-bottom:1px solid rgba(122,175,212,.15)}
+    .xsel-t{font-size:14.5px;font-weight:800;color:#e8f1fa}
+    .xsel-s{font-size:11.5px;color:#7aafd4;margin-top:3px}
+    .xsel-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px 0}
+    .xsel-tools input{flex:1;min-width:150px}
+    .xsel-mini{background:rgba(122,175,212,.12);color:#cbd9e6;border:1px solid rgba(122,175,212,.28);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .xsel-list{flex:1;overflow-y:auto;padding:10px 16px 4px;-webkit-overflow-scrolling:touch}
+    .xsel-it{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.025);border:1px solid rgba(122,175,212,.13);border-radius:11px;padding:10px 11px;margin-bottom:7px;cursor:pointer}
+    .xsel-it.on{background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.45)}
+    .xsel-it input{width:19px;height:19px;margin-top:1px;flex:0 0 auto;accent-color:#22d3ee}
+    .xsel-tx{min-width:0;flex:1}
+    .xsel-tx b{display:block;font-size:12.8px;color:#e8f1fa;font-weight:700;word-break:break-word}
+    .xsel-tx span{display:block;font-size:11.5px;color:#7aafd4;word-break:break-word;margin-top:2px}
+    .xsel-foot{display:flex;gap:8px;flex-wrap:wrap;padding:11px 16px 14px;border-top:1px solid rgba(122,175,212,.15);background:rgba(8,15,26,.6)}
+    .xsel-go{flex:1;min-width:96px;background:rgba(34,211,238,.16);color:#67e8f9;border:1px solid rgba(34,211,238,.4);border-radius:10px;padding:10px 8px;font-size:12.5px;font-weight:800;cursor:pointer}
+    .xsel-x{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+    .xsel-vacio{text-align:center;color:#4a6a88;padding:34px 10px;font-size:13px}
+    body.light #xselBox{background:#fff;border-color:#dbe6f0}
+    body.light .xsel-t{color:#0f2231}
+    body.light .xsel-it{background:#f7fafc;border-color:#dbe6f0}
+    body.light .xsel-tx b{color:#0f2231}
+    body.light .xsel-foot{background:#f2f6fa}
+  `;
+  document.head.appendChild(st);
+
+  const ov = document.createElement('div');
+  ov.id = 'xselOverlay';
+  ov.innerHTML = `<div id="xselBox">
+      <div class="xsel-head">
+        <div class="xsel-t">🖨️ Elegir qué imprimir / bajar</div>
+        <div class="xsel-s" id="xselSub"></div>
+      </div>
+      <div class="xsel-tools">
+        <input id="xselBuscar" class="fi" type="text" placeholder="Buscar…" style="padding:9px 12px;font-size:12.5px" oninput="xselBuscarInput(this.value)">
+        <button class="xsel-mini" onclick="xselTodos()">☑️ Todos / ninguno</button>
+      </div>
+      <div class="xsel-list" id="xselList"></div>
+      <div class="xsel-foot">
+        <button class="xsel-go" onclick="xselExcel()">📥 Excel</button>
+        <button class="xsel-go" onclick="xselPDF()">📄 PDF</button>
+        <button class="xsel-go" onclick="xselImprimir()">🖨️ Imprimir</button>
+        <button class="xsel-x" onclick="xselCerrar()">✕ Cerrar</button>
+      </div>
+    </div>`;
+  // Cuelga de <body> directo: así el CSS de impresión (body.printing > *:not(#printArea))
+  // lo oculta solo cuando se manda a imprimir.
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e=>{ if(e.target===ov) xselCerrar(); });
+}
+
+// Filas que entran al panel (ya ordenadas igual que salen en el papel)
+function xselRows(){
+  let rows = _rowsOrdenadosParaExport();
+  const t = String(XSEL_FILTRO||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(!t) return rows;
+  const pal = t.split(/\s+/).filter(Boolean);
+  const norm = x => String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return rows.filter(r=>{
+    const txt = norm(_xFields().map(f=>_xVal(f,r)).join(' ') + ' ' + (r._por||'') + ' ' + (r._ts||''));
+    return pal.every(p=>txt.includes(p));
+  });
+}
+
+function xselPintar(){
+  const list = document.getElementById('xselList');
+  const sub  = document.getElementById('xselSub');
+  if(!list) return;
+  const rows = xselRows();
+  const total = _rowsOrdenadosParaExport().length;
+  if(sub) sub.textContent = `${CS.name} · ${CM.name} — ${SEL_IDS.size} de ${total} seleccionado${SEL_IDS.size!==1?'s':''}` + (XSEL_FILTRO ? ` · ${rows.length} en pantalla` : '');
+  if(!rows.length){
+    list.innerHTML = `<div class="xsel-vacio">${XSEL_FILTRO ? 'Sin resultados para la búsqueda' : 'No hay registros para imprimir todavía'}</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(r=>{
+    const p = xselResumen(r);
+    const on = SEL_IDS.has(r._id);
+    return `<label class="xsel-it ${on?'on':''}" data-xid="${xselEsc(r._id)}">
+        <input type="checkbox" ${on?'checked':''} onchange="xselToggle('${xselEsc(r._id)}', this.checked)">
+        <div class="xsel-tx">
+          <b>${xselEsc(p[0])}</b>
+          ${p.slice(1).map(x=>`<span>${xselEsc(x)}</span>`).join('')}
+          <span style="color:#4a6a88;font-size:10.5px">${xselEsc(r._por||'')}${r._ts?' · '+xselEsc(r._ts):''}</span>
+        </div>
+      </label>`;
+  }).join('');
+}
+
+function xselToggle(id, marcado){
+  if(marcado) SEL_IDS.add(id); else SEL_IDS.delete(id);
+  const el = document.querySelector(`.xsel-it[data-xid="${id}"]`);
+  if(el) el.classList.toggle('on', marcado);
+  const sub = document.getElementById('xselSub');
+  const total = _rowsOrdenadosParaExport().length;
+  if(sub) sub.textContent = `${CS.name} · ${CM.name} — ${SEL_IDS.size} de ${total} seleccionado${SEL_IDS.size!==1?'s':''}` + (XSEL_FILTRO ? ` · ${xselRows().length} en pantalla` : '');
+}
+
+// Marca/desmarca todo lo que se está viendo (respeta la búsqueda)
+function xselTodos(){
+  const vis = xselRows().map(r=>r._id);
+  const todos = vis.length && vis.every(id=>SEL_IDS.has(id));
+  if(todos) vis.forEach(id=>SEL_IDS.delete(id));
+  else vis.forEach(id=>SEL_IDS.add(id));
+  xselPintar();
+}
+
+function xselBuscarInput(v){ XSEL_FILTRO = v||''; xselPintar(); }
+
+function xselAbrir(){
+  if(!CS||!CM){ alert('Seleccioná un módulo primero'); return; }
+  SEL_MODE = true;          // los export ya saben filtrar por SEL_IDS
+  SEL_IDS.clear();
+  XSEL_FILTRO = '';
+  xselCrear();
+  const b = document.getElementById('xselBuscar'); if(b) b.value = '';
+  xselPintar();
+  document.getElementById('xselOverlay').style.display = 'flex';
+}
+
+function xselCerrar(){
+  const o = document.getElementById('xselOverlay');
+  if(o) o.style.display = 'none';
+  SEL_MODE = false;
+  SEL_IDS.clear();
+}
+
+// Oculta el panel pero conserva lo tildado (para que no salga en el papel)
+function _xselOcultar(){
+  const o = document.getElementById('xselOverlay');
+  if(o) o.style.display = 'none';
+}
+
+function xselExcel(){
+  if(!SEL_IDS.size){ alert('No tildaste ningún registro. Marcá al menos uno.'); return; }
+  exportExcel();
+}
+function xselPDF(){
+  if(!SEL_IDS.size){ alert('No tildaste ningún registro. Marcá al menos uno.'); return; }
+  exportPDFSel();
+}
+function xselImprimir(){
+  if(!SEL_IDS.size){ alert('No tildaste ningún registro. Marcá al menos uno.'); return; }
+  _xselOcultar();
+  imprimirSel();
+}
+
+// Botón que se inserta en el encabezado de cada pestaña con vista propia
+function xselBotonHTML(estilo){
+  return `<button class="xsel-mini" style="${estilo||''}" onclick="xselAbrir()" title="Elegir registros para imprimir o bajar en PDF/Excel">🖨️ Elegir qué imprimir / bajar</button>`;
 }
 
 
@@ -8154,6 +8457,7 @@ function renderExpedientes(){
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="expBuscar" class="exp-search" type="text" placeholder="Buscar…" oninput="expFiltrar(this.value)">
+        ${rows.length ? xselBotonHTML() : ''}
         ${puedeCrear ? `<button class="exp-btn-new" onclick="expNuevo()">+ Nuevo expediente</button>` : ''}
       </div>
     </div>`;
@@ -8680,6 +8984,7 @@ function renderDisposiciones(){
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="dispBuscar" class="exp-search" type="text" placeholder="Buscar…" oninput="dispFiltrar(this.value)">
+        ${rows.length ? xselBotonHTML() : ''}
         ${puedeCrear ? `<button class="exp-btn-new" style="background:linear-gradient(135deg,#18a0a8,#0e7490)" onclick="dispNueva()">+ Nueva disposición</button>` : ''}
       </div>
     </div>`;
@@ -9120,13 +9425,26 @@ function _licMesDeAut(r){
   if(r._ts){ const m=String(r._ts).match(/^(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]; }
   return null;
 }
+// v1.5.44 — Cuánto pesa una autorización contra el tope mensual:
+// las de 24 hs cuentan 1 y las de 48 hs cuentan 2. Las cargadas antes de
+// v1.5.44 no tienen duración guardada: se toman como 24 hs (pesan 1), que es
+// como se venían contando hasta ahora.
+function _licPesoAut(r){ return String(r && r.dur) === '48' ? 2 : 1; }
 function _licAutsDelMes(lp, mesKey, exceptoId){
-  return _licDePersona(lp).filter(r=>r.tipo==='AUT_12' && r._id!==exceptoId && _licMesDeAut(r)===mesKey).length;
+  return _licDePersona(lp)
+    .filter(r=>r.tipo==='AUT_12' && r._id!==exceptoId && _licMesDeAut(r)===mesKey)
+    .reduce((t,r)=> t + _licPesoAut(r), 0);
 }
 // ─── RECORDATORIO DE PRESENTACIÓN (solo administradoras) ───
 // Cartel que avisa cuando un efectivo que está de licencia tiene la fecha
-// "Hasta" encima: hoy o dentro de los próximos días. Se presenta a trabajar
-// el día siguiente al "Hasta" de su licencia.
+// "Hasta" encima: hoy o dentro de los próximos días.
+//
+// v1.5.44 — Antes la presentación se calculaba SIEMPRE como "Hasta + 1 día".
+// El problema: en "Hasta" se venía cargando el día de presentación, así que el
+// aviso salía un día tarde. Ahora "Hasta" es el ÚLTIMO DÍA DE LICENCIA y la
+// presentación es un campo propio (r.presenta) que se autocompleta en Hasta + 1
+// pero se puede corregir a mano. Las licencias viejas no tienen r.presenta:
+// para esas se sigue calculando Hasta + 1, así el cartel no se rompe.
 const LIC_AVISO_DIAS = 3; // avisar cuando falten 3 días o menos para terminar
 function _licHoy0(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
 function _licParseF(f){
@@ -9136,6 +9454,18 @@ function _licParseF(f){
   return isNaN(d.getTime()) ? null : d;
 }
 function _licDDMM(d){ const p=x=>String(x).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1); }
+// Fecha ISO (aaaa-mm-dd) de un Date local
+function _licISO(d){ const p=x=>String(x).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+// Día de presentación de una licencia: el campo propio si está cargado;
+// si no (licencias viejas), el día siguiente al "Hasta".
+function _licFechaPresenta(r){
+  const pr = _licParseF(r && r.presenta);
+  if(pr) return pr;
+  const h = _licParseF(r && r.hasta);
+  if(!h) return null;
+  const d = new Date(h); d.setDate(d.getDate()+1);
+  return d;
+}
 function _licProximosAPresentarse(){
   const hoy = _licHoy0();
   const out = [];
@@ -9147,7 +9477,8 @@ function _licProximosAPresentarse(){
     const desde = _licParseF(r.desde);
     if(desde && desde > hoy) return;                     // todavía no empezó la licencia
     const p = _licPersona(r.lp); if(!p) return;
-    const presenta = new Date(hasta); presenta.setDate(presenta.getDate() + 1);
+    const presenta = _licFechaPresenta(r);
+    if(!presenta) return;
     out.push({ p, r, diff, hasta, presenta });
   });
   out.sort((a,b)=>a.diff-b.diff);
@@ -9425,8 +9756,9 @@ function renderLicencias(){
         <span class="lic-title">🏖️ Licencias y Autorizaciones del Personal</span>
         <span class="lic-sub">${LIC_PERSONAL.length} efectivos · ${rows.length} licencia${rows.length===1?'':'s'} cargada${rows.length===1?'':'s'}</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         ${nivel==='admin' ? `<button class="lic-btn-new" style="padding:8px 13px;font-size:12px" onclick="licCuposMasivos(${_licAnioActual()})">📋 Cupos anuales</button>` : ''}
+        ${rows.length ? xselBotonHTML() : ''}
         <input id="licBuscar" class="lic-search" type="text" placeholder="Buscar nombre, jerarquía o LP…" oninput="licFiltrar(this.value)">
       </div>
     </div>`;
@@ -9541,13 +9873,17 @@ function _licDetalleHTML(p){
     const esLao = r.tipo==='LAO';
     const rango = (r.desde || r.hasta) ? `📆 ${_licFechaCorta(r.desde)||'…'} → ${_licFechaCorta(r.hasta)||'…'}` : '';
     const metaLao = esLao ? `🗓️ Año ${_licEsc(r.anio||'—')} · ${_licEsc(r.dias||'—')} día${r.dias==='1'?'':'s'} · ${_licEsc(r.viaje||'—')}` : '';
+    // v1.5.44 — duración de la autorización y día de presentación a la vista
+    const metaAut = (r.tipo==='AUT_12') ? `⏱️ ${String(r.dur)==='48'?'48 hs':'24 hs'}` : '';
+    const _pres = _licFechaPresenta(r);
+    const metaPres = _pres ? `↩️ Se presenta el ${_licDDMM(_pres)}` : '';
     const acts = esAdmin ? `<div class="lic-acts">
         <button class="lic-da lic-da-edit" onclick="event.stopPropagation();licEditar('${r._id}')">✏️ Editar</button>
         <button class="lic-da lic-da-del" onclick="event.stopPropagation();licBorrar('${r._id}')">🗑️ Borrar</button>
       </div>` : '';
     return `<div class="lic-card">
       <div class="lic-card-tipo">${_licEsc(_licTipoLabel(r.tipo))}</div>
-      <div class="lic-card-meta">${[metaLao, rango].filter(Boolean).join(' · ')}</div>
+      <div class="lic-card-meta">${[metaAut, metaLao, rango, metaPres].filter(Boolean).join(' · ')}</div>
       ${r.obs ? `<div class="lic-card-obs">📝 ${_licEsc(r.obs)}</div>` : ''}
       <div class="lic-card-foot">${r._por ? 'Cargada por: '+_licEsc(r._por) : ''}${r._ts ? ' · '+_licEsc(r._ts) : ''}</div>
       ${acts}
@@ -9637,6 +9973,21 @@ function _licFormHTML(lp, r, soloAut){
     ? `<input type="hidden" id="licf_tipo" value="AUT_12">
        <label class="lic-lbl"><span>Tipo de licencia</span><div class="lic-fijo">Autorizaciones — Art. 12</div></label>`
     : _licSelectTipos(r?r.tipo:'');
+
+  // v1.5.44 — Duración de la Autorización (Art. 12): 24 o 48 hs.
+  // La de 48 hs abarca dos días, así que "Hasta" se autocompleta en Desde + 1.
+  // OJO: el peso contra el tope (24=1 · 48=2) es info SOLO de administradoras;
+  // acá no se muestra ningún contador, igual que el resto del formulario.
+  const esAut = soloAut || (r && r.tipo === 'AUT_12');
+  const durSel = r && r.dur ? String(r.dur) : '24';
+  const autBlock = `
+    <div id="licf_autBlock" style="display:${esAut?'block':'none'}">
+      <label class="lic-lbl"><span>Duración de la autorización</span>
+        <select id="licf_dur" class="lic-sel" onchange="licAutDurChange()">
+          <option value="24" ${durSel==='24'?'selected':''}>24 horas (1 día)</option>
+          <option value="48" ${durSel==='48'?'selected':''}>48 horas (2 días)</option>
+        </select></label>
+    </div>`;
   const laoBlock = soloAut ? '' : `
     <div id="licf_laoBlock" class="lic-lao" style="display:${esLao?'block':'none'}">
       <div class="lic-lao-t">DETALLE DE LA ANUAL ORDINARIA</div>
@@ -9666,11 +10017,15 @@ function _licFormHTML(lp, r, soloAut){
     <input type="hidden" id="licf_id" value="${r?r._id:''}">
     <input type="hidden" id="licf_soloAut" value="${soloAut?'1':''}">
     ${tipoBlock}
+    ${autBlock}
     ${laoBlock}
     <div style="display:flex;gap:10px">
-      <div style="flex:1"><label class="lic-lbl"><span>Desde (opcional)</span><input id="licf_desde" class="lic-in" type="date" value="${r&&r.desde?_licEsc(r.desde):''}"></label></div>
-      <div style="flex:1"><label class="lic-lbl"><span>Hasta (opcional)</span><input id="licf_hasta" class="lic-in" type="date" value="${r&&r.hasta?_licEsc(r.hasta):''}"></label></div>
+      <div style="flex:1"><label class="lic-lbl"><span>Desde</span><input id="licf_desde" class="lic-in" type="date" value="${r&&r.desde?_licEsc(r.desde):''}" onchange="licFechasChange()"></label></div>
+      <div style="flex:1"><label class="lic-lbl"><span>Hasta <small style="color:#94a3b8;font-weight:400">(último día)</small></span><input id="licf_hasta" class="lic-in" type="date" value="${r&&r.hasta?_licEsc(r.hasta):''}" onchange="licHastaChange()"></label></div>
     </div>
+    <label class="lic-lbl"><span>Fecha de presentación <small style="color:#94a3b8;font-weight:400">(se completa sola con el día siguiente al "Hasta" — corregila si hace falta)</small></span>
+      <input id="licf_presenta" class="lic-in" type="date" value="${r&&r.presenta?_licEsc(r.presenta):''}" onchange="_LIC_PRESENTA_TOCADA=true;_licAvisoPresenta()"></label>
+    <div id="licf_presentaAviso" class="lic-restante lic-r-info" style="display:none"></div>
     <label class="lic-lbl"><span>Observaciones</span><textarea id="licf_obs" class="lic-ta" rows="3">${r&&r.obs?_licEsc(r.obs):''}</textarea></label>
     <div class="lic-mbtns">
       <button class="lic-cancel" onclick="licCerrarModal()">Cancelar</button>
@@ -9680,6 +10035,7 @@ function _licFormHTML(lp, r, soloAut){
 }
 
 function licNueva(lp, soloAut){
+  _LIC_PRESENTA_TOCADA = false;
   const nivel = _licNivel();
   if(nivel==='propio'){ alert('No tenés permisos para cargar licencias.'); return; }
   if(nivel==='jefe'){
@@ -9688,12 +10044,16 @@ function licNueva(lp, soloAut){
   }
   licAbrirModal(_licFormHTML(lp, null, !!soloAut));
   if(!soloAut) licActualizarRestante();
+  if(soloAut) licAutDurChange();
 }
 function licEditar(id){
   if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden editar licencias.'); return; }
   const r = _licRows().find(x=>x._id===id); if(!r) return;
+  // Si ya tenía presentación cargada, la respetamos: no se la pisa sola
+  _LIC_PRESENTA_TOCADA = !!(r && r.presenta);
   licAbrirModal(_licFormHTML(r.lp, r, false));
   licActualizarRestante();
+  _licAvisoPresenta();
 }
 
 function licTipoCambio(){
@@ -9701,9 +10061,78 @@ function licTipoCambio(){
   const esLao = tipo==='LAO';
   const bl = document.getElementById('licf_laoBlock');
   if(bl) bl.style.display = esLao ? 'block' : 'none';
+  // v1.5.44 — el selector de 24/48 hs solo aparece en Autorizaciones (Art. 12)
+  const ab = document.getElementById('licf_autBlock');
+  if(ab) ab.style.display = (tipo==='AUT_12') ? 'block' : 'none';
   const dc = document.getElementById('licf_tipoDesc');
   if(dc){ const t = tipo ? _licTipoLabel(tipo) : ''; dc.textContent = t; dc.style.display = t ? 'block' : 'none'; }
   if(esLao) licActualizarRestante();
+  if(tipo==='AUT_12') licAutDurChange();
+}
+
+// ══════════════════════════════════════════════
+// FECHAS DE LA LICENCIA  (v1.5.44)
+// ══════════════════════════════════════════════
+// Regla acordada: "Hasta" es el ÚLTIMO DÍA de licencia y la presentación es el
+// día siguiente. El campo de presentación se autocompleta pero queda editable:
+// si una administradora lo corrige a mano, no se lo volvemos a pisar.
+let _LIC_PRESENTA_TOCADA = false;
+
+function _licSetPresentaDesdeHasta(forzar){
+  const inH = document.getElementById('licf_hasta');
+  const inP = document.getElementById('licf_presenta');
+  if(!inH || !inP) return;
+  const h = _licParseF(inH.value);
+  if(!h){ if(forzar) inP.value = ''; _licAvisoPresenta(); return; }
+  // No pisamos una fecha puesta a mano, salvo que se pida expresamente
+  if(!forzar && inP.value && _LIC_PRESENTA_TOCADA){ _licAvisoPresenta(); return; }
+  const d = new Date(h); d.setDate(d.getDate()+1);
+  inP.value = _licISO(d);
+  _licAvisoPresenta();
+}
+
+// Cartel chico que explica en castellano qué se va a guardar
+function _licAvisoPresenta(){
+  const box = document.getElementById('licf_presentaAviso'); if(!box) return;
+  const h = _licParseF(_licVal('licf_hasta'));
+  const p = _licParseF(_licVal('licf_presenta'));
+  if(!h || !p){ box.style.display='none'; return; }
+  const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const diff = Math.round((p - h) / 86400000);
+  box.style.display = 'block';
+  if(diff === 1){
+    box.className = 'lic-restante lic-r-info';
+    box.innerHTML = `Último día de licencia: <b>${DIAS[h.getDay()]} ${_licDDMM(h)}</b> → se presenta el <b>${DIAS[p.getDay()]} ${_licDDMM(p)}</b>.`;
+  }else if(diff <= 0){
+    box.className = 'lic-restante lic-r-warn';
+    box.innerHTML = `⚠️ La fecha de presentación (${_licDDMM(p)}) tiene que ser posterior al último día de licencia (${_licDDMM(h)}).`;
+  }else{
+    box.className = 'lic-restante lic-r-info';
+    box.innerHTML = `Último día de licencia: <b>${DIAS[h.getDay()]} ${_licDDMM(h)}</b> → se presenta el <b>${DIAS[p.getDay()]} ${_licDDMM(p)}</b> (${diff} días después).`;
+  }
+}
+
+// Cambió "Hasta" → recalculamos la presentación
+function licHastaChange(){ _LIC_PRESENTA_TOCADA = false; _licSetPresentaDesdeHasta(true); }
+
+// Cambió "Desde" → si es una autorización, el "Hasta" sale solo de la duración
+function licFechasChange(){
+  if(_licVal('licf_tipo') === 'AUT_12') licAutDurChange();
+  else _licSetPresentaDesdeHasta(false);
+}
+
+// Autorización: 24 hs → Hasta = Desde · 48 hs → Hasta = Desde + 1
+function licAutDurChange(){
+  const inD = document.getElementById('licf_desde');
+  const inH = document.getElementById('licf_hasta');
+  if(!inD || !inH) return;
+  const d = _licParseF(inD.value);
+  if(!d){ _licAvisoPresenta(); return; }
+  const dur = _licVal('licf_dur') === '48' ? 1 : 0;
+  const h = new Date(d); h.setDate(h.getDate() + dur);
+  inH.value = _licISO(h);
+  _LIC_PRESENTA_TOCADA = false;
+  _licSetPresentaDesdeHasta(true);
 }
 
 function licActualizarRestante(){
@@ -9760,7 +10189,27 @@ async function licGuardar(seguirCargando){
     tipo = 'AUT_12'; // fuera lo que fuera, los jefes solo cargan Autorizaciones
   }
   if(!tipo){ alert('Elegí el tipo de licencia.'); return; }
-  const data = { lp, tipo, desde:_licVal('licf_desde'), hasta:_licVal('licf_hasta'), obs:_licVal('licf_obs') };
+  const data = { lp, tipo, desde:_licVal('licf_desde'), hasta:_licVal('licf_hasta'),
+                 presenta:_licVal('licf_presenta'), obs:_licVal('licf_obs') };
+  // v1.5.44 — Duración de la autorización (24 / 48 hs). Solo aplica al Art. 12.
+  if(tipo === 'AUT_12'){
+    data.dur = _licVal('licf_dur') === '48' ? '48' : '24';
+  }else{
+    data.dur = '';
+  }
+  // La presentación tiene que caer después del último día de licencia
+  if(data.hasta && data.presenta){
+    const h = _licParseF(data.hasta), pr = _licParseF(data.presenta);
+    if(h && pr && pr <= h){
+      alert('La fecha de presentación tiene que ser posterior al último día de licencia («Hasta»).');
+      return;
+    }
+  }
+  // Si cargaron el Hasta y no tocaron la presentación, la dejamos en Hasta + 1
+  if(data.hasta && !data.presenta){
+    const h = _licParseF(data.hasta);
+    if(h){ const d = new Date(h); d.setDate(d.getDate()+1); data.presenta = _licISO(d); }
+  }
   if(tipo==='LAO' && !soloAut){
     data.dias  = _licVal('licf_dias');
     data.viaje = _licVal('licf_viaje');
@@ -9901,3 +10350,4 @@ async function licCuposMasivosGuardar(anio){
 </script>
 </body>
 </html>
+
