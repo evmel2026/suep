@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.47">
+<meta name="app-version" content="1.5.48">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2426,6 +2426,11 @@ function seedOrganigrama(){
 // ══════════════════════════════════════════════
 // accion: 'cargo' (registro nuevo) | 'edito' (modificación de un registro existente)
 function newNotif(sId,mId,rec,accion){
+  // 🔒 v1.5.48: la cuenta de solo consulta (Superintendencia de Apoyo y Servicios)
+  // NO genera notificaciones. A nadie le tiene que llegar aviso de que ella
+  // tocó algo. Igual, con el candado de escritura de más abajo tampoco puede
+  // cargar nada: esto es el segundo cerrojo.
+  if(typeof esVisor==='function' && esVisor()) return;
   accion = accion || 'cargo';
   const sec=SECTORS.find(s=>s.id===sId);
   let mod = sec?.modules.find(m=>m.id===mId);
@@ -2461,6 +2466,26 @@ function newNotif(sId,mId,rec,accion){
     leidaPor:{}});
   if(notifs.length>200)notifs.pop();
   S.sn(notifs); refreshBadge();
+}
+// 🔒 v1.5.48: nombres de las cuentas de solo consulta (visor).
+// Se usa para descartar cualquier notificación vieja generada por esa cuenta,
+// tanto la que quedó guardada en el equipo como la que pueda volver de la nube.
+function _nombresVisor(){
+  try{ return USERS.filter(u=>u.permiso==='visor').map(u=>u.nombre).filter(Boolean); }
+  catch(_){ return []; }
+}
+function _esNotifVisor(n){
+  const t = String((n && n.txt) || '');
+  if(!t) return false;
+  return _nombresVisor().some(nom => t.includes(nom));
+}
+// Borra de una vez las notificaciones viejas de la cuenta visor
+function _purgarNotifsVisor(){
+  try{
+    const todas = S.gn();
+    const limpias = todas.filter(n => !_esNotifVisor(n));
+    if(limpias.length !== todas.length) S.sn(limpias);
+  }catch(_){}
 }
 // ¿La notificación n está leída por el usuario actual?
 function _notifLeida(n){
@@ -2521,15 +2546,18 @@ function _fusionarNotifs(remotas, locales){
   (Array.isArray(remotas)?remotas:[]).forEach(meter);
   (Array.isArray(locales)?locales:[]).forEach(meter);
   return Array.from(porKey.values())
+    // 🔒 v1.5.48: si alguna notificación de la cuenta visor vuelve de la nube,
+    // acá se cae. No se sincroniza ni se muestra en ningún equipo.
+    .filter(n => !_esNotifVisor(n))
     .sort((a,b)=> _notifMs(b) - _notifMs(a))
     .slice(0,200);
 }
 // Devuelve las notificaciones SIEMPRE ordenadas: más reciente primero
 function _notifsOrdenadas(){
-  return S.gn().slice().sort((a,b)=> _notifMs(b) - _notifMs(a));
+  return S.gn().filter(n=>!_esNotifVisor(n)).slice().sort((a,b)=> _notifMs(b) - _notifMs(a));
 }
 function refreshBadge(){
-  const n=S.gn().filter(x=>!_notifLeida(x)).length;
+  const n=S.gn().filter(x=>!_esNotifVisor(x) && !_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
   if(n>0){el.textContent=n; el.classList.add('show')}
   else el.classList.remove('show');
@@ -2763,6 +2791,33 @@ function _aplicarModoVisor(user){
       return false;
     }
   }, true);
+
+  // 7) 🔒 v1.5.48 — CANDADO GLOBAL DE ESCRITURA.
+  //    Esto es lo que faltaba: antes tapábamos los botones pestaña por pestaña,
+  //    así que si alguna vista propia (Minutas, por ejemplo) mostraba su formulario,
+  //    la cuenta terminaba pudiendo guardar. Ahora cortamos en la fuente: cualquier
+  //    alta, edición o borrado — venga de donde venga, incluso de una pestaña que
+  //    agreguemos más adelante — queda frenado antes de tocar el registro y antes
+  //    de llegar a Supabase. La cuenta ve TODO y no puede modificar NADA.
+  const _bloquearEscritura = (nombreFn, retorno) => {
+    const original = S[nombreFn];
+    if(typeof original !== 'function') return;
+    S[nombreFn] = function(){
+      if(esVisor()){
+        try{ alert('🔒 Tu cuenta es de solo consulta: no podés cargar, editar ni borrar registros.'); }catch(_){}
+        return retorno;
+      }
+      return original.apply(S, arguments);
+    };
+  };
+  ['add','upd','del'].forEach(fn => _bloquearEscritura(fn, null));
+  // Las versiones *Safe son async: devuelven una promesa ya resuelta para que
+  // el `await` de quien las llame no quede colgado.
+  ['addSafe','updSafe','delSafe'].forEach(fn => _bloquearEscritura(fn, Promise.resolve(null)));
+  // OJO: NO tocamos S.set. Ese método también es el que baja los datos de la nube
+  // al dispositivo; si lo bloqueáramos, la cuenta dejaría de VER lo que cargan los
+  // demás. Las dos pestañas que escriben con S.set directo (Selección de Aspirantes
+  // y Almuerzo) tienen su propia guarda en la función que las toca.
 }
 
 // ══════════════════════════════════════════════
@@ -2815,6 +2870,9 @@ function iniciarSesion(user, esRestauracion){
       migratePanol();
       seedOrganigrama();
       seedExpedientes(); // carga inicial del Libro de Expedientes (solo si está vacío) — fire-and-forget
+      // 🔒 v1.5.48: si quedó guardada alguna notificación vieja de la cuenta
+      // de solo consulta, se borra del equipo al iniciar sesión.
+      try{ _purgarNotifsVisor(); }catch(_){}
       buildSidebar(); refreshBadge();
       // Mostrar opción admin del menú de configuración solo a administradoras
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
@@ -3898,6 +3956,7 @@ function _minutaValidar(){
 }
 // Guarda la minuta en el registro (sincroniza a la nube y notifica como cualquier carga)
 async function minutaGuardar(silencioso){
+  if(_vlBloquear()) return null; // 🔒 v1.5.48: solo consulta
   if(!_minutaValidar()) return null;
   const g = id => (document.getElementById(id)?.value || '').trim();
   const informa = g('min_informa');
@@ -3920,12 +3979,14 @@ async function minutaGuardar(silencioso){
   return data;
 }
 async function minutaCopiar(){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   if(!(document.getElementById('min_relato')?.value||'').trim()){ alert('Escribí el RELATO primero.'); return; }
   const ok = await _copiarTexto(_minutaTextoForm());
   if(typeof syncStatus==='function') syncStatus(ok?'📋 Minuta copiada al portapapeles':'No se pudo copiar', ok?'#34d399':'#f87171');
 }
 // Flujo principal: guarda en el registro y abre WhatsApp listo para enviar
 async function minutaGuardarYEnviar(){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   if(!_minutaValidar()) return;
   const texto = _minutaTextoForm();
   const data = await minutaGuardar(true);
@@ -3937,6 +3998,7 @@ async function minutaGuardarYEnviar(){
 }
 // Guardar la configuración (firma "Informa" y número de WhatsApp)
 function minutaGuardarConfig(){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const inf = (document.getElementById('min_cfg_informa')?.value||'').trim();
   const num = (document.getElementById('min_cfg_num')?.value||'').replace(/[^0-9]/g,'');
   if(inf) localStorage.setItem('suep_minuta_informa', inf);
@@ -3947,21 +4009,25 @@ function minutaGuardarConfig(){
   if(typeof syncStatus==='function') syncStatus('✓ Preferencias de minuta guardadas','#34d399');
 }
 function minutaToggleConfig(){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const el = document.getElementById('minutaCfg');
   if(el) el.style.display = (el.style.display==='none' ? 'block' : 'none');
 }
 // Acciones sobre minutas ya guardadas (lista)
 async function minutaCopiarRec(id){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const r = S.get('MINUTAS','MINUTAS_MOD').find(x=>x._id===id); if(!r) return;
   const ok = await _copiarTexto(r.textoWhatsapp || _minutaTextoRec(r));
   if(typeof syncStatus==='function') syncStatus(ok?'📋 Minuta copiada':'No se pudo copiar', ok?'#34d399':'#f87171');
 }
 function minutaWhatsAppRec(id){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const r = S.get('MINUTAS','MINUTAS_MOD').find(x=>x._id===id); if(!r) return;
   _abrirWhatsApp(r.textoWhatsapp || _minutaTextoRec(r));
 }
 // Borra una minuta refrescando SOLO la lista (no toca el formulario que estés escribiendo)
 async function minutaBorrarRec(id){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   if(!confirm('¿Eliminar esta minuta?')) return;
   const s='MINUTAS', m='MINUTAS_MOD', key=S.key(s,m);
   if(typeof S.delSafe==='function'){
@@ -3978,6 +4044,9 @@ function _minutaCardHTML(r){
   const txtRelato = r.relato || r.mensaje || '';
   const hora = r.hora ? (' · '+_minEsc(r.hora)) : '';
   const borrar = (typeof puedeBorrarRec==='function' && puedeBorrarRec(r));
+  // 🔒 v1.5.48: la cuenta de solo consulta ve la minuta, pero sin Copiar,
+  // sin WhatsApp y sin borrar (copiar y reenviar también es sacar la info).
+  const soloLectura = (typeof esVisor==='function' && esVisor());
   return `<div style="background:rgba(255,255,255,.025);border:1px solid rgba(122,175,212,.12);border-radius:12px;padding:13px 14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px">
         <span style="background:rgba(34,211,238,.14);color:${ac};border:1px solid rgba(34,211,238,.3);font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:20px">${_minEsc(txtAsunto)}</span>
@@ -3986,11 +4055,11 @@ function _minutaCardHTML(r){
         <span style="margin-left:auto;font-size:10px;color:#4a6a88">${_minEsc(r._por||'')}</span>
       </div>
       <div style="font-size:12.5px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word;line-height:1.5;background:rgba(13,22,35,.4);border-left:3px solid ${ac};border-radius:6px;padding:8px 10px;margin-bottom:9px">${_minEsc(txtRelato) || '<span style=\"color:#2a4060\">(sin relato)</span>'}</div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap">
+      ${soloLectura ? '' : `<div style="display:flex;gap:7px;flex-wrap:wrap">
         <button onclick="minutaCopiarRec('${r._id}')" style="flex:1;min-width:120px;background:rgba(122,175,212,.12);color:#cbd9e6;border:1px solid rgba(122,175,212,.25);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer">📋 Copiar</button>
         <button onclick="minutaWhatsAppRec('${r._id}')" style="flex:1;min-width:120px;background:rgba(37,211,102,.16);color:#4ade80;border:1px solid rgba(37,211,102,.35);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer">🟢 WhatsApp</button>
         ${borrar?`<button onclick="minutaBorrarRec('${r._id}')" style="background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:9px;padding:8px 11px;font-size:12px;cursor:pointer">🗑️</button>`:''}
-      </div>
+      </div>`}
     </div>`;
 }
 // Lista de minutas agrupada en CARPETAS POR FECHA (más reciente arriba), con filtro opcional
@@ -4006,7 +4075,7 @@ function _minutaListaHTML(filtro){
     });
   }
   if(!recs.length){
-    return `<div class="empty-state"><div class="empty-icon">💬</div><p>${filtro?'Sin resultados para la búsqueda':'Todavía no hay minutas cargadas'}</p><small>${filtro?'Probá con otras palabras':'Escribí el relato arriba y tocá "Guardar y enviar"'}</small></div>`;
+    return `<div class="empty-state"><div class="empty-icon">💬</div><p>${filtro?'Sin resultados para la búsqueda':'Todavía no hay minutas cargadas'}</p><small>${filtro?'Probá con otras palabras':((typeof esVisor==='function'&&esVisor())?'Cuando alguien cargue una minuta, la vas a ver acá':'Escribí el relato arriba y tocá "Guardar y enviar"')}</small></div>`;
   }
   // Agrupar por fecha (campo fecha; si falta, fecha de carga)
   const dateField = {key:'fecha'};
@@ -4073,6 +4142,33 @@ function renderMinuta(){
 
   // ─── Listado de minutas agrupado por fecha (se arma en _minutaListaHTML) ───
   const recsTotal = S.get('MINUTAS','MINUTAS_MOD').length;
+
+  // 🔒 v1.5.48 — Vista de SOLO CONSULTA.
+  // Minutas tiene vista propia, así que no pasaba por el control de permisos de
+  // las pestañas comunes: el formulario se armaba igual para todos y por eso la
+  // cuenta de la Superintendencia podía cargar. Ahora, para permiso 'visor',
+  // devolvemos únicamente el listado: ve todas las minutas cargadas, sin
+  // formulario, sin botones de guardar/enviar/copiar y sin selector de impresión.
+  if(esVisor()){
+    return `
+    <div class="fade-in minuta-panel" style="padding:4px 2px;max-width:640px;margin:0 auto">
+
+      <div class="info-banner" style="margin-bottom:16px">
+        <div class="info-banner-title">💬 Minutas</div>
+        <div class="info-banner-text">Estás viendo el registro de minutas del Departamento. Tu cuenta es de <strong>solo consulta</strong>: podés leer todo, pero no cargar ni enviar.</div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 10px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:800;color:#cbd9e6">🗂️ Minutas cargadas</div>
+        <div style="font-size:11px;color:#7aafd4">${recsTotal} registro${recsTotal!==1?'s':''}</div>
+      </div>
+      <div style="position:relative;margin-bottom:4px">
+        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+        <input id="min_buscar" class="fi" type="text" value="${_minEsc(filtro)}" placeholder="Buscar por relato, asunto, fecha, quién informa..." style="padding:9px 12px 9px 34px;font-size:13px" oninput="minutaFiltrar()">
+      </div>
+      <div id="minutaListWrap">${_minutaListaHTML(filtro)}</div>
+    </div>`;
+  }
 
   return `
   <div class="fade-in minuta-panel" style="padding:4px 2px;max-width:640px;margin:0 auto">
@@ -4282,6 +4378,7 @@ function navSelFecha(tipo, dir){
   renderTable();
 }
 function toggleAspirante(tipo, nombre, seccion){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const st=_selAspState[tipo];
   const fecha=st.fechaVista || todayISO();   // marca en la fecha que se está viendo
   const key=_selKey(tipo);
@@ -4426,6 +4523,7 @@ function renderSeleccionAspirantes(tipo){
 }
 
 function setAlmuerzo(value){
+  if(_vlBloquear()) return; // 🔒 v1.5.48: solo consulta
   const today = todayISO();
   const records = S.get('ALMUERZO','ALMUERZO');
   const idx = records.findIndex(r => r.usuario === CU.usuario && r.fecha === today);
