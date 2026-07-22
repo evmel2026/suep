@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.48">
+<meta name="app-version" content="1.5.50">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -679,6 +679,11 @@ tr.sel-on>td{background:rgba(37,99,235,.14)!important}
 .np-head{padding:13px 16px;border-bottom:1px solid rgba(122,175,212,.15);display:flex;justify-content:space-between;align-items:center}
 .np-head h4{font-size:13px;font-weight:800;color:#e8f1fb}
 .mark-all{font-size:11px;color:#7aafd4;background:none;border:none;cursor:pointer;font-weight:600;font-family:inherit}
+/* 🗑️ v1.5.49 — borrado de notificaciones (solo administradoras) */
+.np-del-all{color:#f87171}
+.n-del{background:none;border:none;color:#4a6a88;font-size:13px;cursor:pointer;padding:2px 4px;border-radius:6px;flex-shrink:0;align-self:center;opacity:.55;transition:opacity .15s,background .15s}
+.n-del:hover{opacity:1;background:rgba(248,113,113,.15)}
+.light-mode .n-del{color:#6b87a3}
 .notif-list{max-height:350px;overflow-y:auto}
 .notif-item{padding:11px 16px;border-bottom:1px solid rgba(122,175,212,.08);display:flex;gap:9px;align-items:flex-start;cursor:pointer;transition:background .15s}
 .notif-item:hover{background:rgba(122,175,212,.07)}
@@ -1199,7 +1204,10 @@ textarea.fi{resize:vertical;min-height:72px}
 <div class="notif-panel" id="notifPanel">
   <div class="np-head">
     <h4>🔔 Notificaciones</h4>
-    <button class="mark-all" onclick="markAllRead()">Marcar todo leído</button>
+    <div style="display:flex;gap:7px;align-items:center">
+      <button class="mark-all" onclick="markAllRead()">Marcar todo leído</button>
+      <button class="mark-all np-del-all" id="notifDelAll" style="display:none" onclick="borrarTodasNotifs()">🗑️ Borrar todo</button>
+    </div>
   </div>
   <div class="notif-list" id="notifList"></div>
 </div>
@@ -1406,10 +1414,20 @@ let _versionRemotaPendiente = null;
 async function checkForUpdates(){
   if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return; // sin configurar aún
   try{
-    // cache:'no-store' + parámetro anti-caché → siempre trae lo último de GitHub
-    const resp = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store' });
-    if(!resp.ok) return;
-    const html = await resp.text();
+    // ✅ v1.5.50: pedimos SOLO los primeros 4 KB del archivo (donde está el
+    // <meta app-version>) en vez de bajarlo entero. Antes cada chequeo se traía
+    // el archivo completo (más de 1,5 MB) × cada dispositivo × cada 5 minutos.
+    // Con esto el chequeo pesa casi nada, así que además lo hacemos más seguido.
+    let html = '';
+    try{
+      const r = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store', headers:{ 'Range':'bytes=0-4095' } });
+      if(r.ok) html = await r.text();
+    }catch(_){ /* si el servidor no acepta Range, caemos al pedido completo */ }
+    if(!html){
+      const resp = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store' });
+      if(!resp.ok) return;
+      html = await resp.text();
+    }
     const m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
     if(!m) return;
     const remota = m[1].trim();
@@ -1429,9 +1447,10 @@ async function checkForUpdates(){
   }catch(e){ /* sin conexión: reintenta en el próximo ciclo */ }
 }
 
-// Revisar al arrancar y cada 5 minutos mientras la app está abierta
-document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(checkForUpdates, 2500); });
-setInterval(checkForUpdates, 5 * 60 * 1000);
+// Revisar al arrancar y cada 90 segundos mientras la app está abierta.
+// (v1.5.50: se puede chequear más seguido porque ahora el pedido pesa ~4 KB.)
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(checkForUpdates, 1200); });
+setInterval(checkForUpdates, 90 * 1000);
 // Revisar también cuando el usuario vuelve a la app (clave en celular)
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdates(); });
 
@@ -1489,6 +1508,49 @@ function _autoAplicarUpdate(remota){
       location.reload(true);
     }
   }, 1200); // breve pausa para que se alcance a ver el aviso
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AVISO DE VERSIÓN POR LA NUBE  (v1.5.50)
+// ───────────────────────────────────────────────────────────────────
+// Antes, para enterarse de una versión nueva, cada dispositivo tenía que ir a
+// preguntarle a GitHub (al arrancar, al volver a la app y cada 5 minutos). Eso
+// significaba que un celular abierto podía tardar hasta 5 minutos en actualizarse.
+// AHORA, además de eso, la versión viaja por Supabase igual que los datos: el
+// primer dispositivo que abre la versión nueva la publica en la nube, y todos los
+// que tengan la app abierta se enteran POR REALTIME en segundos y se actualizan
+// solos. Es el mismo camino que ya usan las notificaciones, así que no agrega
+// consultas a GitHub ni tráfico pesado (viaja un texto de 6 caracteres).
+// Esto NO toca ni borra datos: solo reemplaza el archivo de la app.
+// ═══════════════════════════════════════════════════════════════════
+const VERSION_KEY = 'suep_version';
+// Publica MI versión en la nube, pero solo si es más nueva que la anotada.
+// Así un dispositivo viejo nunca "baja" la marca ni hace retroceder a los demás.
+function _publicarVersion(){
+  try{
+    const anotada = localStorage.getItem(VERSION_KEY) || '0.0.0';
+    if(_verMayor(APP_VERSION, anotada) === 1){
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      if(typeof syncToSupabase === 'function') syncToSupabase(VERSION_KEY, APP_VERSION);
+    }
+  }catch(_){}
+}
+// Llega una versión (por realtime o al bajar datos): si es más nueva, actualizar solo.
+function _recibirVersionRemota(valor){
+  try{
+    const remota = String(valor || '').trim();
+    if(!remota || !/^\d+(\.\d+)*$/.test(remota)) return;
+    localStorage.setItem(VERSION_KEY, remota);
+    if(_verMayor(remota, APP_VERSION) !== 1) return; // no es más nueva: nada que hacer
+    _versionRemotaPendiente = remota;
+    const banner = document.getElementById('updateBanner');
+    if(banner){
+      const msg = banner.querySelector('.upd-msg');
+      if(msg) msg.innerHTML = '<strong>¡Nueva actualización disponible!</strong> Versión ' + remota + ' lista. Recargá para obtener las últimas mejoras.';
+      banner.classList.add('show');
+    }
+    if(_puedeAutoActualizar(remota)) _autoAplicarUpdate(remota);
+  }catch(_){}
 }
 // Al arrancar: si ya llegamos a la versión que intentábamos (o una más nueva),
 // limpiamos el contador anti-bucle para que las próximas actualicen sin trabas.
@@ -2487,6 +2549,86 @@ function _purgarNotifsVisor(){
     if(limpias.length !== todas.length) S.sn(limpias);
   }catch(_){}
 }
+// ══════════════════════════════════════════════════════════════════
+// BORRADO DE NOTIFICACIONES — SOLO ADMINISTRADORAS (v1.5.49)
+// ------------------------------------------------------------------
+// Problema: si una notificación se borra solo del equipo, otro dispositivo
+// que todavía la tiene la vuelve a subir al fusionar y la notificación revive.
+// Solución: además de sacarla de la lista, dejamos una MARCA DE BORRADO con su
+// clave estable (la misma que usa _notifKey). Todos los dispositivos, al
+// fusionar o al mostrar, descartan lo que esté marcado. Así el borrado de la
+// administradora se respeta en toda la flota y no puede volver.
+// Solo permiso 'admin' puede borrar: el resto ni ve los botones.
+// ══════════════════════════════════════════════════════════════════
+const NOTIF_DEL_KEY = 'suep_notifs_del';
+function _puedeBorrarNotifs(){
+  return !!(typeof CU !== 'undefined' && CU && CU.permiso === 'admin');
+}
+function _notifsBorradas(){
+  try{
+    const a = JSON.parse(localStorage.getItem(NOTIF_DEL_KEY) || '[]');
+    return Array.isArray(a) ? a : [];
+  }catch(_){ return []; }
+}
+function _keysBorradas(){
+  return new Set(_notifsBorradas().map(x => x && x.k).filter(Boolean));
+}
+function _guardarBorradas(lista){
+  const cortada = (lista || []).slice(-500); // tope: no crece para siempre
+  try{ localStorage.setItem(NOTIF_DEL_KEY, JSON.stringify(cortada)); }catch(_){}
+  if(typeof syncToSupabase === 'function') syncToSupabase(NOTIF_DEL_KEY, cortada);
+  return cortada;
+}
+// Une dos listas de marcas de borrado (sin duplicar). Se usa cuando llega la
+// lista de otro dispositivo: las marcas se SUMAN, nunca se pisan.
+function _fusionarBorradas(a, b){
+  const m = new Map();
+  [].concat(Array.isArray(a)?a:[], Array.isArray(b)?b:[]).forEach(x => {
+    if(x && x.k && !m.has(x.k)) m.set(x.k, x);
+  });
+  return Array.from(m.values()).slice(-500);
+}
+// Marca como borradas las notificaciones indicadas y las saca de la lista
+function _marcarBorradas(notifsABorrar){
+  const ahora = Date.now();
+  const nuevas = (notifsABorrar || []).map(n => ({
+    k: _notifKey(n), ts: ahora, por: (CU && CU.usuario) || '—'
+  })).filter(x => x.k);
+  if(!nuevas.length) return;
+  _guardarBorradas(_fusionarBorradas(_notifsBorradas(), nuevas));
+  const keys = new Set(nuevas.map(x => x.k));
+  S.sn(S.gn().filter(n => !keys.has(_notifKey(n))));
+  refreshBadge();
+  renderNotifs();
+}
+// Borrar UNA notificación (desde el tachito de la fila)
+function borrarNotif(id, ev){
+  try{ if(ev){ ev.stopPropagation(); ev.preventDefault(); } }catch(_){}
+  if(!_puedeBorrarNotifs()){
+    alert('🔒 Solo las administradoras pueden borrar notificaciones.');
+    return;
+  }
+  const n = S.gn().find(x => x.id === id);
+  if(!n) return;
+  if(!confirm('¿Borrar esta notificación?\n\nSe borra para TODOS los usuarios y no vuelve a aparecer.')) return;
+  _marcarBorradas([n]);
+}
+// Borrar TODAS las notificaciones visibles
+function borrarTodasNotifs(){
+  if(!_puedeBorrarNotifs()){
+    alert('🔒 Solo las administradoras pueden borrar notificaciones.');
+    return;
+  }
+  const todas = _notifsOrdenadas();
+  if(!todas.length){ alert('No hay notificaciones para borrar.'); return; }
+  if(!confirm(`¿Borrar las ${todas.length} notificaciones?\n\nSe borran para TODOS los usuarios y no vuelven a aparecer.`)) return;
+  _marcarBorradas(todas);
+}
+// Muestra el botón "Borrar todo" solo si la que entró es administradora
+function _ajustarBotoneraNotifs(){
+  const b = document.getElementById('notifDelAll');
+  if(b) b.style.display = _puedeBorrarNotifs() ? 'inline-block' : 'none';
+}
 // ¿La notificación n está leída por el usuario actual?
 function _notifLeida(n){
   if(!CU) return false;
@@ -2545,34 +2687,49 @@ function _fusionarNotifs(remotas, locales){
   };
   (Array.isArray(remotas)?remotas:[]).forEach(meter);
   (Array.isArray(locales)?locales:[]).forEach(meter);
+  const borradas = _keysBorradas();
   return Array.from(porKey.values())
     // 🔒 v1.5.48: si alguna notificación de la cuenta visor vuelve de la nube,
     // acá se cae. No se sincroniza ni se muestra en ningún equipo.
     .filter(n => !_esNotifVisor(n))
+    // 🗑️ v1.5.49: lo que la administradora borró no revive aunque otro
+    // dispositivo lo suba de nuevo.
+    .filter(n => !borradas.has(_notifKey(n)))
     .sort((a,b)=> _notifMs(b) - _notifMs(a))
     .slice(0,200);
 }
 // Devuelve las notificaciones SIEMPRE ordenadas: más reciente primero
 function _notifsOrdenadas(){
-  return S.gn().filter(n=>!_esNotifVisor(n)).slice().sort((a,b)=> _notifMs(b) - _notifMs(a));
+  const borradas = _keysBorradas();
+  return S.gn()
+    .filter(n => !_esNotifVisor(n) && !borradas.has(_notifKey(n)))
+    .slice()
+    .sort((a,b)=> _notifMs(b) - _notifMs(a));
 }
 function refreshBadge(){
-  const n=S.gn().filter(x=>!_esNotifVisor(x) && !_notifLeida(x)).length;
+  const borradas = _keysBorradas();
+  const n=S.gn().filter(x=>!_esNotifVisor(x) && !borradas.has(_notifKey(x)) && !_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
   if(n>0){el.textContent=n; el.classList.add('show')}
   else el.classList.remove('show');
 }
 function renderNotifs(){
   const notifs=_notifsOrdenadas();
+  _ajustarBotoneraNotifs();
   const el=document.getElementById('notifList');
   if(!notifs.length){el.innerHTML='<div class="notif-empty">Sin notificaciones aún</div>';return;}
+  const puedeBorrar = _puedeBorrarNotifs();
   el.innerHTML=notifs.map(n=>{
     const leida=_notifLeida(n);
+    const btnDel = puedeBorrar
+      ? `<button class="n-del" title="Borrar esta notificación para todos" onclick="borrarNotif('${n.id}', event)">🗑️</button>`
+      : '';
     return `
     <div class="notif-item ${leida?'':'unread'}" onclick="notifGo('${n.id}')">
       <div class="n-dot ${leida?'read':''}"></div>
-      <div><div class="n-text">${n.icon} ${n.txt} <span style="color:#4a6a88;font-size:10px">[${n.sec}]</span></div>
+      <div style="flex:1;min-width:0"><div class="n-text">${n.icon} ${n.txt} <span style="color:#4a6a88;font-size:10px">[${n.sec}]</span></div>
       <div class="n-time">${n.time}</div></div>
+      ${btnDel}
     </div>`;}).join('');
 }
 function readN(id){
@@ -2873,6 +3030,7 @@ function iniciarSesion(user, esRestauracion){
       // 🔒 v1.5.48: si quedó guardada alguna notificación vieja de la cuenta
       // de solo consulta, se borra del equipo al iniciar sesión.
       try{ _purgarNotifsVisor(); }catch(_){}
+      try{ _ajustarBotoneraNotifs(); }catch(_){} // 🗑️ v1.5.49: "Borrar todo" solo para admin
       buildSidebar(); refreshBadge();
       // Mostrar opción admin del menú de configuración solo a administradoras
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
@@ -7818,7 +7976,20 @@ async function pullAllFromSupabase(opts){
           return;
         }
         try{
-          if(row.key === 'suep_notifs'){
+          if(row.key === VERSION_KEY){
+            // ⬆️ v1.5.50: al arrancar o al entrar, si en la nube hay una versión
+            // más nueva que la mía, me actualizo antes de seguir.
+            _recibirVersionRemota(row.value);
+          } else if(row.key === NOTIF_DEL_KEY){
+            // 🗑️ v1.5.49: marcas de borrado — se SUMAN, nunca se pisan, y de paso
+            // sacamos de la lista local lo que ya esté marcado.
+            const fus = _fusionarBorradas(row.value, _notifsBorradas());
+            localStorage.setItem(NOTIF_DEL_KEY, JSON.stringify(fus));
+            const keys = new Set(fus.map(x => x && x.k).filter(Boolean));
+            try{ _S_sn_local(S.gn().filter(n => !keys.has(_notifKey(n)))); }catch(_){}
+            try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
+            try{ if(typeof ntOpen!=='undefined' && ntOpen && typeof renderNotifs==='function') renderNotifs(); }catch(_){}
+          } else if(row.key === 'suep_notifs'){
             // ✅ FIX v1.5.3: NO pisar las notificaciones al entrar/volver a la app.
             // Las fusionamos por registro conservando quién leyó qué; si no, se
             // perdían las marcas de "leída" y reaparecían como nuevas (lo "tardío").
@@ -7947,6 +8118,23 @@ function subscribeRealtime(){
               console.warn('No se pudo fusionar notificaciones remotas', e);
               try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
             }
+          } else if(row.key === VERSION_KEY){
+            // ⬆️ v1.5.50: alguien abrió una versión más nueva. Si es mayor que la
+            // mía, me actualizo solo en segundos (con el mismo tope anti-bucle).
+            _recibirVersionRemota(row.value);
+            return;
+          } else if(row.key === NOTIF_DEL_KEY){
+            // 🗑️ v1.5.49: marcas de borrado de notificaciones. Se SUMAN con las
+            // que ya tenemos (nunca se pisan), así el borrado de una administradora
+            // llega a todos los equipos y lo borrado no revive.
+            try{
+              const fus = _fusionarBorradas(row.value, _notifsBorradas());
+              localStorage.setItem(NOTIF_DEL_KEY, JSON.stringify(fus));
+              const keys = new Set(fus.map(x => x && x.k).filter(Boolean));
+              _S_sn_local(S.gn().filter(n => !keys.has(_notifKey(n))));
+            }catch(e){ console.warn('No se pudieron fusionar las marcas de borrado', e); }
+            try{ refreshBadge(); if(typeof ntOpen !== 'undefined' && ntOpen) renderNotifs(); }catch(_){}
+            return;
           } else {
             // ✅ v1.5: si esta clave tiene cambios locales sin subir, no la pisamos
             // con la versión remota; al fusionar y subir los pendientes se reconcilia.
@@ -8008,6 +8196,9 @@ window.doLogin = async function(){
     if(!CU) return; // login falló, no suscribir
     try{ reconstruirNotifsFaltantes(); }catch(e){ console.warn('No se pudieron reconstruir notificaciones:', e); }
     subscribeRealtime();
+    // ⬆️ v1.5.50: publico mi versión. Si soy el primero con la nueva, todos los
+    // que tengan la app abierta se enteran por realtime y se actualizan solos.
+    try{ _publicarVersion(); }catch(_){}
   }, 700);
 };
 
