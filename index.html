@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.45">
+<meta name="app-version" content="1.5.47">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -347,19 +347,6 @@ body.visor-lock, body.visor-lock *{
   -webkit-touch-callout:none!important;
 }
 body.visor-lock img{ -webkit-user-drag:none; pointer-events:none }
-/* Marca de agua identificatoria: cualquier captura queda trazada */
-#vlMarca{
-  position:fixed; inset:0; z-index:99998; pointer-events:none;
-  display:none; overflow:hidden; opacity:.13;
-}
-body.visor-lock #vlMarca{ display:block }
-#vlMarca div{
-  position:absolute; white-space:nowrap; transform:rotate(-30deg);
-  transform-origin:0 0; font:700 13px/1.2 Arial,Helvetica,sans-serif;
-  color:#7fb2e0; letter-spacing:.5px;
-}
-body.light #vlMarca{ opacity:.10 }
-body.light #vlMarca div{ color:#12406b }
 /* Cortina: tapa la pantalla cuando la app pierde el foco o se manda a
    segundo plano. Deja en blanco la miniatura del multitarea. */
 #vlCortina{
@@ -1279,8 +1266,7 @@ textarea.fi{resize:vertical;min-height:72px}
 </div>
 <div id="printArea"></div>
 
-<!-- ████ MODO VISOR BLINDADO — marca de agua + cortina (v1.5.45) ████ -->
-<div id="vlMarca" aria-hidden="true"></div>
+<!-- ████ MODO VISOR BLINDADO — cortina de segundo plano (v1.5.45) ████ -->
 <div id="vlCortina" aria-hidden="true">🔒<br>SUEP<br><span style="font-weight:400;font-size:12.5px">Contenido oculto mientras la app no está en pantalla.<br>Volvé a la aplicación para seguir viendo.</span></div>
 
 <!-- ████ MODAL CAMBIO DE CONTRASEÑA ████ -->
@@ -1515,11 +1501,10 @@ try{
 // ══════════════════════════════════════════════
 const USERS = [
   // ─── Visores (ven todo, no editan) ───
+  // v1.5.47: esta es la cuenta que se le entrega a la Superintendencia.
+  // Por ser permiso 'visor' arranca con el MODO VISOR BLINDADO (ver más abajo):
+  // no carga, no edita, no borra, no imprime, no descarga y no ve Configuración.
   { usuario:'jefe.visor', password:'jefe2026', permiso:'visor', sectores:[], nombre:'Jefe/a (visor)', rol:'Solo lectura' },
-  // v1.5.45: cuenta propia para la Superintendencia de Apoyo y Servicio. Es 'visor'
-  // pero con el blindaje reforzado (ver MODO VISOR BLINDADO más abajo):
-  // no carga, no edita, no borra, no imprime, no exporta y no ve Configuración.
-  { usuario:'superintendencia', password:'SupApoyo.2026', permiso:'visor', sectores:[], nombre:'Superintendencia de Apoyo y Servicio', rol:'Solo lectura' },
 
   // ─── Ve todo + puede agregar (sin editar ni borrar) ───
   { usuario:'marcos.blanco', password:'blanco2026', permiso:'cargar-global', sectores:[], nombre:'Marcos Antonio Blanco', rol:'Rector del Departamento' },
@@ -2679,11 +2664,12 @@ window.addEventListener('DOMContentLoaded',()=>{
 // ------------------------------------------------------------------
 // La cuenta de la Superintendencia (y cualquier permiso 'visor') entra
 // SOLO a mirar: no carga, no edita, no borra, no entra a Configuración
-// y no puede imprimir ni bajar nada. Además se le pone marca de agua
-// con su nombre y la fecha/hora, y se tapa la pantalla cuando la app
-// pierde el foco.
-// OJO: una captura de pantalla del celular NO se puede prohibir desde
-// una página web; lo que hacemos es que toda captura salga firmada.
+// y no puede imprimir ni bajar nada (ni Excel, ni PDF, ni adjuntos).
+// La app se ve EXACTAMENTE igual que siempre: lo único que cambia es que
+// no le aparecen los botones de carga/impresión/descarga.
+// OJO: una captura de pantalla del celular NO se puede prohibir desde una
+// página web. Lo único que hacemos es tapar la pantalla cuando la app se
+// va a segundo plano (eso deja en blanco la vista del multitarea).
 // ══════════════════════════════════════════════════════════════════
 function esVisor(){
   return !!(typeof CU !== 'undefined' && CU && CU.permiso === 'visor');
@@ -2694,19 +2680,6 @@ function _vlBloquear(msg){
   if(!esVisor()) return false;
   try{ alert(msg || '🔒 Tu cuenta es de solo consulta: esta acción no está habilitada.'); }catch(_){}
   return true;
-}
-// Dibuja la marca de agua en diagonal por toda la pantalla
-function _vlPintarMarca(){
-  const cont = document.getElementById('vlMarca');
-  if(!cont || !esVisor()) return;
-  const ahora = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
-  const txt = (CU.nombre||'') + '  ·  ' + (CU.usuario||'') + '  ·  ' + ahora + '  ·  SUEP — USO INTERNO';
-  const alto = window.innerHeight, ancho = window.innerWidth;
-  let html = '';
-  for(let y = -60; y < alto + 260; y += 118){
-    html += '<div style="top:' + y + 'px;left:-40px">' + txt + '&nbsp;&nbsp;&nbsp;&nbsp;' + txt + '&nbsp;&nbsp;&nbsp;&nbsp;' + txt + '</div>';
-  }
-  cont.innerHTML = html;
 }
 // Tapa / destapa la pantalla
 function _vlTapar(tapar){
@@ -2723,24 +2696,19 @@ function _aplicarModoVisor(user){
   const _cfgP = document.getElementById('cfgPanel');
   if(_cfgP){ _cfgP.classList.remove('show'); _cfgP.style.display = 'none'; }
 
-  // 2) Marca de agua identificatoria, refrescada cada minuto
-  _vlPintarMarca();
-  setInterval(_vlPintarMarca, 60000);
-  window.addEventListener('resize', _vlPintarMarca);
-
-  // 3) Cortina al perder el foco o al mandar la app a segundo plano.
+  // 2) Cortina al perder el foco o al mandar la app a segundo plano.
   //    Esto además deja en blanco la vista previa del multitarea.
   document.addEventListener('visibilitychange', () => _vlTapar(document.hidden));
   window.addEventListener('blur',  () => _vlTapar(true));
   window.addEventListener('focus', () => _vlTapar(false));
   window.addEventListener('pagehide', () => _vlTapar(true));
 
-  // 4) Nada de menú contextual, copiar, cortar ni arrastrar
+  // 3) Nada de menú contextual, copiar, cortar ni arrastrar
   ['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev => {
     document.addEventListener(ev, e => { e.preventDefault(); return false; }, true);
   });
 
-  // 5) Atajos de teclado bloqueados: imprimir, guardar, copiar y PrintScreen
+  // 4) Atajos de teclado bloqueados: imprimir, guardar, copiar y PrintScreen
   document.addEventListener('keydown', e => {
     const k = (e.key || '').toLowerCase();
     if((e.ctrlKey || e.metaKey) && ['p','s','c','x','u'].includes(k)){
@@ -2755,12 +2723,46 @@ function _aplicarModoVisor(user){
     }
   }, true);
 
-  // 6) Último candado: si algo llegara a disparar window.print(), no imprime
+  // 5) Último candado: si algo llegara a disparar window.print(), no imprime
   const _printOriginal = window.print;
   window.print = function(){
     if(esVisor()){ alert('🔒 Tu cuenta es de solo consulta: la impresión no está habilitada.'); return; }
     return _printOriginal.apply(window, arguments);
   };
+
+  // 6) Candado GLOBAL de descargas. En vez de tapar botón por botón,
+  //    cortamos en la fuente: cualquier Excel, PDF o adjunto que se
+  //    intente bajar (de acá o de una pestaña futura) queda frenado.
+  //    ─ Excel (SheetJS)
+  try{
+    if(typeof XLSX !== 'undefined' && XLSX && typeof XLSX.writeFile === 'function'){
+      const _xlsxOriginal = XLSX.writeFile;
+      XLSX.writeFile = function(){
+        if(esVisor()){ alert('🔒 Tu cuenta es de solo consulta: la descarga de archivos no está habilitada.'); return; }
+        return _xlsxOriginal.apply(XLSX, arguments);
+      };
+    }
+  }catch(_){}
+  //    ─ PDF (jsPDF)
+  try{
+    if(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.prototype){
+      const _pdfOriginal = window.jspdf.jsPDF.prototype.save;
+      window.jspdf.jsPDF.prototype.save = function(){
+        if(esVisor()){ alert('🔒 Tu cuenta es de solo consulta: la descarga de archivos no está habilitada.'); return this; }
+        return _pdfOriginal.apply(this, arguments);
+      };
+    }
+  }catch(_){}
+  //    ─ Adjuntos y cualquier otro <a download> generado por la app
+  document.addEventListener('click', e => {
+    if(!esVisor()) return;
+    const a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if(a && (a.hasAttribute('download') || String(a.href||'').startsWith('blob:'))){
+      e.preventDefault(); e.stopPropagation();
+      alert('🔒 Tu cuenta es de solo consulta: la descarga de archivos no está habilitada.');
+      return false;
+    }
+  }, true);
 }
 
 // ══════════════════════════════════════════════
@@ -5305,6 +5307,7 @@ function openAttachment(a){
 }
 
 function downloadAttachment(a){
+  if(_vlBloquear('🔒 Tu cuenta es de solo consulta: la impresión y la descarga no están habilitadas.')) return;
   // ✅ v1.5.33: adjunto pendiente guardado en IndexedDB de este dispositivo
   if(a && a._idb && !a.url && !a.data){
     _idbGet(a._idb).then(blob=>{
@@ -5820,6 +5823,7 @@ function exportExcel(){
 // EXPORTAR EXCEL — Selección de Aspirantes (Imaginarias / Recargo)
 // ══════════════════════════════════════════════
 function exportSeleccionExcel(tipo, fechaISO){
+  if(_vlBloquear('🔒 Tu cuenta es de solo consulta: la impresión y la descarga no están habilitadas.')) return;
   const titulo = tipo==='recargo' ? 'Recargo Operacional Aspirantes' : 'Imaginarias';
   const today = todayISO();
   const fecha = fechaISO || today;
@@ -5849,6 +5853,7 @@ function exportSeleccionExcel(tipo, fechaISO){
 // EXPORTAR PDF
 // ══════════════════════════════════════════════
 function exportPDF(){
+  if(_vlBloquear('🔒 Tu cuenta es de solo consulta: la impresión y la descarga no están habilitadas.')) return;
   if(!CS||!CM){alert('Seleccioná un módulo primero');return;}
   let rows = _rowsOrdenadosParaExport();
   if(!rows.length){alert('No hay datos para exportar en este módulo.');return;}
@@ -10514,5 +10519,3 @@ async function licCuposMasivosGuardar(anio){
 </script>
 </body>
 </html>
-
-
