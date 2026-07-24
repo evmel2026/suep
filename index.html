@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.59">
+<meta name="app-version" content="1.5.60">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2209,10 +2209,13 @@ const SECTORS = [
   // ─── GESTIÓN DOCUMENTAL INSTITUCIONAL (v1.5.51) ───
   // custom:'gestiondoc' → usa la vista propia renderGestionDoc(). Genera los
   // documentos en Word con el formato institucional (membrete, márgenes y
-  // tipografía del modelo original de cada uno). restringido:'admin' → por
-  // ahora la ven SOLO las administradoras, hasta terminar la prueba.
+  // tipografía del modelo original de cada uno).
+  // v1.5.60: terminó la prueba → la pestaña queda abierta a TODOS los usuarios
+  // (universal:true). Los permisos finos van por registro: cada uno edita lo que
+  // cargó él mismo, el borrado es solo de las administradoras y la cuenta
+  // 'visor' únicamente mira (ver gdVistaLista / gdAbrir / gdBorrar).
   { id:'GESTION_DOC', name:'Gestión Documental Institucional', icon:'🗂️', color:'#2563eb', bg:'#dbeafe',
-    custom:'gestiondoc', restringido:'admin', modules:[
+    custom:'gestiondoc', universal:true, modules:[
     { id:'GESTION_DOC', name:'Gestión Documental Institucional', fields:[
       {key:'tipo',   label:'Tipo de documento', type:'text'},
       {key:'titulo', label:'Documento',         type:'text'},
@@ -11751,6 +11754,21 @@ const TIPOS_DOC = {
 const GD_S = 'GESTION_DOC', GD_M = 'GESTION_DOC';
 var GD_VISTA = 'lista', GD_TIPO = null, GD_ID = null, GD_D = {},
     GD_TIMER = null, GD_ESTADO = '', GD_FILTRO = '';
+// v1.5.60: GD_RO = el documento abierto es de otra persona (o la cuenta es
+// 'visor'), así que se muestra completo pero no se puede modificar.
+var GD_RO = false;
+function gdEsAdmin(){ return typeof CU !== 'undefined' && CU && CU.permiso === 'admin'; }
+// ¿Puede EDITAR este documento? Administradoras siempre; el resto, lo suyo.
+function gdPuedeEditar(r){
+  if(typeof esVisor === 'function' && esVisor()) return false;
+  if(gdEsAdmin()) return true;
+  return !!(r && r._por && typeof CU !== 'undefined' && CU && r._por === CU.nombre);
+}
+// El borrado sigue la regla general de la app: solo administradoras.
+function gdPuedeBorrar(r){
+  if(typeof esVisor === 'function' && esVisor()) return false;
+  return (typeof puedeBorrarRec === 'function') ? puedeBorrarRec(r) : gdEsAdmin();
+}
 
 function gdEsc(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -11796,12 +11814,14 @@ function _gdFechaCorta(iso){
 // ─── Navegación ───────────────────────────────────────────────────────────
 function gdNuevo(t){
   if(_vlBloquear && _vlBloquear('🔒 Tu cuenta es de solo consulta.')) return;
+  GD_RO = false;                      // v1.5.60
   GD_TIPO = t; GD_D = gdDefaults(t); GD_ID = null; GD_ESTADO = ''; GD_VISTA = 'editor';
   renderTable();
 }
 function gdAbrir(id){
   const r = S.get(GD_S, GD_M).find(x => x._id === id);
   if(!r) return;
+  GD_RO = !gdPuedeEditar(r);          // v1.5.60
   GD_TIPO = r.tipo; GD_ID = id; GD_ESTADO = '';
   try{ GD_D = JSON.parse(r.datos || '{}'); }catch(_){ GD_D = gdDefaults(r.tipo); }
   // por si la plantilla sumó campos nuevos después de haberlo guardado
@@ -11811,17 +11831,26 @@ function gdAbrir(id){
 }
 async function gdVolver(){
   await gdGuardarYa();
-  GD_VISTA = 'lista'; GD_TIPO = null; GD_ID = null; renderTable();
+  GD_VISTA = 'lista'; GD_TIPO = null; GD_ID = null; GD_RO = false; renderTable();
 }
 async function gdBorrar(id){
+  // v1.5.60: el borrado queda reservado a las administradoras.
+  const _r = S.get(GD_S, GD_M).find(x => x._id === id);
+  if(!gdPuedeBorrar(_r)){
+    alert('⛔ Solo las administradoras pueden borrar documentos.\n\n'
+        + 'Si te equivocaste en uno tuyo, abrilo y corregilo.');
+    return;
+  }
   if(!confirm('¿Borrar este documento? Se elimina para todos.')) return;
   if(typeof S.delSafe === 'function') await S.delSafe(GD_S, GD_M, id);
   else S.del(GD_S, GD_M, id);
   renderTable();
 }
 function gdDuplicar(id){
+  if(_vlBloquear && _vlBloquear('🔒 Tu cuenta es de solo consulta.')) return;
   const r = S.get(GD_S, GD_M).find(x => x._id === id);
   if(!r) return;
+  GD_RO = false;                      // la copia es tuya: se edita normal
   GD_TIPO = r.tipo; GD_ID = null; GD_ESTADO = '';
   try{ GD_D = JSON.parse(r.datos || '{}'); }catch(_){ GD_D = gdDefaults(r.tipo); }
   GD_D.fecha = todayISO();
@@ -11862,6 +11891,7 @@ async function gdGuardarYa(){
   if(!GD_TIPO || GD_VISTA !== 'editor') return;
   if(!GD_ID && !gdHayContenido()){ GD_ESTADO = ''; gdPintarEstado(); return; }
   if(typeof CU !== 'undefined' && CU && CU.permiso === 'visor') return;
+  if(GD_RO) return;                   // v1.5.60: documento de otra persona
   if(!GD_ID && !gdTieneContenido()){ GD_ESTADO = ''; gdPintarEstado(); return; }
   const reg = {
     tipo:   GD_TIPO,
@@ -11977,6 +12007,7 @@ function gdMarcar(sig, id){
 
 // ─── Descarga del Word ────────────────────────────────────────────────────
 async function gdDescargar(){
+  if(_vlBloquear && _vlBloquear('⛔ Tu cuenta es de solo consulta: no podés descargar.')) return;
   await gdGuardarYa();
   const cfg = TIPOS_DOC[GD_TIPO];
   const vacios = gdCampos(GD_TIPO).filter(gdAplica)
@@ -12010,7 +12041,9 @@ function gdVistaLista(){
   const f = (GD_FILTRO||'').toLowerCase();
   const vis = f ? regs.filter(r => String(r.titulo||'').toLowerCase().includes(f)) : regs;
 
-  const botones = Object.keys(TIPOS_DOC).map(k => `
+  // v1.5.60: la cuenta de solo consulta no ve los botones de carga.
+  const _soloVe = (typeof esVisor === 'function') && esVisor();
+  const botones = _soloVe ? '' : Object.keys(TIPOS_DOC).map(k => `
     <button onclick="gdNuevo('${k}')" style="flex:1 1 150px;min-width:150px;background:#0d1928;
       border:1px solid rgba(122,175,212,.22);color:#c8d8e8;padding:13px 12px;border-radius:11px;
       font-size:13px;font-weight:600;cursor:pointer;text-align:left">
@@ -12032,11 +12065,11 @@ function gdVistaLista(){
         <div style="font-size:11px;color:#6f92ae;margin-bottom:9px">Cargado por ${gdEsc(r._por||'—')} · ${gdEsc(r._ts||'')}</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button onclick="gdAbrir('${r._id}')" style="flex:1;min-width:90px;background:${GD_AC};border:none;
-            color:#08111f;font-weight:700;padding:9px;border-radius:8px;font-size:12.5px;cursor:pointer">Abrir</button>
-          <button onclick="gdDuplicar('${r._id}')" style="flex:1;min-width:90px;background:#132539;
-            border:1px solid rgba(122,175,212,.25);color:#c8d8e8;padding:9px;border-radius:8px;font-size:12.5px;cursor:pointer">Duplicar</button>
-          <button onclick="gdBorrar('${r._id}')" style="background:none;border:1px solid rgba(214,110,110,.4);
-            color:#d68686;padding:9px 13px;border-radius:8px;font-size:12.5px;cursor:pointer">Borrar</button>
+            color:#08111f;font-weight:700;padding:9px;border-radius:8px;font-size:12.5px;cursor:pointer">${gdPuedeEditar(r) ? 'Abrir' : 'Ver'}</button>
+          ${_soloVe ? '' : `<button onclick="gdDuplicar('${r._id}')" style="flex:1;min-width:90px;background:#132539;
+            border:1px solid rgba(122,175,212,.25);color:#c8d8e8;padding:9px;border-radius:8px;font-size:12.5px;cursor:pointer">Duplicar</button>`}
+          ${gdPuedeBorrar(r) ? `<button onclick="gdBorrar('${r._id}')" style="background:none;border:1px solid rgba(214,110,110,.4);
+            color:#d68686;padding:9px 13px;border-radius:8px;font-size:12.5px;cursor:pointer">Borrar</button>` : ''}
         </div>
       </div>`).join('');
 
@@ -12046,6 +12079,7 @@ function gdVistaLista(){
                 padding:11px 13px;font-size:12.5px;line-height:1.55;color:#a9c8e4;margin-bottom:14px">
       Elegí el documento, completá los campos y descargalo en Word con el formato institucional.
       Lo que cargás se guarda solo: podés cerrar la app y seguir después.
+      ${_soloVe ? '' : '<br><b>Cada uno edita los documentos que cargó.</b> Los de otra persona se pueden mirar, descargar o duplicar para hacer el propio. El borrado queda a cargo de las administradoras.'}
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${botones}</div>
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
@@ -12079,7 +12113,14 @@ function gdVistaEditor(){
         <div id="gdEstado" style="font-size:11px;color:#34d399;height:14px"></div>
       </div>
     </div>
-    <div id="gdForm">${gdForm()}</div>
+    ${GD_RO ? `<div style="background:rgba(199,154,58,.10);border:1px solid rgba(199,154,58,.35);border-radius:11px;
+        padding:10px 13px;font-size:12.5px;color:#e8c97a;margin-bottom:12px">
+        🔒 Estás viendo un documento cargado por otra persona: se puede leer y descargar, pero no modificar.
+        Si necesitás uno igual, volvé y usá <b>Duplicar</b>.
+      </div>` : ''}
+    <fieldset ${GD_RO ? 'disabled' : ''} style="border:none;padding:0;margin:0;min-width:0">
+      <div id="gdForm">${gdForm()}</div>
+    </fieldset>
     <div style="background:rgba(13,25,40,.85);border:1px solid rgba(122,175,212,.15);border-radius:12px;
                 padding:14px;margin-bottom:14px">
       <div style="font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:${GD_AC};font-weight:700;margin-bottom:10px">
@@ -12091,10 +12132,10 @@ function gdVistaEditor(){
         Es orientativa: el formato exacto, con membrete y márgenes, sale en el archivo de Word.
       </div>
     </div>
-    <button onclick="gdDescargar()" style="width:100%;background:#c79a3a;border:none;color:#1a1206;
+    ${(typeof esVisor === 'function' && esVisor()) ? '' : `<button onclick="gdDescargar()" style="width:100%;background:#c79a3a;border:none;color:#1a1206;
       font-weight:700;font-size:14px;letter-spacing:.6px;padding:14px;border-radius:10px;cursor:pointer">
       DESCARGAR EN WORD (.docx)
-    </button>
+    </button>`}
   </div>`;
 }
 
