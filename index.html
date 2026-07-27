@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.76">
+<meta name="app-version" content="1.5.77">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1122,13 +1122,14 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
    repetirse: el panel entero quedaba lavado en dorado/celeste y las letras
    oscuras encima no se leían (por eso el corrector no lo agarraba: él mira
    el color de fondo, que seguía siendo blanco, no el degradado).
-   Acá se le devuelve el tamaño, la posición y el "no repetir". */
+   v1.5.77 — Va marcado como prioritario (!important) para que ninguna otra
+   regla en forma corta pueda volver a reiniciarlo. */
 .light-mode .data-wrap,
 .light-mode .notif-panel,
-.light-mode .modal{background-position:top;background-repeat:no-repeat}
-.light-mode .data-wrap{background-size:100% 2.5px}
-.light-mode .notif-panel{background-size:100% 2px}
-.light-mode .modal{background-size:100% 2.5px}
+.light-mode .modal{background-position:top !important;background-repeat:no-repeat !important}
+.light-mode .data-wrap{background-size:100% 2.5px !important}
+.light-mode .notif-panel{background-size:100% 2px !important}
+.light-mode .modal{background-size:100% 2.5px !important}
 .light-mode .sb-label{color:var(--acc-ink)}
 
 /* ── 2) MENÚ LATERAL ──────────────────────────────────────────────── */
@@ -1616,6 +1617,15 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
       <span class="cfg-sub">Libera espacio del dispositivo · solo administradoras</span>
     </div>
   </button>
+  <!-- v1.5.77 — Cartel de versión: sirve para saber, sin adivinar, qué archivo
+       está corriendo el navegador en este momento. -->
+  <div class="cfg-item" id="cfgVersion" style="cursor:default">
+    <span class="cfg-icon">🏷️</span>
+    <div class="cfg-item-content">
+      <span id="cfgVerLabel">Versión —</span>
+      <span class="cfg-sub" id="cfgVerSub">Qué archivo está cargado ahora</span>
+    </div>
+  </div>
 </div>
 
 <!-- ████ IMPRESIÓN DE REGISTROS ████ -->
@@ -9079,6 +9089,16 @@ window.addEventListener('DOMContentLoaded', ()=>{
   try{ palAplicar(); }catch(e){ console.warn('Paleta:', e); }
   try{ sbColorCarpetas(); }catch(_){}
   try{ _ccEncender(); }catch(_){}     // v1.5.75: en los dos modos
+  // v1.5.77 — Cartel de versión en Configuración. Así se puede confirmar de una
+  // qué archivo está corriendo, sin tener que abrir la consola del navegador.
+  try{
+    const l = document.getElementById('cfgVerLabel');
+    const s = document.getElementById('cfgVerSub');
+    if(l) l.textContent = 'Versión ' + APP_VERSION;
+    if(s) s.textContent = (typeof APP_EN_PRUEBA !== 'undefined' && APP_EN_PRUEBA)
+      ? 'Archivo de prueba (abierto desde el dispositivo)'
+      : 'Publicada · ' + (location.hostname || 'local');
+  }catch(_){}
 });
 
 </script>
