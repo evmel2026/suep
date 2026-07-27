@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.60">
+<meta name="app-version" content="1.5.73">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1073,6 +1073,321 @@ textarea.fi{resize:vertical;min-height:72px}
 .light-mode .notif-panel{background-color:#ffffff;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(74,128,168,0))}
 .light-mode .modal{background-color:#ffffff;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 60%,rgba(74,128,168,0))}
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUEP v1.5.64 — MEJORAS VISUALES
+   1) PALETA DEL PERÍODO: cada 5 días cambia el color de acento. El azul
+      institucional del modo oscuro NO se toca: lo único que rota es el
+      hilo dorado de los bordes, el brillo del menú y la trama de fondo.
+   2) MENÚ LATERAL: mismas pestañas, mismos permisos, mismo orden. Solo
+      se ve mejor (carpetas con relieve, buscador con foco, barra activa).
+   3) MODO CLARO: ninguna letra queda blanca sobre fondo claro.
+   4) SALUDO DEL DÍA: tarjeta de bienvenida al ingresar.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1) PALETA DEL PERÍODO ────────────────────────────────────────── */
+/* --acc      = acento en modo oscuro   --acc-ink = acento en modo claro
+   --acc-soft = trama de fondo          --acc-glow = títulos del menú     */
+body{--acc:#c79a3a;--acc-ink:#a07a24;--acc-soft:rgba(199,154,58,.10);--acc-glow:rgba(199,154,58,.85);--av-txt:#c8d8e8;--av-txt2:#7f9fb8}
+body.light-mode{--av-txt:#33536f;--av-txt2:#5a7a9a}
+body[data-paleta="0"]{--acc:#c79a3a;--acc-ink:#8a6310;--acc-soft:rgba(199,154,58,.10);--acc-glow:rgba(199,154,58,.85)}
+body[data-paleta="1"]{--acc:#18a0a8;--acc-ink:#0d6f75;--acc-soft:rgba(24,160,168,.11);--acc-glow:rgba(46,190,198,.88)}
+body[data-paleta="2"]{--acc:#d98a4e;--acc-ink:#96541f;--acc-soft:rgba(217,138,78,.11);--acc-glow:rgba(230,155,95,.88)}
+body[data-paleta="3"]{--acc:#4fa373;--acc-ink:#2c6b47;--acc-soft:rgba(79,163,115,.11);--acc-glow:rgba(96,185,134,.88)}
+body[data-paleta="4"]{--acc:#8f83db;--acc-ink:#5b4bb0;--acc-soft:rgba(143,131,219,.11);--acc-glow:rgba(163,152,232,.88)}
+body[data-paleta="5"]{--acc:#5aa6dd;--acc-ink:#1f6598;--acc-soft:rgba(90,166,221,.11);--acc-glow:rgba(120,188,236,.88)}
+body[data-paleta="6"]{--acc:#dd7c78;--acc-ink:#a33e3a;--acc-soft:rgba(221,124,120,.11);--acc-glow:rgba(233,145,141,.88)}
+body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,181,.11);--acc-glow:rgba(216,158,197,.88)}
+
+/* Los mismos adornos de siempre, ahora tomando el color de la paleta */
+#appScreen::before{background-image:radial-gradient(var(--acc-soft) 1px,rgba(122,175,212,0) 1.3px)}
+.app-header::after{background-image:linear-gradient(90deg,var(--acc),var(--sec) 40%,rgba(122,175,212,0) 90%)}
+.sector-btn.active::before{background-image:linear-gradient(180deg,var(--acc),var(--sec))}
+.data-wrap{background-image:linear-gradient(90deg,var(--acc),var(--sec) 55%,rgba(122,175,212,0) 95%)}
+.notif-panel{background-image:linear-gradient(90deg,var(--acc),var(--sec) 60%,rgba(122,175,212,0))}
+.modal{background-image:linear-gradient(90deg,var(--acc),var(--sec) 60%,rgba(122,175,212,0))}
+.login-card{background-image:linear-gradient(90deg,var(--acc),#7aafd4 60%,rgba(122,175,212,0))}
+.sb-label{color:var(--acc-glow)}
+.light-mode #appScreen::before{background-image:radial-gradient(rgba(74,128,168,.12) 1px,rgba(74,128,168,0) 1.3px)}
+.light-mode .data-wrap{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 55%,rgba(74,128,168,0) 95%)}
+.light-mode .notif-panel{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 60%,rgba(74,128,168,0))}
+.light-mode .modal{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 60%,rgba(74,128,168,0))}
+.light-mode .sb-label{color:var(--acc-ink)}
+
+/* ── 2) MENÚ LATERAL ──────────────────────────────────────────────── */
+.sidebar{scrollbar-width:thin;scrollbar-color:rgba(122,175,212,.30) transparent}
+.sidebar::-webkit-scrollbar{width:7px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(122,175,212,.28);border-radius:7px}
+.sidebar::-webkit-scrollbar-thumb:hover{background:rgba(122,175,212,.45)}
+.light-mode .sidebar{scrollbar-color:#c9d6e2 transparent}
+.light-mode .sidebar::-webkit-scrollbar-thumb{background:#cfdae6}
+
+/* Buscador de pestañas */
+.sb-buscar{width:100%;box-sizing:border-box;margin:0 0 10px;padding:9px 11px;border-radius:11px;
+  border:1px solid rgba(122,175,212,.22);background:rgba(122,175,212,.08);color:#dbeafe;
+  font-size:12.5px;font-family:inherit;outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
+.sb-buscar::placeholder{color:rgba(154,180,208,.75)}
+.sb-buscar:focus{border-color:var(--acc);background:rgba(122,175,212,.13);box-shadow:0 0 0 3px rgba(122,175,212,.13)}
+.light-mode .sb-buscar{background:#f3f7fb;border-color:#d7e2ec;color:#1c3550}
+.light-mode .sb-buscar::placeholder{color:#8aa3ba}
+.light-mode .sb-buscar:focus{border-color:var(--acc-ink);background:#fff;box-shadow:0 0 0 3px rgba(21,49,79,.07)}
+
+/* Encabezado de carpeta — v1.5.66: color propio, "A/C" en segunda línea y
+   flecha que gira. Cada carpeta define su color en --gc. */
+.sb-grupo{margin-bottom:6px;position:relative;padding-left:9px}
+.sb-grupo::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:3px;
+  background:var(--gc,#7aafd4);opacity:.55;transition:opacity .2s,box-shadow .2s}
+.sb-grupo:hover::before{opacity:1;box-shadow:0 0 10px var(--gc,#7aafd4)}
+.sb-grupo.sb-sola{padding-left:9px}
+
+.sb-gh{width:100%;display:flex;align-items:center;gap:8px;background:rgba(122,175,212,.05);
+  border:1px solid rgba(122,175,212,.10);border-radius:11px;color:#a8c8e0;font-size:11px;font-weight:800;
+  letter-spacing:.5px;text-transform:uppercase;padding:8px 9px;cursor:pointer;font-family:inherit;
+  text-align:left;line-height:1.3;transition:background .18s,border-color .18s,color .18s,transform .18s}
+.sb-gh:hover{background:rgba(122,175,212,.12);border-color:rgba(122,175,212,.22);color:#e2eefa;transform:translateX(2px)}
+.sb-gh.abierta{background:rgba(122,175,212,.09);border-color:rgba(122,175,212,.18);color:#eaf3fb}
+.sb-gh.sb-gh-sub{font-size:10.5px;background:none;border-color:transparent;padding:7px 7px}
+.sb-gh.sb-gh-sub:hover{background:rgba(122,175,212,.08)}
+.sb-gh.sb-gh-sub.abierta{background:rgba(122,175,212,.05)}
+
+.sb-chev{width:11px;flex:none;display:inline-block;text-align:center;color:var(--gc,#7aafd4);
+  transition:transform .22s cubic-bezier(.3,.8,.3,1.2)}
+.sb-chev.abierto{transform:rotate(90deg)}
+.sb-gh-ico{flex:none;font-size:14px;line-height:1;filter:saturate(1.1)}
+.sb-gh-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;white-space:normal}
+.sb-gh-ac{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:none;
+  color:var(--gc,#7aafd4);opacity:.92;line-height:1.25}
+
+.light-mode .sb-grupo::before{opacity:.85}
+.light-mode .sb-gh{background:#f6f9fc;border-color:#e3ebf3;color:#3d5f80}
+.light-mode .sb-gh:hover{background:#eef4f9;border-color:#d7e2ec;color:#15314f}
+.light-mode .sb-gh.abierta{background:#eef4f9;border-color:#dde7f0;color:#15314f}
+.light-mode .sb-gh.sb-gh-sub,.light-mode .sb-gh.sb-gh-sub.abierta{background:none;border-color:transparent}
+.light-mode .sb-gh.sb-gh-sub:hover{background:#f3f7fb}
+/* El "A/C" en modo claro se oscurece solo con el corrector de contraste */
+
+/* v1.5.69 — Las pestañas internas que se listan sueltas en el menú (por ejemplo
+   las 9 de Logística) llevan debajo el nombre de su sector. Así dejan de
+   confundirse dos pestañas que se llaman igual, como las dos "Novedades". */
+.s-name{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.s-sec{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:none;
+  color:#7f9fb8;opacity:.92;line-height:1.2}
+.light-mode .s-sec{color:#6b87a3}
+.sector-btn.active .s-sec{color:rgba(255,255,255,.82)}
+.sector-btn.sb-destacado .s-sec{color:#b9975a}
+.light-mode .sector-btn.sb-destacado .s-sec{color:#8a6310}
+
+/* v1.5.70 — Cartel de modo prueba: se ve cuando la app NO corre desde su
+   dirección oficial (por ejemplo, abriendo el archivo desde Descargas). */
+#pruebaBanner{position:relative;z-index:10000;display:flex;align-items:flex-start;gap:12px;
+  padding:12px 16px;background:linear-gradient(135deg,#7a5b12,#4a3608);
+  border-bottom:2px solid #e8c97a;color:#fff6e0;font-size:13px;line-height:1.5}
+#pruebaBanner .pb-ico{font-size:22px;line-height:1;flex:none}
+#pruebaBanner .pb-txt{flex:1;min-width:0}
+#pruebaBanner b{color:#ffe9b8}
+#pruebaBanner .pb-x{background:none;border:none;color:#ffe9b8;font-size:20px;line-height:1;
+  cursor:pointer;padding:0 3px;flex:none;opacity:.85;font-family:inherit}
+#pruebaBanner .pb-x:hover{opacity:1}
+@media print{#pruebaBanner{display:none}}
+
+/* Cuerpo de carpeta y subcarpetas */
+.sb-grupo-b{padding-top:4px}
+.sb-grupo-b.abre{animation:sbAbre .26s cubic-bezier(.2,.85,.3,1) both}
+@keyframes sbAbre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.sb-grupo-b.abre .sector-btn{animation:sbItem .3s ease both}
+.sb-grupo-b.abre .sector-btn:nth-child(1){animation-delay:.02s}
+.sb-grupo-b.abre .sector-btn:nth-child(2){animation-delay:.05s}
+.sb-grupo-b.abre .sector-btn:nth-child(3){animation-delay:.08s}
+.sb-grupo-b.abre .sector-btn:nth-child(4){animation-delay:.11s}
+.sb-grupo-b.abre .sector-btn:nth-child(n+5){animation-delay:.14s}
+@keyframes sbItem{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+.sb-sub{margin:4px 0 6px 4px;padding-left:9px}
+.sb-sub::before{opacity:.45;width:2px}
+.light-mode .sb-sub::before{opacity:.7}
+@media(prefers-reduced-motion:reduce){
+  .sb-grupo-b.abre,.sb-grupo-b.abre .sector-btn{animation:none}
+  .sb-chev,.sb-gh:hover{transition:none;transform:none}
+}
+
+/* Separación entre pestañas y píldora activa un poco más marcada */
+.sector-btn{margin-bottom:2px}
+.sector-btn.active .s-name{color:#fff}
+.light-mode .sector-btn:hover .s-icon{background:#e4edf6;border-color:#c9d9e8}
+
+/* ── 3) MODO CLARO: correcciones puntuales de contraste ───────────── */
+/* (además del corrector automático que corre en JS) */
+.light-mode .aviso-alerta small{color:#a15c04}
+.light-mode .info-banner .ib-ok{color:#15803d}
+.light-mode .welcome-state small{color:#5a7a9a}
+.light-mode .notif-list,.light-mode .np-head h4{color:#15314f}
+.light-mode .sb-section{color:#243b53}
+.light-mode .s-name{color:inherit}
+
+/* ── 4) SALUDO DEL DÍA ────────────────────────────────────────────── */
+.sal-card{position:relative;display:flex;align-items:flex-start;gap:12px;margin:0 0 10px;padding:13px 15px;
+  border-radius:16px;border:1px solid rgba(122,175,212,.20);
+  background-color:rgba(13,25,40,.85);
+  background-image:linear-gradient(90deg,var(--acc),var(--sec) 55%,rgba(122,175,212,0) 95%);
+  background-size:100% 2.5px;background-position:top;background-repeat:no-repeat;
+  box-shadow:0 10px 26px rgba(0,0,0,.28);
+  animation:salEntra .45s cubic-bezier(.2,.9,.3,1.3) both;overflow:hidden}
+.sal-card::after{content:'';position:absolute;right:-40px;top:-55px;width:150px;height:150px;border-radius:50%;
+  background-image:radial-gradient(circle,var(--acc-soft),rgba(255,255,255,0) 68%);pointer-events:none}
+.sal-emoji{font-size:26px;line-height:1;flex:none;margin-top:1px}
+.sal-txt{flex:1;min-width:0}
+.sal-hola{font-size:15.5px;font-weight:800;color:#eaf3fb;letter-spacing:.2px}
+.sal-frase{font-size:12.5px;line-height:1.5;color:#a9c6de;margin-top:3px}
+.sal-x{background:none;border:none;color:#8fb4d0;font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex:none;opacity:.75}
+.sal-x:hover{opacity:1}
+.light-mode .sal-card{background-color:#ffffff;border-color:#dbe4ee;box-shadow:0 10px 24px rgba(21,49,79,.10);
+  background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 55%,rgba(74,128,168,0) 95%)}
+.light-mode .sal-hola{color:#15314f}
+.light-mode .sal-frase{color:#4a6a88}
+.light-mode .sal-x{color:#6b87a3}
+@keyframes salEntra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.sal-card.sal-sale{animation:salSale .35s ease forwards}
+@keyframes salSale{to{opacity:0;transform:translateY(-8px);margin-bottom:0;padding-top:0;padding-bottom:0;height:0}}
+@media(prefers-reduced-motion:reduce){.sal-card{animation:none}}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v1.5.72 — Cómo se VE lo cargado: cintita de resumen, vista de tarjetas,
+   carpetas de fecha más cortas y panel de inicio.
+   Es todo apariencia: no cambia ni una coma de lo que está guardado.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* — Cintita de resumen arriba de cada pestaña — */
+.rz-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;margin:0 2px 8px;border-radius:12px;
+  background:rgba(20,30,46,.75);border:1px solid rgba(122,175,212,.15);font-size:12px;color:#a9c6de}
+.rz-bar b{color:#e7f0f8;font-size:13px}
+.rz-i{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.rz-i+.rz-i{padding-left:10px;border-left:1px solid rgba(122,175,212,.18)}
+.rz-hoy b{color:#4ade80}
+.rz-ult{color:#7f9fb8;overflow:hidden;text-overflow:ellipsis}
+.light-mode .rz-bar{background:#fff;border-color:#d6e2ee;color:#4a6a88}
+.light-mode .rz-bar b{color:#15314f}
+.light-mode .rz-hoy b{color:#15803d}
+.light-mode .rz-ult{color:#6b87a3}
+
+/* — Selector Tabla / Tarjetas — */
+.vw-toggle{display:inline-flex;gap:4px;padding:3px;margin:0 2px 8px;border-radius:11px;background:rgba(13,25,40,.6);border:1px solid rgba(122,175,212,.14)}
+.vw-btn{background:none;border:none;color:#7f9fb8;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s}
+.vw-btn.on{background:rgba(122,175,212,.18);color:#e7f0f8;box-shadow:inset 0 0 0 1px rgba(122,175,212,.25)}
+.light-mode .vw-toggle{background:#eef4fa;border-color:#d6e2ee}
+.light-mode .vw-btn{color:#5a7a9a}
+.light-mode .vw-btn.on{background:#fff;color:#15314f}
+
+/* — Chips de período (Hoy / 7 días / Este mes / Todo) — */
+.fchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 2px 10px}
+.fchip{background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.18);color:#a9c6de;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:20px;cursor:pointer;transition:background .15s}
+.fchip b{color:#7aafd4;margin-left:4px}
+.fchip:hover{background:rgba(122,175,212,.18)}
+.fchip.on{background-image:linear-gradient(120deg,#1f4a74,#2563b8);border-color:rgba(255,255,255,.2);color:#fff}
+.fchip.on b{color:#ffe6a8}
+.light-mode .fchip{background:#eef4fa;border-color:#d6e2ee;color:#4a6a88}
+.light-mode .fchip b{color:#2563b8}
+.light-mode .fchip.on{background-image:none;background:#2563b8;color:#fff;border-color:#2563b8}
+.light-mode .fchip.on b{color:#ffe6a8}
+.vw-vacio{padding:18px;text-align:center;color:#7f9fb8;font-size:12.5px}
+.light-mode .vw-vacio{color:#6b87a3}
+
+/* — Carpetas en vista tarjetas — */
+.cf-bloque{margin-bottom:10px}
+.cf-head{display:flex;align-items:center;gap:8px;width:100%;text-align:left;cursor:pointer;
+  background-image:linear-gradient(90deg,rgba(122,175,212,.16),rgba(122,175,212,.04));
+  border:1px solid rgba(122,175,212,.16);border-radius:11px;padding:9px 12px;margin-bottom:8px;
+  color:#cfe1f0;font-size:12.5px;font-weight:700;letter-spacing:.3px}
+.cf-head.letra{cursor:default;justify-content:flex-start}
+.cf-chev{color:#7aafd4;font-size:11px}
+.cf-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cf-count{background:rgba(122,175,212,.18);border:1px solid rgba(122,175,212,.2);border-radius:11px;padding:2px 9px;font-size:11px;color:#a9c6de;flex-shrink:0}
+.light-mode .cf-head{background-image:none;background:#eef4fa;border-color:#d6e2ee;color:#15314f}
+.light-mode .cf-count{background:#fff;border-color:#d6e2ee;color:#4a6a88}
+
+/* — Tarjeta de registro — */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:9px;margin-bottom:6px}
+.rec-card{background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);border-left:3px solid var(--sec);
+  border-radius:13px;padding:11px 13px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+.rec-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.35);border-color:rgba(122,175,212,.35)}
+.rec-card.rc-new{border-left-color:#4ade80}
+.rec-card.rc-sel{box-shadow:inset 0 0 0 2px #2563b8}
+.rc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.rc-tit{flex:1;min-width:0;font-size:14px;font-weight:700;color:#e7f0f8;line-height:1.3;word-break:break-word}
+.rc-cb{width:17px;height:17px;margin-top:2px;flex-shrink:0}
+.rc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px}
+.rc-chip{display:inline-flex;flex-direction:column;gap:1px;background:rgba(122,175,212,.08);border:1px solid rgba(122,175,212,.12);
+  border-radius:9px;padding:4px 9px;font-size:12px;color:#cbd9e6;max-width:100%;overflow:hidden}
+.rc-chip i{font-style:normal;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:#7aafd4}
+.rc-det{margin:5px 0;padding:7px 9px;background:rgba(122,175,212,.07);border-left:3px solid rgba(122,175,212,.35);
+  border-radius:7px;font-size:12px;color:#cbd9e6;white-space:pre-wrap;word-break:break-word;max-height:112px;overflow:auto}
+.rc-det b{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:#7aafd4;margin-bottom:3px}
+.rc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;padding-top:7px;
+  border-top:1px solid rgba(122,175,212,.10);font-size:10.5px;color:#7f9fb8}
+.rc-acts{margin-left:auto;display:flex;gap:5px}
+.light-mode .rec-card{background:#fff;border-color:#d6e2ee}
+.light-mode .rc-tit{color:#15314f}
+.light-mode .rc-chip{background:#f3f8fc;border-color:#e0eaf4;color:#33526f}
+.light-mode .rc-chip i{color:#4a6a88}
+.light-mode .rc-det{background:#f3f8fc;color:#33526f}
+.light-mode .rc-det b{color:#4a6a88}
+.light-mode .rc-foot{color:#6b87a3;border-top-color:#e6eef6}
+
+/* — Panel de inicio — */
+.ini-wrap{padding:2px}
+.ini-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ini-head h3{font-size:17px;color:#e7f0f8;margin:0}
+.ini-head p{font-size:11.5px;color:#7f9fb8;margin:2px 0 0}
+.ini-ref{background:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.22);color:#a9c6de;font-size:11.5px;font-weight:600;padding:7px 13px;border-radius:10px;cursor:pointer}
+.ini-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:9px;margin-bottom:12px}
+.ini-kpi{background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);border-radius:14px;padding:13px 14px;position:relative;overflow:hidden}
+.ini-kpi::after{content:'';position:absolute;right:-18px;top:-24px;width:78px;height:78px;border-radius:50%;background-image:radial-gradient(circle,rgba(122,175,212,.16),rgba(0,0,0,0) 65%);pointer-events:none}
+.ini-k-num{font-size:26px;font-weight:800;color:#fff;line-height:1}
+.ini-k-lab{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:#7aafd4;margin-top:5px}
+.ini-k-ico{position:absolute;right:11px;bottom:9px;font-size:19px;opacity:.45}
+.ini-kpi.k-verde .ini-k-num{color:#4ade80}
+.ini-kpi.k-oro .ini-k-num{color:#e8be62}
+.ini-sec{background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+.ini-tit{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:#7aafd4;font-weight:700;margin-bottom:10px}
+.ini-bars{display:flex;align-items:flex-end;gap:6px;height:112px}
+.ini-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.ini-b-n{font-size:10.5px;color:#a9c6de;height:13px}
+.ini-b-col{flex:1;width:100%;display:flex;align-items:flex-end;background:rgba(122,175,212,.07);border-radius:7px;overflow:hidden}
+.ini-b-col i{display:block;width:100%;border-radius:7px;background-image:linear-gradient(180deg,#5aa6dd,#2563b8);min-height:3px}
+.ini-b.hoy .ini-b-col i{background-image:linear-gradient(180deg,#e8be62,#c79a3a)}
+.ini-b-l{font-size:10px;color:#7f9fb8;text-transform:capitalize}
+.ini-lista{display:flex;flex-direction:column;gap:6px}
+.ini-item{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:rgba(122,175,212,.06);border:1px solid rgba(122,175,212,.10);
+  border-radius:10px;padding:8px 11px;cursor:pointer;color:#cbd9e6;font-size:12.5px;transition:background .15s,transform .15s}
+.ini-item:hover{background:rgba(122,175,212,.14);transform:translateX(3px)}
+.ini-item.ii-fijo{cursor:default}
+.ini-item.ii-fijo:hover{background:rgba(122,175,212,.06);transform:none}
+.light-mode .ini-item.ii-fijo:hover{background:#f3f8fc}
+.ini-item .ii-ico{font-size:16px;flex-shrink:0}
+.ini-item .ii-txt{flex:1;min-width:0}
+.ini-item .ii-txt b{display:block;color:#e7f0f8;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-item .ii-txt small{display:block;font-size:10.5px;color:#7f9fb8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-item .ii-n{background:rgba(122,175,212,.18);border-radius:11px;padding:3px 9px;font-size:11px;color:#e7f0f8;flex-shrink:0}
+.ini-vacio{padding:14px;text-align:center;color:#7f9fb8;font-size:12px}
+.light-mode .ini-head h3{color:#15314f}
+.light-mode .ini-head p,.light-mode .ini-vacio{color:#6b87a3}
+.light-mode .ini-kpi,.light-mode .ini-sec{background:#fff;border-color:#d6e2ee}
+.light-mode .ini-k-num{color:#15314f}
+.light-mode .ini-k-lab,.light-mode .ini-tit{color:#4a6a88}
+.light-mode .ini-kpi.k-verde .ini-k-num{color:#15803d}
+.light-mode .ini-kpi.k-oro .ini-k-num{color:#a15c04}
+.light-mode .ini-item{background:#f3f8fc;border-color:#e0eaf4;color:#33526f}
+.light-mode .ini-item .ii-txt b{color:#15314f}
+.light-mode .ini-item .ii-txt small,.light-mode .ini-b-l,.light-mode .ini-b-n{color:#6b87a3}
+.light-mode .ini-item .ii-n{background:#e3edf7;color:#15314f}
+.light-mode .ini-ref{background:#eef4fa;border-color:#d6e2ee;color:#33526f}
+.light-mode .ini-b-col{background:#eef4fa}
+.sb-inicio .s-icon{background:rgba(199,154,58,.16);border-color:rgba(199,154,58,.3)}
+
+@media(max-width:820px){
+  .card-grid{grid-template-columns:1fr}
+  .ini-k-num{font-size:22px}
+  .ini-bars{height:96px}
+  .rz-i+.rz-i{padding-left:8px}
+}
 </style>
 </head>
 <body>
@@ -1082,13 +1397,13 @@ textarea.fi{resize:vertical;min-height:72px}
   <div class="upd-text">
     <div class="upd-icon">🔄</div>
     <div class="upd-msg">
-      <strong>¡Nueva actualización disponible!</strong>
-      Hay una nueva versión de SUEP. Recargá para obtener las últimas mejoras.
+      <strong>No te olvides de actualizar</strong>
+      Hay una versión nueva de SUEP. Tocá Actualizar ahora: tus datos no se tocan.
     </div>
   </div>
   <div class="upd-actions">
     <button class="upd-btn-skip" onclick="dismissUpdate()">Ahora no</button>
-    <button class="upd-btn-ok" onclick="applyUpdate()">⚡ Actualizar</button>
+    <button class="upd-btn-ok" onclick="applyUpdate()">⚡ Actualizar ahora</button>
   </div>
 </div>
 
@@ -1175,6 +1490,8 @@ textarea.fi{resize:vertical;min-height:72px}
 
     <!-- MAIN -->
     <main class="main-content">
+      <!-- v1.5.64: saludo del día (frase distinta cada día, según la hora) -->
+      <div id="saludoDia" style="padding:0 2px"></div>
       <!-- v1.5.56: banner de avisos fijos (lo cargan las administradoras) -->
       <div id="avisoBanner" style="padding:0 2px"></div>
       <div class="sector-header" id="sectorHeader" style="display:none">
@@ -1237,6 +1554,20 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="cfg-item-content">
       <span id="darkModeLabel">Activar modo claro</span>
       <span class="cfg-sub">Tema oscuro para la noche</span>
+    </div>
+  </button>
+  <button class="cfg-item" onclick="palToggle()">
+    <span class="cfg-icon" id="palIcono">🎨</span>
+    <div class="cfg-item-content">
+      <span id="palLabel">Paleta del período</span>
+      <span class="cfg-sub" id="palSub">Los colores cambian cada 5 días</span>
+    </div>
+  </button>
+  <button class="cfg-item" onclick="salCambiarNombre()">
+    <span class="cfg-icon">👋</span>
+    <div class="cfg-item-content">
+      <span>Cómo quiero que me salude</span>
+      <span class="cfg-sub" id="salSub">Nombre del saludo diario</span>
     </div>
   </button>
   <div class="cfg-head">⚙️ Configuración</div>
@@ -1410,6 +1741,68 @@ textarea.fi{resize:vertical;min-height:72px}
 // ══════════════════════════════════════════════════════════════════
 const APP_VERSION = (document.querySelector('meta[name="app-version"]')?.content || '1.0.0').trim();
 
+// ══════════════════════════════════════════════════════════════════
+// MODO PRUEBA  (v1.5.63)
+// ──────────────────────────────────────────────────────────────────
+// EL PROBLEMA QUE RESUELVE: cuando se prueba un archivo nuevo ANTES de subirlo a
+// GitHub (abriéndolo desde la carpeta de descargas), ese archivo anunciaba su
+// versión en la nube. Resultado: todos los celulares y PCs que tenían la app
+// publicada empezaban a recibir "¡Nueva actualización disponible!" de una versión
+// que todavía NO existía en GitHub, y como al recargar seguían bajando la vieja,
+// el cartel volvía y volvía.
+// AHORA: la app se considera PUBLICADA solo si corre desde su dirección web real.
+// Si se abre desde el archivo del disco (file://), desde localhost o desde una
+// vista previa, queda en MODO PRUEBA y entonces:
+//   • no consulta GitHub ni muestra el cartel de actualización,
+//   • no se actualiza sola (no te pisa el archivo que estás probando),
+//   • y —lo más importante— NO publica su versión en la nube: nadie se entera
+//     de una versión que todavía no subiste.
+// Todo lo demás (datos, carga, sincronización con Supabase) funciona igual.
+// ══════════════════════════════════════════════════════════════════
+const APP_EN_PRUEBA = (function(){
+  try{
+    const proto = String(location.protocol || '').toLowerCase();
+    const host  = String(location.hostname || '').toLowerCase();
+    // Archivo abierto directamente del dispositivo (descargas, USB, WhatsApp…)
+    if(proto === 'file:' || proto === 'content:' || proto === 'blob:' || proto === 'about:') return true;
+    // Servidor local o red interna
+    if(!host || host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.endsWith('.local')) return true;
+    return false;   // cualquier dirección web real = app publicada
+  }catch(_){ return true; }   // si no se puede saber, nos quedamos del lado seguro
+})();
+if(APP_EN_PRUEBA){
+  console.log('🧪 SUEP ' + APP_VERSION + ' en MODO PRUEBA (' + (location.hostname || location.protocol) +
+    '): no se avisan, no se aplican y no se publican actualizaciones. Subí el archivo a GitHub para que la versión sea oficial.');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.70 — CARTEL VISIBLE DE MODO PRUEBA
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA QUE RESUELVE: al abrir el archivo directo desde Descargas, el
+// navegador lo trata como OTRO sitio distinto de la dirección de siempre. Los
+// datos guardados en el equipo pertenecen a esa dirección, no al archivo, así
+// que la app se ve COMPLETAMENTE VACÍA — como si nadie hubiera cargado nada.
+// Antes eso solo se avisaba por consola (donde nadie mira). Ahora se ve.
+// ═══════════════════════════════════════════════════════════════════
+function _pruebaCartel(){
+  if(!APP_EN_PRUEBA) return;
+  if(document.getElementById('pruebaBanner')) return;
+  const local = String(location.protocol || '').toLowerCase().indexOf('file') === 0;
+  const div = document.createElement('div');
+  div.id = 'pruebaBanner';
+  div.innerHTML =
+    '<div class="pb-ico">🧪</div>' +
+    '<div class="pb-txt"><b>Estás viendo una copia de prueba, no la app real.</b> ' +
+    (local
+      ? 'Abriste el archivo desde el dispositivo, y para el navegador eso es otro sitio distinto del de siempre: acá no están los datos cargados, y lo que cargues no le llega a nadie. Subí el archivo a GitHub y entrá por la dirección de siempre.'
+      : 'Esta dirección no es la oficial de la app, así que no muestra los datos reales ni avisa de actualizaciones.') +
+    '</div>' +
+    '<button class="pb-x" onclick="this.parentNode.remove()" title="Ocultar">×</button>';
+  document.body.insertBefore(div, document.body.firstChild);
+}
+document.addEventListener('DOMContentLoaded', _pruebaCartel);
+if(document.readyState !== 'loading') _pruebaCartel();
+
 // ─── URL "cruda" de tu archivo en GitHub (la usa el chequeo automático) ───
 // 👉 EDITÁ ESTA LÍNEA UNA SOLA VEZ con la ruta real de tu repo:
 //    https://raw.githubusercontent.com/USUARIO/REPO/RAMA/ARCHIVO.html
@@ -1428,14 +1821,15 @@ function _verMayor(a, b){
 
 let _versionRemotaPendiente = null;
 
-// Consulta GitHub y, si hay una versión más nueva publicada, muestra el banner.
-async function checkForUpdates(){
-  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return; // sin configurar aún
+// ─── Qué versión está REALMENTE publicada en GitHub ───
+// Se consulta una sola vez por minuto (el resultado queda cacheado) y la usan
+// tanto el chequeo automático como la validación del aviso que llega por la nube.
+let _verPublicadaCache = { ver:null, ts:0 };
+async function _versionPublicadaEnGitHub(){
+  if(APP_EN_PRUEBA) return null;                                        // en prueba no se consulta
+  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return null;
+  if(_verPublicadaCache.ver && (Date.now() - _verPublicadaCache.ts) < 60*1000) return _verPublicadaCache.ver;
   try{
-    // ✅ v1.5.50: pedimos SOLO los primeros 4 KB del archivo (donde está el
-    // <meta app-version>) en vez de bajarlo entero. Antes cada chequeo se traía
-    // el archivo completo (más de 1,5 MB) × cada dispositivo × cada 5 minutos.
-    // Con esto el chequeo pesa casi nada, así que además lo hacemos más seguido.
     let html = '';
     try{
       const r = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store', headers:{ 'Range':'bytes=0-4095' } });
@@ -1443,12 +1837,26 @@ async function checkForUpdates(){
     }catch(_){ /* si el servidor no acepta Range, caemos al pedido completo */ }
     if(!html){
       const resp = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store' });
-      if(!resp.ok) return;
+      if(!resp.ok) return null;
       html = await resp.text();
     }
     const m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
-    if(!m) return;
-    const remota = m[1].trim();
+    if(!m) return null;
+    const ver = m[1].trim();
+    _verPublicadaCache = { ver, ts: Date.now() };
+    return ver;
+  }catch(e){ return null; }   // sin conexión: se reintenta en el próximo ciclo
+}
+
+// Consulta GitHub y, si hay una versión más nueva publicada, muestra el banner.
+async function checkForUpdates(){
+  if(APP_EN_PRUEBA) return;                                             // 🧪 probando: no avisar nada
+  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return; // sin configurar aún
+  try{
+    // ✅ v1.5.50: se piden SOLO los primeros 4 KB del archivo (donde está el
+    // <meta app-version>) en vez de bajarlo entero, así el chequeo pesa casi nada.
+    const remota = await _versionPublicadaEnGitHub();
+    if(!remota) return;
     if(_verMayor(remota, APP_VERSION) === 1){
       _versionRemotaPendiente = remota;
       // Mostramos igual el cartel manual (sirve de respaldo si la actualización
@@ -1456,7 +1864,8 @@ async function checkForUpdates(){
       const banner = document.getElementById('updateBanner');
       if(banner){
         const msg = banner.querySelector('.upd-msg');
-        if(msg) msg.innerHTML = '<strong>¡Nueva actualización disponible!</strong> Versión ' + remota + ' lista. Recargá para obtener las últimas mejoras.';
+        if(msg) msg.innerHTML = '<strong>No te olvides de actualizar</strong> Ya está la versión ' + remota +
+          '. Tocá Actualizar ahora — tarda unos segundos y no se pierde nada de lo cargado.';
         banner.classList.add('show');
       }
       // Y la aplicamos SOLA (con tope anti-bucle).
@@ -1545,6 +1954,10 @@ const VERSION_KEY = 'suep_version';
 // Publica MI versión en la nube, pero solo si es más nueva que la anotada.
 // Así un dispositivo viejo nunca "baja" la marca ni hace retroceder a los demás.
 function _publicarVersion(){
+  // 🧪 v1.5.63 — Si estamos probando un archivo que todavía no está en GitHub,
+  // NO se publica nada: así ningún dispositivo recibe el aviso de una versión
+  // que aún no existe.
+  if(APP_EN_PRUEBA) return;
   try{
     const anotada = localStorage.getItem(VERSION_KEY) || '0.0.0';
     if(_verMayor(APP_VERSION, anotada) === 1){
@@ -1554,12 +1967,27 @@ function _publicarVersion(){
   }catch(_){}
 }
 // Llega una versión (por realtime o al bajar datos): si es más nueva, actualizar solo.
-function _recibirVersionRemota(valor){
+async function _recibirVersionRemota(valor){
   try{
     const remota = String(valor || '').trim();
     if(!remota || !/^\d+(\.\d+)*$/.test(remota)) return;
     localStorage.setItem(VERSION_KEY, remota);
+    if(APP_EN_PRUEBA) return;                        // 🧪 probando: no avisar ni recargar
     if(_verMayor(remota, APP_VERSION) !== 1) return; // no es más nueva: nada que hacer
+    // 🧪 v1.5.63 — Antes de avisar, confirmamos que esa versión EXISTE publicada
+    // en GitHub. Si la nube anuncia una versión más nueva que la publicada (por
+    // ejemplo, porque quedó anotada desde un archivo de prueba), el aviso se
+    // ignora y se corrige la marca de la nube: así el cartel no vuelve más.
+    const publicada = await _versionPublicadaEnGitHub();
+    if(publicada && _verMayor(remota, publicada) === 1){
+      console.warn('⚠️ La nube anuncia la versión ' + remota + ', pero en GitHub está publicada la ' +
+                   publicada + '. Se ignora el aviso y se corrige la marca (venía de un archivo de prueba).');
+      try{
+        localStorage.setItem(VERSION_KEY, publicada);
+        if(typeof syncToSupabase === 'function') syncToSupabase(VERSION_KEY, publicada);
+      }catch(_){}
+      return;
+    }
     _versionRemotaPendiente = remota;
     const banner = document.getElementById('updateBanner');
     if(banner){
@@ -1946,7 +2374,7 @@ const SECTORS = [
     ]},
 
   ]},
-  { id:'RECLUTAMIENTO', name:'Reclutamiento', icon:'🪖', color:'#6b21a8', bg:'#f3e8ff', modules:[
+  { id:'RECLUTAMIENTO', name:'División Reclutamiento CCO', icon:'🪖', color:'#6b21a8', bg:'#f3e8ff', modules:[
 
     { id:'POST_SEGURIDAD', name:'Postulantes Seguridad', fields:[
       {key:'apellidoNombre',  label:'Apellido y Nombre',         type:'text',   req:true},
@@ -2015,13 +2443,10 @@ const SECTORS = [
   ]},
   { id:'ADMINISTRATIVA', name:'Administrativa', icon:'🏛️', color:'#374151', bg:'#f3f4f6', modules:[
 
-    { id:'AUTORIZADOS', name:'Autorizados', fields:[
-      {key:'apellidoNombre', label:'Efectivo',            type:'org-select', req:true},
-      {key:'jerarquia',      label:'Jerarquía',           type:'text', readonlyAuto:true},
-      {key:'autorizacion',   label:'Autorización',        type:'text'},
-      {key:'vigencia',       label:'Vigencia hasta',      type:'date'},
-      {key:'obs',            label:'Observaciones',       type:'textarea'},
-    ]},
+    // v1.5.63 — La sub-pestaña "Autorizados" YA NO ESTÁ acá. Las autorizaciones
+    // (Art. 12) se cargan únicamente en la pestaña AUTORIZACIONES del Panel
+    // Institucional; lo que estaba cargado en esta sub-pestaña se pasó para allá
+    // solo (ver migrarAutorizaciones()), sin perder ningún registro.
 
     { id:'LICENCIAS', name:'Licencias', fields:[
       {key:'apellidoNombre', label:'Apellido y Nombre',   type:'text',   req:true},
@@ -2214,9 +2639,9 @@ const SECTORS = [
   // (universal:true). Los permisos finos van por registro: cada uno edita lo que
   // cargó él mismo, el borrado es solo de las administradoras y la cuenta
   // 'visor' únicamente mira (ver gdVistaLista / gdAbrir / gdBorrar).
-  { id:'GESTION_DOC', name:'Gestión Documental Institucional', icon:'🗂️', color:'#2563eb', bg:'#dbeafe',
+  { id:'GESTION_DOC', name:'Documentación Institucional', icon:'🗂️', color:'#2563eb', bg:'#dbeafe',
     custom:'gestiondoc', universal:true, modules:[
-    { id:'GESTION_DOC', name:'Gestión Documental Institucional', fields:[
+    { id:'GESTION_DOC', name:'Documentación Institucional', fields:[
       {key:'tipo',   label:'Tipo de documento', type:'text'},
       {key:'titulo', label:'Documento',         type:'text'},
       {key:'fecha',  label:'Fecha',             type:'date'},
@@ -2288,7 +2713,7 @@ const SECTORS = [
   // custom:'licencias' → usa la vista propia renderLicencias() con el organigrama
   // jerárquico embebido (LIC_PERSONAL). Por ahora la ven todos los usuarios;
   // los roles específicos se van a definir más adelante.
-  { id:'LICENCIAS', name:'Licencias y Autorizaciones', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
+  { id:'LICENCIAS', name:'Licencias', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
     { id:'LICENCIAS', name:'Licencias', fields:[
       {key:'lp',   label:'LP',               type:'text'},
       {key:'tipo', label:'Tipo de licencia', type:'text'},
@@ -2310,6 +2735,35 @@ const SECTORS = [
       {key:'dias',  label:'Días',    type:'text'},
       {key:'viaje', label:'Viaje',   type:'text'},
       {key:'anio',  label:'Año',     type:'text'},
+      {key:'obs',   label:'Observaciones', type:'textarea'},
+    ]},
+  ]},
+
+  // ─── AUTORIZACIONES (Art. 12) — v1.5.63 ───
+  // Pestaña propia dentro del Panel Institucional. Antes las autorizaciones se
+  // cargaban en DOS lugares (mezcladas en "Licencias y Autorizaciones" y en la
+  // sub-pestaña "Autorizados" de Administrativa). Ahora se cargan y se controlan
+  // acá, con su propia clave de datos. Las reglas son las mismas de siempre:
+  // 24 o 48 hs, tope de 2 por mes por efectivo (control solo de administradoras)
+  // y cada jefe carga únicamente sobre su personal.
+  { id:'AUTORIZACIONES', name:'Autorizaciones', icon:'🪪', color:'#0e7490', bg:'#cffafe',
+    universal:true, custom:'autorizaciones', modules:[
+    { id:'AUTORIZACIONES', name:'Autorizaciones', fields:[
+      {key:'lp',   label:'LP',               type:'text'},
+      {key:'obs',  label:'Observaciones',    type:'textarea'},
+    ],
+      // Columnas para Excel / PDF / Imprimir: en el papel se ve el nombre, la
+      // jerarquía, la duración y las fechas (el registro guarda el LP).
+      exportFields:[
+      {key:'lp',    label:'LP',      type:'text'},
+      {label:'Jerarquía', type:'text', calc:r=>{ const p=(typeof _licPersona==='function')?_licPersona(r.lp):null; return p?p.jerarquia:''; }},
+      {label:'Apellido y Nombre', type:'text', calc:r=>{ const p=(typeof _licPersona==='function')?_licPersona(r.lp):null; return p?p.nombre:(r._nombreViejo||('LP '+(r.lp||''))); }},
+      {label:'Autorización', type:'text', calc:r=>'Autorización (Art. 12)'},
+      {label:'Duración', type:'text', calc:r=> String(r.dur)==='48' ? '48 hs' : '24 hs'},
+      {key:'desde', label:'Desde',   type:'date'},
+      {key:'hasta', label:'Hasta (último día)', type:'text'},
+      {label:'Se presenta', type:'text', calc:r=>{
+        try{ const d=_licFechaPresenta(r); return d?_licISO(d):''; }catch(_){ return r.presenta||''; } }},
       {key:'obs',   label:'Observaciones', type:'textarea'},
     ]},
   ]},
@@ -2388,6 +2842,71 @@ const SECTORS = [
   ]},
 
 ];
+
+// ══════════════════════════════════════════════
+// CONVOCATORIAS  (v1.5.62 · nombres y avisos v1.5.63)
+// ══════════════════════════════════════════════
+// Los aspirantes de la 1ª convocatoria ya egresaron, pero NO se borra ni se
+// mueve un solo registro: la 1ª sigue guardándose con las claves de siempre
+// (suep_SECCIONES_GEN_SECC_1 … y suep_ASPIRANTES_ASPIRANTES_STATS) y se puede
+// seguir consultando y editando igual que hoy. La 2ª convocatoria se agrega
+// como pestañas NUEVAS con claves nuevas y vacías (…_C2), así que Supabase
+// solo ve filas nuevas: nunca un borrado ni una migración.
+(function _convocatoriasInit(){
+  try{
+    // v1.5.63 — Las dos convocatorias se muestran igual de claras: lo que ya
+    // está cargado queda agrupado como 1ª Convocatoria y la 2ª queda lista y
+    // vacía para cuando arranque. Ninguna dice "Archivo": son las dos
+    // convocatorias del Departamento, cada una con sus propias secciones.
+    const sec = SECTORS.find(x=>x.id==='SECCIONES_GEN');
+    if(sec && sec.modules[0] && sec.modules[0].subTabs){
+      const base = sec.modules[0];
+      base.name = '1️⃣ 1ª Convocatoria';
+      sec.modules.push({
+        id:'SEC_GRUPO_C2', name:'2️⃣ 2ª Convocatoria',
+        subTabs: base.subTabs.map(st=>({ id: st.id+'_C2', name: st.name, fields: st.fields }))
+      });
+    }
+    // En Aspirantes cada convocatoria es su propia serie de estadísticas
+    // (inscriptos, presentes, femeninos, masculinos, bajas, desistieron,
+    // ausentes y desafectados, fecha por fecha).
+    const asp = SECTORS.find(x=>x.id==='ASPIRANTES');
+    if(asp && asp.modules[0]){
+      const m0 = asp.modules[0];
+      m0.name = '1️⃣ Estadísticas · 1ª Convocatoria';
+      asp.modules.push({ id:'ASPIRANTES_STATS_C2', name:'2️⃣ Estadísticas · 2ª Convocatoria', fields: m0.fields });
+    }
+  }catch(e){ console.warn('Convocatorias:', e); }
+})();
+
+// Cuál de las dos convocatorias es la que está CURSANDO. Ese dato decide de qué
+// secciones se nutren Recargo, Imaginarias y las Evaluaciones. Arranca en la 1ª,
+// o sea que todo sigue funcionando exactamente como hoy hasta que una
+// administradora la cambie a mano desde la pestaña Secciones o Aspirantes.
+// Se guarda como un registro más (clave suep_SECCIONES_GEN_CONVOCATORIA), así
+// viaja por Supabase y todos ven la misma.
+function convActiva(){
+  try{
+    const r = JSON.parse(localStorage.getItem('suep_SECCIONES_GEN_CONVOCATORIA')||'[]');
+    return (r && r[0] && String(r[0].activa)==='2') ? '2' : '1';
+  }catch(_){ return '1'; }
+}
+function convSuf(){ return convActiva()==='2' ? '_C2' : ''; }
+function convNombre(v){ return (v||convActiva())==='2' ? '2ª Convocatoria' : '1ª Convocatoria'; }
+function convCambiar(){
+  if(!CU || CU.permiso!=='admin'){ alert('Solo las administradoras pueden cambiar la convocatoria en curso.'); return; }
+  const act = convActiva();
+  const nueva = act==='1' ? '2' : '1';
+  const ok = confirm(
+    'Convocatoria en curso: ' + convNombre(act) + '\n\n' +
+    '¿Pasar a la ' + convNombre(nueva) + '?\n\n' +
+    'No se borra ni se mueve ningún dato. Lo único que cambia es de qué secciones ' +
+    'toman la lista de aspirantes Recargo, Imaginarias y las Evaluaciones.');
+  if(!ok) return;
+  S.set('SECCIONES_GEN','CONVOCATORIA',[{_id:'conv', activa:nueva, _por:(CU&&CU.nombre)||'—', _ts:new Date().toLocaleString('es-AR')}]);
+  try{ buildModTabs(); renderTable(); }catch(_){}
+  alert('Listo: la convocatoria en curso ahora es la ' + convNombre(nueva) + '.');
+}
 
 // ══════════════════════════════════════════════
 // SEED ORGANIGRAMA — 39 efectivos DCFyCCCO
@@ -3076,6 +3595,7 @@ function iniciarSesion(user, esRestauracion){
         if(typeof _centinelaSincronizarPadron === 'function') _centinelaSincronizarPadron();
       }catch(_){}
       migratePanol();
+      try{ autMigrarSiHaceFalta(); }catch(_){}   // v1.5.63: autorizaciones → pestaña propia
       seedOrganigrama();
       seedExpedientes(); // carga inicial del Libro de Expedientes (solo si está vacío) — fire-and-forget
       // 🔒 v1.5.48: si quedó guardada alguna notificación vieja de la cuenta
@@ -3083,6 +3603,8 @@ function iniciarSesion(user, esRestauracion){
       try{ _purgarNotifsVisor(); }catch(_){}
       try{ _ajustarBotoneraNotifs(); }catch(_){} // 🗑️ v1.5.49: "Borrar todo" solo para admin
       buildSidebar(); refreshBadge();
+      // v1.5.72 — Panel de inicio: lo primero que ve cada uno al entrar.
+      try{ showInicio(); }catch(e){ console.warn('Panel de inicio:', e); }
       // Mostrar opción admin del menú de configuración solo a administradoras
       document.getElementById('cfgResetItem').style.display = (user.permiso==='admin') ? 'flex' : 'none';
       var _cfgMig = document.getElementById('cfgMigrarItem'); if(_cfgMig) _cfgMig.style.display = (user.permiso==='admin') ? 'flex' : 'none';
@@ -3253,6 +3775,100 @@ function doLogout(){
 // ══════════════════════════════════════════════
 // SIDEBAR
 // ══════════════════════════════════════════════
+// v1.5.62 — Carpetas del menú. Si mañana se agrega una pestaña nueva y no se la
+// suma a ninguna carpeta, no se pierde: cae sola en "Otras".
+// v1.5.66 — Cada carpeta tiene ahora tres datos separados:
+//   name  = el nombre corto que se lee grande
+//   ac    = quién está a cargo, abreviado ("A/C Crio. E. Velázquez"). Va en una
+//           segunda línea chiquita, para que el nombre no empuje el menú a lo ancho.
+//   color = el color de la carpeta (la barrita de la izquierda y el ícono).
+//           Es lo que hace que el menú se vea vivo y no todo del mismo color.
+const SB_GRUPOS = [
+  { id:'DEST', name:'Panel Institucional', icon:'★', color:'#c79a3a',
+    ids:['NUMEROS_VARIOS','EXPEDIENTES','DISPOSICIONES','GESTION_DOC','AUTORIZACIONES','LICENCIAS'] },
+  // Carpeta propia para lo que se comunica hacia afuera/adentro.
+  { id:'COM',  name:'Comunicaciones', icon:'📣', color:'#18a0a8', ids:['MINUTAS','NOVEDADES'] },
+  // ÁREAS DEL DEPARTAMENTO: carpeta con SUBCARPETAS, una por Secretaría.
+  // Adentro van las pestañas de trabajo de cada área (las mismas de siempre,
+  // con los mismos permisos).
+  { id:'AREAS', name:'Áreas del DCFyCCCO', ac:'A/C Crio. Insp. M. Blanco', icon:'🏛️', color:'#5aa6dd', ids:[], subgrupos:[
+    // "SECTOR>*" = en vez de una sola carpeta, se listan de una todas las
+    // pestañas que tiene adentro, al mismo nivel que las demás. También se puede
+    // poner una sola: 'SECTOR>MODULO'. Los datos, permisos y el contenido de cada
+    // pestaña son EXACTAMENTE los mismos: cambia solo cómo se llega desde el menú.
+    { id:'AREA_ACAD', name:'Secretaría Académica', ac:'A/C Crio. E. Velázquez', icon:'🎓', color:'#8ed08a',
+      ids:['ACADEMICA>*','RECLUTAMIENTO','DOCENTES_GEN','MATERIAS','SECCIONES_GEN'] },
+    { id:'AREA_OPER', name:'Secretaría Operacional', ac:'A/C Crio. E. Muñoz', icon:'⚙️', color:'#5aa6dd',
+      ids:['OPERACIONAL>*','ASPIRANTES','MOVILES'] },
+    { id:'AREA_LOG',  name:'Secretaría Op. Logística', ac:'A/C Crio. A. Sánchez', icon:'📦', color:'#4fbf83',
+      ids:['LOGISTICA>*'] },
+    { id:'AREA_ADM',  name:'Administrativa', ac:'A/C Of. Ppal. J. Catricura', icon:'🗄️', color:'#9fb6c9',
+      ids:['ADMINISTRATIVA>*'] },
+    // v1.5.71 — Enfermería deja de ser una pestaña suelta y pasa a ser una
+    // subcarpeta más dentro de las Áreas del DCFyCCCO, debajo de Administrativa.
+    { id:'AREA_ENF',  name:'Enfermería', icon:'🩺', color:'#e57373',
+      ids:['ENFERMERIA>*'] },
+  ]},
+  { id:'PLAN', name:'Planificación / Diagramación', icon:'🗓️', color:'#8f83db',
+    ids:['HORARIO_DIARIO','DIAGRAMA','AVISOS','CRONOGRAMA','ALMUERZO','EVENTOS','CEREMONIAL'] },
+  { id:'RECU', name:'Recursos', icon:'📦', color:'#d9a03e',
+    ids:['PERTENENCIAS','PERTENENCIAS_INTERNAS','INTERNET_PASS'] },
+  { id:'PERSONAL_DPTO', name:'Personal del DCFyCCCO', ac:'39 efectivos', icon:'👮', color:'#6f8ed8',
+    ids:['ORGANIGRAMA'] },
+];
+function _sbEstado(){ try{ return JSON.parse(localStorage.getItem('suep_sb_grupos')||'{}'); }catch(_){ return {}; } }
+function sbGrupoAbierto(id){
+  const st = _sbEstado();
+  if(Object.prototype.hasOwnProperty.call(st, id)) return !!st[id];
+  // Las pestañas sueltas (sin carpeta) no se pliegan: quedan siempre a la vista.
+  if(String(id||'').indexOf('SOLA_') === 0) return true;
+  // v1.5.63 — Arrancan abiertas: Panel Institucional, Comunicaciones, la carpeta
+  // de Áreas (sus subcarpetas arrancan cerradas, así se ve el índice),
+  // Planificación / Diagramación y Personal del DCFyCCCO.
+  return id==='DEST' || id==='COM' || id==='AREAS' || id==='PLAN' || id==='PERSONAL_DPTO';
+}
+function sbToggleGrupo(id){
+  const st = _sbEstado();
+  st[id] = !sbGrupoAbierto(id);
+  try{ localStorage.setItem('suep_sb_grupos', JSON.stringify(st)); }catch(_){}
+  const g = document.querySelector(`#sectorList .sb-grupo[data-g="${id}"]`);
+  if(!g) return;
+  const cuerpo = g.querySelector('.sb-grupo-b');
+  const chev = g.querySelector('.sb-chev');
+  const cab = g.querySelector('.sb-gh');
+  // v1.5.66 — La flecha gira y el contenido entra con una animación corta,
+  // en vez de aparecer y desaparecer de golpe.
+  if(cuerpo){
+    cuerpo.style.display = st[id] ? 'block' : 'none';
+    cuerpo.classList.remove('abre');
+    if(st[id]){ void cuerpo.offsetWidth; cuerpo.classList.add('abre'); }
+  }
+  if(chev){ chev.textContent = '\u25B8'; chev.classList.toggle('abierto', !!st[id]); }
+  if(cab) cab.classList.toggle('abierta', !!st[id]);
+}
+// Buscador: mientras hay texto se abren todas las carpetas y se muestran solo
+// las pestañas que coinciden. Al borrar el texto vuelve todo como estaba.
+function sbFiltrar(q){
+  q = (q||'').trim().toLowerCase();
+  // v1.5.63 — Se recorren las carpetas de adentro hacia afuera para que una
+  // carpeta con subcarpetas quede visible si CUALQUIERA de sus pestañas coincide.
+  const grupos = Array.from(document.querySelectorAll('#sectorList .sb-grupo')).reverse();
+  grupos.forEach(g=>{
+    const cuerpo = g.querySelector('.sb-grupo-b'); if(!cuerpo) return;
+    let visibles = 0;
+    cuerpo.querySelectorAll('.sector-btn').forEach(b=>{
+      const ok = !q || (b.getAttribute('data-nom')||'').includes(q);
+      b.style.display = ok ? '' : 'none';
+      if(ok) visibles++;
+    });
+    const abierto = q ? true : sbGrupoAbierto(g.getAttribute('data-g'));
+    g.style.display = visibles ? '' : 'none';
+    cuerpo.style.display = abierto ? 'block' : 'none';
+    const chev = g.querySelector('.sb-chev');
+    if(chev){ chev.textContent = '\u25B8'; chev.classList.toggle('abierto', !!abierto); }
+    const cab = g.querySelector('.sb-gh'); if(cab) cab.classList.toggle('abierta', !!abierto);
+  });
+}
 function buildSidebar(){
   const isAdmin=CU.permiso==='admin';
   const isVisor=CU.permiso==='visor';
@@ -3271,21 +3887,111 @@ function buildSidebar(){
     if(veTodo) return true;
     return (CU.sectores||[]).includes(s.id) || s.universal || s.custom;
   });
-  document.getElementById('sectorList').innerHTML=visible.map(s=>{
-    // v1.5.58: Gestión Documental Institucional se suma a las pestañas destacadas.
-    const destacado = (s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES' || s.id==='DISPOSICIONES' || s.id==='GESTION_DOC');
+  // v1.5.62 — El menú se agrupa en carpetas plegables y suma un buscador.
+  // Las pestañas son EXACTAMENTE las mismas y con los mismos permisos: lo único
+  // que cambia es cómo se ordenan en la lista, para no scrollear 29 botones.
+  // v1.5.63 — Del nombre de un módulo separamos el emoji del principio, para
+  // usarlo como ícono del botón (ej: "📰 Novedades" → 📰 + "Novedades").
+  const _sbIcono = nombre=>{
+    const n = String(nombre||'').trim();
+    const m = n.match(/^([^\w\sÁÉÍÓÚÜÑáéíóúüñ]+)\s+(.+)$/);
+    return m ? { icono:m[1], nombre:m[2] } : { icono:null, nombre:n };
+  };
+  // Botón de una pestaña interna (un módulo mostrado al mismo nivel que los
+  // sectores). Al tocarlo entra al sector y se para en ese módulo.
+  const btnModHTML = (s, m)=>{
+    const p = _sbIcono(m.name);
+    const cant = m.subTabs ? m.subTabs.length : '';
     return `
-    <button class="sector-btn${destacado?' sb-destacado':''}" id="sb_${s.id}" onclick="selectSector('${s.id}')">
+    <button class="sector-btn" id="sb_${s.id}__${m.id}"
+      data-nom="${((m.name||'')+' '+(s.name||'')).toLowerCase()}" onclick="selectSector('${s.id}','${m.id}')">
+      <span class="s-icon">${p.icono || s.icon}</span>
+      <span class="s-name">${p.nombre}<span class="s-sec">${s.name}</span></span>
+      <span class="s-count">${cant}</span>
+    </button>`;
+  };
+  const btnHTML = s=>{
+    const destacado = (s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES' || s.id==='DISPOSICIONES' || s.id==='GESTION_DOC' || s.id==='AUTORIZACIONES' || s.id==='LICENCIAS');
+    return `
+    <button class="sector-btn${destacado?' sb-destacado':''}" id="sb_${s.id}"
+      data-nom="${(s.name||'').toLowerCase()}" onclick="selectSector('${s.id}')">
       <span class="s-icon">${s.icon}</span>
       <span class="s-name">${s.name}</span>
       ${destacado?'<span class="sb-pin">★</span>':''}
       <span class="s-count">${s.modules.length}</span>
     </button>`;
-  }).join('');
-  if(!veTodo){
-    const first = (CU.sectores && CU.sectores[0]) || null;
-    if(first) setTimeout(()=>selectSector(first),120);
-  }
+  };
+  // v1.5.63 — Las carpetas pueden tener SUBCARPETAS (un nivel más de anidado):
+  // así las Áreas del Departamento tienen una subcarpeta por Secretaría. Las
+  // pestañas se muestran en el orden en que están listadas en cada carpeta.
+  // Cada entrada del listado puede ser: 'SECTOR' (la pestaña entera),
+  // 'SECTOR>MODULO' (una pestaña interna) o 'SECTOR>*' (todas las internas).
+  const _sbEntradas = ids => {
+    const out = [];
+    (ids||[]).forEach(entrada=>{
+      const [sid, mid] = String(entrada).split('>');
+      const sec = visible.find(x=>x.id===sid);
+      if(!sec) return;
+      if(!mid){ out.push({tipo:'sector', s:sec}); return; }
+      if(mid === '*'){ (sec.modules||[]).forEach(m=>out.push({tipo:'mod', s:sec, m})); return; }
+      const mod = (sec.modules||[]).find(m=>m.id===mid);
+      if(mod) out.push({tipo:'mod', s:sec, m:mod});
+    });
+    return out;
+  };
+  const _sbEntradaHTML = e => e.tipo==='mod' ? btnModHTML(e.s, e.m) : btnHTML(e.s);
+  // Pestañas que todavía no están asignadas a ninguna carpeta → van a "Otras",
+  // así ninguna pestaña puede quedar escondida por un olvido en el listado.
+  const _asignadas = new Set();
+  const _marcar = id => _asignadas.add(String(id).split('>')[0]);
+  SB_GRUPOS.forEach(g=>{
+    (g.ids||[]).forEach(_marcar);
+    (g.subgrupos||[]).forEach(sg=>(sg.ids||[]).forEach(_marcar));
+  });
+  const sueltas = visible.filter(x=>!_asignadas.has(x.id));
+
+  const grupoHTML = (g, nivel)=>{
+    const propias = _sbEntradas(g.ids);
+    const subs = (g.subgrupos||[]).map(sg=>({sg, tabs:_sbEntradas(sg.ids)})).filter(x=>x.tabs.length);
+    const total = propias.length + subs.reduce((t,x)=>t+x.tabs.length, 0);
+    if(!total) return '';
+    // Pestaña suelta: se dibuja el botón sin encabezado ni flechita, pero
+    // envuelto igual en .sb-grupo para que el buscador la siga encontrando.
+    if(g.sola){
+      return `<div class="sb-grupo sb-sola" data-g="${g.id}" style="--gc:${g.color||'var(--acc)'};margin-bottom:4px">
+        <div class="sb-grupo-b" style="display:block">${propias.map(_sbEntradaHTML).join('')}</div>
+      </div>`;
+    }
+    const abierto = sbGrupoAbierto(g.id);
+    // v1.5.64 — El encabezado usa clases (.sb-gh) en vez de colores escritos a
+    // mano, así el modo claro puede oscurecer el texto.
+    // v1.5.66 — Cada carpeta lleva su color propio (--gc) y el "a cargo de"
+    // pasa a una segunda línea abreviada, para que no estire el menú.
+    const col = g.color || 'var(--acc)';
+    return `<div class="sb-grupo${nivel?' sb-sub':''}" data-g="${g.id}" style="--gc:${col}">
+      <button class="sb-gh${nivel?' sb-gh-sub':''}${abierto?' abierta':''}" onclick="sbToggleGrupo('${g.id}')">
+        <span class="sb-chev${abierto?' abierto':''}">▸</span>
+        <span class="sb-gh-ico">${g.icon}</span>
+        <span class="sb-gh-txt">${g.name}${g.ac ? `<span class="sb-gh-ac">${g.ac}</span>` : ''}</span>
+      </button>
+      <div class="sb-grupo-b${abierto?' abre':''}" style="display:${abierto?'block':'none'}">
+        ${propias.map(_sbEntradaHTML).join('')}
+        ${subs.map(x=>grupoHTML(x.sg, nivel+1)).join('')}
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('sectorList').innerHTML =
+    // v1.5.72 — Botón fijo para volver al Panel de inicio.
+    `<button class="sector-btn sb-inicio" id="sb_INICIO" onclick="showInicio()" data-nom="inicio panel">
+       <span class="s-icon">🏠</span><span class="s-name">Inicio</span>
+     </button>` +
+    `<input id="sbFiltro" class="sb-buscar" type="text" placeholder="🔍 Buscar pestaña…"
+       oninput="sbFiltrar(this.value)">` +
+    SB_GRUPOS.map(g=>grupoHTML(g, 0)).join('') +
+    (sueltas.length ? grupoHTML({id:'OTRAS', name:'Otras', icon:'📂', ids:sueltas.map(x=>x.id)}, 0) : '');
+  // v1.5.72 — Antes, a quien tenía pocas pestañas la app le abría sola la
+  // primera. Ahora todos aterrizan en el Panel de inicio y desde ahí eligen.
   // Panel de accesos y administración solo para ADMIN
   if(isAdmin){
     const adminSec = document.getElementById('sectorList');
@@ -3304,16 +4010,41 @@ function buildSidebar(){
           <span class="s-icon">🛠️</span>
           <span class="s-name">Panel de Administración</span>
         </button>
+        <button class="sector-btn" id="sb_REVISION" onclick="showRevisionDatos()">
+          <span class="s-icon">🩺</span>
+          <span class="s-name">Revisión de datos</span>
+        </button>
       </div>`);
   }
 }
-function selectSector(id){
+// v1.5.63 — Segundo parámetro opcional: el módulo al que hay que entrar. Lo usan
+// las pestañas internas que ahora se listan directamente en el menú (por ejemplo
+// las de Logística dentro de su Secretaría).
+function selectSector(id, modId){
   const sec=SECTORS.find(s=>s.id===id); if(!sec) return;
+  // v1.5.73 — Candado: si la pestaña es de acceso restringido y la persona no
+  // lo tiene, no se abre aunque se la llame desde otro lado. Es la misma regla
+  // del menú, así que a quien le corresponde entra igual que siempre.
+  try{
+    if(sec.restringido && typeof iniSectorVisible === 'function' && !iniSectorVisible(sec)){
+      alert('Esa pestaña es de acceso restringido.');
+      return;
+    }
+  }catch(_){}
+  const btnId = modId ? `sb_${id}__${modId}` : `sb_${id}`;
+  // v1.5.62: si la pestaña elegida está en una carpeta cerrada, la abre para
+  // que se vea marcada como activa.
+  try{
+    const btn = document.getElementById(btnId);
+    const grp = btn && btn.closest('.sb-grupo');
+    if(grp && !sbGrupoAbierto(grp.getAttribute('data-g'))) sbToggleGrupo(grp.getAttribute('data-g'));
+  }catch(_){}
   CS=sec;
   // Si el primer módulo tiene sub-pestañas, CM apunta a la primera sub-pestaña
-  CM = sec.modules[0].subTabs ? sec.modules[0].subTabs[0] : sec.modules[0];
+  const _mod = (modId && sec.modules.find(m=>m.id===modId)) || sec.modules[0];
+  CM = _mod.subTabs ? _mod.subTabs[0] : _mod;
   document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
-  const ab=document.getElementById(`sb_${id}`);
+  const ab=document.getElementById(btnId);
   if(ab){ab.classList.add('active');ab.style.background=sec.color;ab.style.color='#fff';}
   // SUEP NEO v1.5.22: el color del sector tiñe toda la interfaz (header hero,
   // hilo superior del panel de datos, tabs) vía la variable CSS --sec.
@@ -3344,6 +4075,17 @@ function buildModTabs(){
       style="${isActive?`background:${CS.color};color:#fff`:''}"
       onclick="selectMod('${m.id}')">${m.name}</button>`;
   }).join('');
+  // v1.5.62 — En Secciones y Aspirantes se muestra cuál es la convocatoria en
+  // curso (la que alimenta Recargo, Imaginarias y Evaluaciones). Solo las
+  // administradoras pueden cambiarla.
+  if(CS.id==='SECCIONES_GEN' || CS.id==='ASPIRANTES'){
+    const esAdmin = CU && CU.permiso==='admin';
+    document.getElementById('modTabs').insertAdjacentHTML('beforeend',
+      `<button class="mod-tab" ${esAdmin?'onclick="convCambiar()"':'disabled'}
+        title="Convocatoria que alimenta Recargo, Imaginarias y Evaluaciones"
+        style="border:1px dashed rgba(122,175,212,.45);background:transparent;${esAdmin?'':'cursor:default;'}opacity:.9">
+        🎯 En curso: ${convNombre()}${esAdmin?' ✏️':''}</button>`);
+  }
   // Habilitar arrastrar con mouse para scroll (desktop)
   setupDragScroll(document.getElementById('modTabs'));
 }
@@ -3501,7 +4243,11 @@ function _selRefreshBar(){
 // TABLA
 // ══════════════════════════════════════════════
 function renderTable(searchOverride){
-  if(typeof avPintarBanner === 'function') avPintarBanner();   // v1.5.56
+  // v1.5.56 · blindado en v1.5.69: si el banner de avisos falla por lo que sea,
+  // NO puede impedir que se dibuje la tabla. Antes, un error acá dejaba la
+  // pestaña completamente en blanco aunque los registros estuvieran cargados.
+  try{ if(typeof avPintarBanner === 'function') avPintarBanner(); }
+  catch(e){ console.warn('Banner de avisos:', e); }
   if(!CS||!CM)return;
   // Al cambiar de módulo, salgo del modo selección y limpio los tildados (v1.5.38)
   const _modKeyActual = CS.id+'|'+CM.id;
@@ -3558,6 +4304,14 @@ function renderTable(searchOverride){
     licEnsureModal();
     // Enfoco el buscador para poder tipear el nombre al toque (v1.5.38)
     setTimeout(()=>{ const b=document.getElementById('licBuscar'); if(b && window.matchMedia && !window.matchMedia('(hover: none)').matches) b.focus(); }, 60);
+    return;
+  }
+
+  // ─── Pestaña custom: AUTORIZACIONES (Art. 12) — v1.5.63 ───
+  if(CS.custom==='autorizaciones'){
+    area.innerHTML = renderAutorizaciones();
+    licEnsureModal();
+    setTimeout(()=>{ const b=document.getElementById('autBuscar'); if(b && window.matchMedia && !window.matchMedia('(hover: none)').matches) b.focus(); }, 60);
     return;
   }
 
@@ -3709,13 +4463,69 @@ function renderTable(searchOverride){
         ${detail?`<tr class="detail-row clickable-row ${rowClass}" onclick="viewDetail('${r._id}')" style="cursor:pointer"><td colspan="${colSpan}" style="padding:6px 12px 12px;background:rgba(13,22,35,.4)">${detail}</td></tr>`:''}`;
   };
 
-  // ─── Carpetas desplegables por fecha (módulos con campo fecha) ───
-  // ✅ v1.5: soporte de carpetas POR MES (groupByMonth) para módulos sin campo
-  // fecha, como Números Varios: agrupa por el mes de la fecha de carga (_ts).
+  // ─── v1.5.72 · Armado de una TARJETA (misma info que la fila de la tabla) ───
+  const cardHTML = r => {
+    const nAtt = (r._attachments && r._attachments.length) || 0;
+    const esNuevo = r._ts_new && (ahora - r._ts_new < TIMEOUT_NUEVO);
+    const puedeEditarEste = puedeEditarRec(r);
+    const puedeBorrarEste = puedeBorrarRec(r);
+    // El título de la tarjeta es el primer dato que se lee bien (nombre, título,
+    // materia…). Si la primera columna es una fecha o una imagen, se busca la
+    // siguiente que sirva y la fecha pasa a ser uno de los datos de abajo.
+    const _val = f => (f.type==='date' && r[f.key]) ? _fechaCorta12(r[f.key]) : cell(f, r[f.key]);
+    const _PREF = ['titulo','apellidoNombre','nombre','aspirante','docente','materia',
+                   'asunto','tema','patente','producto','articulo','item','detalle'];
+    const principal = _PREF.map(k=>cols.find(f=>f.key===k && r[f.key])).find(Boolean)
+                   || cols.find(f=>f.type!=='date' && f.type!=='image' && r[f.key]) || cols[0] || null;
+    const titulo = principal ? _val(principal) : '—';
+    const chips = cols.filter(f=>!principal || f.key!==principal.key)
+      .map(f=>`<span class="rc-chip"><i>${f.label}</i>${_val(f)}</span>`).join('');
+    const det = textAreas
+      .filter(f => r[f.key] && String(r[f.key]).trim())
+      .map(f=>`<div class="rc-det"><b>${f.label}</b>${String(r[f.key]).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`)
+      .join('');
+    const exam = isReclu ? `<div class="rc-chips">${EXAM_KEYS.map(k=>{
+        const v = r[k] || 'Pendiente';
+        const f = fields.find(x=>x.key===k);
+        return `<span class="rc-chip"><i>${f?f.label:k}</i><span class="badge ${EXAM_BADGE[v]||'bx'}">${v}</span></span>`;
+      }).join('')}</div>` : '';
+    const cb = SEL_MODE
+      ? `<input type="checkbox" class="rc-cb" id="selcb_${r._id}" ${SEL_IDS.has(r._id)?'checked':''} onclick="selToggle('${r._id}',event)">`
+      : '';
+    const clic = SEL_MODE ? `onclick="selToggle('${r._id}',event)"` : `onclick="viewDetail('${r._id}')"`;
+    return `<div class="rec-card${esNuevo?' rc-new':''}${SEL_MODE&&SEL_IDS.has(r._id)?' rc-sel':''}" data-id="${r._id}" ${clic}
+      title="${SEL_MODE?'Tocá para seleccionar':'Tocá para ver el detalle completo'}">
+      <div class="rc-top">${cb}<div class="rc-tit">${titulo}</div>
+        ${nAtt?`<button class="att-badge" onclick="event.stopPropagation();viewAttachments('${r._id}')" title="Ver adjuntos">📎 ${nAtt}</button>`:''}
+      </div>
+      ${chips?`<div class="rc-chips">${chips}</div>`:''}
+      ${exam}
+      ${det}
+      <div class="rc-foot">
+        <span>👤 ${r._por||'—'}</span>
+        <span>🕒 ${r._ts||'—'}</span>
+        ${(puedeEditarEste||puedeBorrarEste)?`<span class="rc-acts" onclick="event.stopPropagation()">
+          ${puedeEditarEste?`<button class="btn-e" onclick="openEdit('${r._id}')">✏️</button>`:''}
+          ${puedeBorrarEste?`<button class="btn-d" onclick="delRec('${r._id}')">🗑️</button>`:''}
+        </span>`:''}
+      </div>
+    </div>`;
+  };
+
+  // ─── v1.5.72 · Los registros se agrupan en BLOQUES ───
+  // Un bloque = un encabezado (carpeta de fecha, sección o letra) + sus registros.
+  // Antes cada caso armaba las filas de la tabla por su cuenta; ahora todos arman
+  // la misma lista de bloques y recién al final se dibuja como tabla o como
+  // tarjetas. Se agrupa y se ordena exactamente igual que siempre.
   const dateField = fields.find(f=>f.type==='date');
   const porMes = CM.groupByMonth === true;
   const useFolders = (!!dateField || porMes) && CM.groupByDate !== false && !isOrgan;
-  let bodyHTML = '';
+  const modKey = CS.id+'|'+CM.id;
+  const buscando = palabras.length > 0;   // con búsqueda activa se abre todo
+  let bloques = [];
+  let chipsBar = '';
+  let avisoPeriodo = '';
+
   if(useFolders){
     const grupos = {};
     showRows.forEach(r=>{
@@ -3728,10 +4538,8 @@ function renderTable(searchOverride){
       if(!a) return 1; if(!b) return -1;
       return b.localeCompare(a);
     });
-    const modKey = CS.id+'|'+CM.id;
     if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
     const st = DATE_FOLDERS[modKey];
-    const buscando = palabras.length > 0; // con búsqueda activa se abren todas las carpetas
     // ✅ Si el módulo usa número correlativo (auto:'yearly'), ordenamos cada
     // carpeta por ese número de menor a mayor, así no quedan fuera de orden
     // los que se cargaron a destiempo (ej.: un 1340 cargado después del 1345).
@@ -3740,39 +4548,32 @@ function renderTable(searchOverride){
     const campoNum = fields.find(f=>f.auto==='yearly');
     if(campoNum){
       const _n = r => { const v = parseInt(String(r[campoNum.key]||'').replace(/\D/g,''),10); return isNaN(v) ? Infinity : v; };
-      const _cargaMs = r => {
-        // 1) _ts_new es un Date.now() en ms guardado al crear el registro
-        if(typeof r._ts_new === 'number') return r._ts_new;
-        // 2) _ts es "dd/mm/yyyy, HH:MM" (es-AR, 24h) → lo pasamos a ms
-        const m = String(r._ts||'').match(/(\d{2})\/(\d{2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})/);
-        if(m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime();
-        // 3) el _id arranca con Date.now() en base 36 → último recurso
-        const p = String(r._id||'').split(/[^0-9a-z]/i)[0];
-        const t = parseInt(p, 36);
-        return isNaN(t) ? 0 : t;
-      };
       Object.keys(grupos).forEach(k=>{
         grupos[k] = grupos[k].slice().sort((a,b)=>{
           const dn = _n(a) - _n(b);
           if(dn !== 0) return dn;
-          return _cargaMs(a) - _cargaMs(b); // mismo número → más temprano primero
+          return recCargaMs(a) - recCargaMs(b); // mismo número → más temprano primero
         });
       });
     }
-    bodyHTML = fechas.map(iso=>{
+    // Filtro rápido por período: solo esconde carpetas de la vista.
+    const soloDias = !porMes;
+    const per = buscando ? 'todo' : vwPeriodo(modKey);
+    const visibles = (soloDias && per!=='todo') ? fechas.filter(iso=>vwEnPeriodo(iso, per)) : fechas;
+    if(soloDias && fechas.length > 2 && !buscando) chipsBar = vwChipsHTML(modKey, fechas, grupos, per);
+    if(!visibles.length && fechas.length){
+      avisoPeriodo = `<div class="vw-vacio">No hay registros en ese período.
+        <button class="fchip" onclick="vwSetPeriodo('${modKey}','todo')">Ver todo</button></div>`;
+    }
+    bloques = visibles.map(iso=>{
       const g = grupos[iso];
       // La carpeta más reciente queda abierta por defecto (salvo que el usuario la haya cerrado)
       const open = buscando || st.open.has(iso) || (iso===fechas[0] && !st.closed.has(iso));
-      return `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${iso}',${open?1:0})">
-        <td colspan="${colSpan}"><span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${_fechaCarpetaLabel(iso)} <span class="df-count">${g.length} registro${g.length!==1?'s':''}</span></td>
-      </tr>` + (open ? g.map(rowHTML).join('') : '');
-    }).join('');
+      return { tipo:'carpeta', clave:iso, label:_fechaCarpetaCorto(iso), largo:_fechaCarpetaLabel(iso),
+               cuenta:g.length, unidad:'registro', open, rows:g };
+    });
   } else if(CM.id==='INSTRUCTORES' && fields.some(f=>f.key==='seccion')){
     // ─── Operacional · Instructores: agrupar las notas POR SECCIÓN ───
-    // Las cargas de las distintas secciones venían todas mezcladas. Ahora se
-    // agrupan en carpetas desplegables (Sección 1 … Sección 5) y, dentro de cada
-    // una, ordenadas alfabéticamente por aspirante. Reutiliza el mismo mecanismo
-    // de carpetas (DATE_FOLDERS + toggleDateFolder) usando la sección como clave.
     const _ordSec = s => {
       const n = parseInt(String(s||'').replace(/\D/g,''),10);
       return isNaN(n) ? 999 : n;
@@ -3792,37 +4593,40 @@ function renderTable(searchOverride){
     Object.keys(grupos).forEach(k=>{
       grupos[k] = grupos[k].slice().sort((a,b)=> _nombre(a).localeCompare(_nombre(b),'es'));
     });
-    const modKey = CS.id+'|'+CM.id;
     if(!DATE_FOLDERS[modKey]) DATE_FOLDERS[modKey] = {open:new Set(), closed:new Set()};
     const st = DATE_FOLDERS[modKey];
-    const buscando = palabras.length > 0; // con búsqueda activa se abren todas
-    bodyHTML = secciones.map(sec=>{
+    bloques = secciones.map(sec=>{
       const g = grupos[sec];
-      // Por defecto abre la primera sección; el usuario puede abrir/cerrar las demás
       const open = buscando || st.open.has(sec) || (sec===secciones[0] && !st.closed.has(sec));
       const secSafe = String(sec).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      return `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${sec.replace(/'/g,"\\'")}',${open?1:0})">
-        <td colspan="${colSpan}"><span class="df-chev">${open?'▾':'▸'}</span> ${open?'📂':'📁'} ${secSafe} <span class="df-count">${g.length} aspirante${g.length!==1?'s':''}</span></td>
-      </tr>` + (open ? g.map(rowHTML).join('') : '');
-    }).join('');
+      return { tipo:'carpeta', clave:sec, label:secSafe, largo:secSafe,
+               cuenta:g.length, unidad:'aspirante', open, rows:g };
+    });
   } else if(CS.id==='SECCIONES_GEN'){
-    // ─── Sector Secciones: lista estilo agenda, ordenada alfabéticamente con separadores por letra ───
+    // ─── Secciones: lista tipo agenda, alfabética con separador por letra ───
     const ordenados = showRows.slice().sort((a,b)=>String(a.apellidoNombre||'').localeCompare(String(b.apellidoNombre||''),'es'));
-    let letraActual = '';
-    bodyHTML = ordenados.map(r=>{
+    const porLetra = {};
+    const orden = [];
+    ordenados.forEach(r=>{
       let ini = String(r.apellidoNombre||'').trim().charAt(0).toUpperCase() || '#';
       ini = ini.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       if(!/[A-ZÑ0-9]/.test(ini)) ini = '#';
-      let divisor = '';
-      if(ini !== letraActual){
-        letraActual = ini;
-        divisor = `<tr class="letter-divider"><td colspan="${colSpan}">${ini}</td></tr>`;
-      }
-      return divisor + rowHTML(r);
-    }).join('');
+      if(!porLetra[ini]){ porLetra[ini] = []; orden.push(ini); }
+      porLetra[ini].push(r);
+    });
+    bloques = orden.map(l=>({ tipo:'letra', clave:l, label:l, largo:l,
+                              cuenta:porLetra[l].length, unidad:'', open:true, rows:porLetra[l] }));
   } else {
-    bodyHTML = showRows.map(rowHTML).join('');
+    bloques = [{ tipo:'plano', clave:'', label:'', largo:'', cuenta:0, unidad:'', open:true, rows:showRows }];
   }
+
+  // ─── Cintita de resumen y selector de vista (v1.5.72) ───
+  const resumenBar = rzBarHTML(rows, dateField);
+  const modoVista = vwModo(modKey);
+  const vistaBar = `<div class="vw-toggle">
+    <button class="vw-btn ${modoVista==='tabla'?'on':''}" onclick="vwSetModo('${modKey}','tabla')" title="Ver como tabla">📋 Tabla</button>
+    <button class="vw-btn ${modoVista==='tarjetas'?'on':''}" onclick="vwSetModo('${modKey}','tarjetas')" title="Ver como tarjetas">🗂️ Tarjetas</button>
+  </div>`;
 
   // ─── Barra de selección para imprimir/PDF/Excel (v1.5.41) ───
   // v1.5.45: la cuenta de solo consulta no ve la barra de imprimir/bajar
@@ -3845,7 +4649,44 @@ function renderTable(searchOverride){
         <button class="sel-activar" onclick="toggleSelMode()" title="Elegir registros para imprimir o bajar en PDF/Excel">🖨️ Elegir qué imprimir / bajar</button>
       </div>`;
 
-  area.innerHTML=`${orgToggleBar}${edfBar}${searchBar}${selBar}
+  const barras = `${orgToggleBar}${edfBar}${searchBar}${resumenBar}${vistaBar}${chipsBar}${selBar}${avisoPeriodo}`;
+
+  // ─── Dibujado final: TARJETAS ───
+  if(modoVista === 'tarjetas'){
+    const cuerpo = bloques.map(b=>{
+      let cab = '';
+      if(b.tipo === 'carpeta'){
+        const claveJs = String(b.clave).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        cab = `<button class="cf-head" onclick="toggleDateFolder('${modKey}','${claveJs}',${b.open?1:0})" title="${b.largo}">
+          <span class="cf-chev">${b.open?'▾':'▸'}</span><span>${b.open?'📂':'📁'}</span>
+          <span class="cf-txt">${b.label}</span>
+          <span class="cf-count">${b.cuenta}</span>
+        </button>`;
+      } else if(b.tipo === 'letra'){
+        cab = `<div class="cf-head letra"><span class="cf-txt">${b.label}</span><span class="cf-count">${b.cuenta}</span></div>`;
+      }
+      return `<div class="cf-bloque">${cab}${b.open?`<div class="card-grid">${b.rows.map(cardHTML).join('')}</div>`:''}</div>`;
+    }).join('');
+    area.innerHTML = `${barras}<div class="fade-in">${cuerpo}</div>`;
+    return;
+  }
+
+  // ─── Dibujado final: TABLA (como siempre) ───
+  const bodyHTML = bloques.map(b=>{
+    let cab = '';
+    if(b.tipo === 'carpeta'){
+      const claveJs = String(b.clave).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      cab = `<tr class="date-folder" onclick="toggleDateFolder('${modKey}','${claveJs}',${b.open?1:0})" title="${b.largo}">
+        <td colspan="${colSpan}"><span class="df-chev">${b.open?'▾':'▸'}</span> ${b.open?'📂':'📁'} ${b.label}
+        <span class="df-count">${b.cuenta} ${b.unidad}${b.cuenta!==1?'s':''}</span></td>
+      </tr>`;
+    } else if(b.tipo === 'letra'){
+      cab = `<tr class="letter-divider"><td colspan="${colSpan}">${b.label}</td></tr>`;
+    }
+    return cab + (b.open ? b.rows.map(rowHTML).join('') : '');
+  }).join('');
+
+  area.innerHTML=`${barras}
     <div class="data-wrap fade-in">
     <table class="data-table">
       <thead><tr>
@@ -3891,6 +4732,291 @@ function toggleDateFolder(modKey, iso, currentlyOpen){
   if(currentlyOpen){ st.open.delete(iso); st.closed.add(iso); }
   else { st.closed.delete(iso); st.open.add(iso); }
   renderTable();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.72 — CÓMO SE VE LO CARGADO
+// Tres cosas, todas de apariencia (no se toca ni un dato guardado):
+//   1) cada pestaña se puede ver como TABLA (compu) o como TARJETAS (celular)
+//   2) las carpetas de fecha tienen nombre corto y filtro por período
+//   3) arriba de cada pestaña va una cintita con el resumen
+// ══════════════════════════════════════════════════════════════════════════
+
+// Momento en que se cargó un registro, en milisegundos. Primero mira _ts_new
+// (que se guarda como número), después la fecha de carga _ts (dd/mm/aaaa, hh:mm)
+// y como último recurso el arranque del _id, que se arma con la hora del alta.
+function recCargaMs(r){
+  if(typeof r._ts_new === 'number' && r._ts_new > 1e12) return r._ts_new;
+  const m = String(r._ts||'').match(/(\d{2})\/(\d{2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})/);
+  if(m){ const t = new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime(); if(!isNaN(t)) return t; }
+  const t2 = parseInt(String(r._id||'').slice(0,8), 36);
+  return (!isNaN(t2) && t2 > 1e12 && t2 < 4e12) ? t2 : 0;
+}
+// Fecha linda para las tarjetas: 2026-07-27 → 27/07/2026
+function _fechaCorta12(v){
+  const s = String(v||'');
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+}
+function _isoDeFecha(d){
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+
+// ─── Vista: tabla o tarjetas ───
+// Lo elegido queda guardado en el equipo de cada uno (no viaja a la nube).
+// Si nunca eligió nada: en el celular arranca en tarjetas, en la compu en tabla.
+function vwLeer(){ try{ return JSON.parse(localStorage.getItem('suep_vista_reg')||'{}'); }catch(_){ return {}; } }
+function vwModo(modKey){
+  const st = vwLeer();
+  if(st[modKey]==='tabla' || st[modKey]==='tarjetas') return st[modKey];
+  if(st['*']==='tabla' || st['*']==='tarjetas') return st['*'];
+  return (window.innerWidth <= 820) ? 'tarjetas' : 'tabla';
+}
+function vwSetModo(modKey, m){
+  const st = vwLeer(); st[modKey] = m; st['*'] = m;
+  try{ localStorage.setItem('suep_vista_reg', JSON.stringify(st)); }catch(_){}
+  renderTable();
+}
+
+// ─── Filtro rápido por período (solo esconde carpetas de la vista) ───
+var VW_PERIODO = {};
+function vwPeriodo(modKey){ return VW_PERIODO[modKey] || 'todo'; }
+function vwSetPeriodo(modKey, p){ VW_PERIODO[modKey] = p; renderTable(); }
+function vwEnPeriodo(iso, p){
+  if(p === 'todo') return true;
+  if(!iso) return false;                       // "Sin fecha" solo aparece en Todo
+  const hoy = todayISO();
+  if(p === 'hoy')  return iso === hoy;
+  if(p === 'mes')  return iso.slice(0,7) === hoy.slice(0,7);
+  if(p === 'semana'){
+    const d = new Date(iso+'T12:00:00'), h = new Date(hoy+'T12:00:00');
+    if(isNaN(d)) return false;
+    const dif = (h - d) / 86400000;
+    return dif >= -0.5 && dif <= 6.5;
+  }
+  return true;
+}
+function vwChipsHTML(modKey, fechas, grupos, per){
+  const cuenta = p => fechas.filter(f=>vwEnPeriodo(f,p)).reduce((t,f)=>t+grupos[f].length,0);
+  const op = [ {id:'hoy',txt:'Hoy'}, {id:'semana',txt:'Últimos 7 días'}, {id:'mes',txt:'Este mes'}, {id:'todo',txt:'Todo'} ];
+  return `<div class="fchips">${op.map(o=>
+    `<button class="fchip${per===o.id?' on':''}" onclick="vwSetPeriodo('${modKey}','${o.id}')">${o.txt}<b>${cuenta(o.id)}</b></button>`
+  ).join('')}</div>`;
+}
+
+// ─── Nombre corto de la carpeta: "HOY · lun 27/07" en vez de la fecha larga ───
+function _fechaCarpetaCorto(iso){
+  if(!iso) return 'Sin fecha';
+  if(/^\d{4}-\d{2}$/.test(iso)) return _fechaCarpetaLabel(iso);   // carpetas por mes: igual que antes
+  const d = new Date(iso+'T12:00:00');
+  if(isNaN(d)) return iso;
+  const hoy = todayISO();
+  const ayer = _isoDeFecha(new Date(new Date(hoy+'T12:00:00').getTime() - 86400000));
+  let dia = d.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.','');
+  dia = dia.charAt(0).toUpperCase()+dia.slice(1);
+  if(iso === hoy)  return 'HOY · ' + dia;
+  if(iso === ayer) return 'Ayer · ' + dia;
+  if(d.getFullYear() !== new Date().getFullYear()) return dia + '/' + String(d.getFullYear()).slice(2);
+  return dia;
+}
+
+// ─── Cintita de resumen (total · de hoy · último movimiento) ───
+function rzBarHTML(rows, dateField){
+  if(!rows || !rows.length) return '';
+  const hoy = todayISO();
+  let nHoy = 0, ultimo = null, ultimoMs = -1;
+  rows.forEach(r=>{
+    if(_fechaISORegistro(r, dateField) === hoy) nHoy++;
+    const ms = recCargaMs(r);
+    if(ms > ultimoMs){ ultimoMs = ms; ultimo = r; }
+  });
+  return `<div class="rz-bar">
+    <span class="rz-i">🗂️ <b>${rows.length}</b> registro${rows.length!==1?'s':''}</span>
+    <span class="rz-i rz-hoy">🆕 <b>${nHoy}</b> de hoy</span>
+    ${ultimo ? `<span class="rz-i rz-ult">🕒 Último: <b>${ultimo._por||'—'}</b> · ${ultimo._ts||'—'}</span>` : ''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.72 — PANEL DE INICIO
+// Lo primero que ve cada persona al entrar. Solo LEE lo que ya está cargado
+// en las pestañas que esa persona tiene habilitadas y muestra los números.
+// No escribe, no borra y no sube nada.
+// ══════════════════════════════════════════════════════════════════════════
+// ¿Esta persona tiene habilitada esta pestaña? Es la MISMA regla que usa el
+// menú lateral para decidir qué botones mostrar (v1.5.73).
+function iniSectorVisible(sec){
+  if(!sec || typeof CU === 'undefined' || !CU) return false;
+  const isAdmin = CU.permiso==='admin', isVisor = CU.permiso==='visor', isCG = CU.permiso==='cargar-global';
+  const veTodo = isAdmin || isVisor || isCG;
+  if(!isAdmin && Array.isArray(CU.pestanasOcultas) && CU.pestanasOcultas.includes(sec.id)) return false;
+  if(sec.restringido) return (sec.restringido === 'admin') ? isAdmin : _expTieneAcceso();
+  if(veTodo) return true;
+  return (CU.sectores||[]).includes(sec.id) || !!sec.universal || !!sec.custom;
+}
+function iniPuedeVer(secId){
+  return iniSectorVisible((typeof SECTORS === 'undefined' ? [] : SECTORS).find(s=>s.id===secId));
+}
+function iniPestanasVisibles(){
+  const out = [];
+  (typeof SECTORS === 'undefined' ? [] : SECTORS).forEach(sec=>{
+    if(!iniSectorVisible(sec)) return;
+    (sec.modules||[]).forEach(mod=>{
+      const destinos = mod.subTabs ? mod.subTabs : [mod];
+      destinos.forEach(t=>{
+        let rows = [];
+        try{ rows = S.get(sec.id, t.id); }catch(_){ rows = []; }
+        if(!Array.isArray(rows) || !rows.length) return;
+        out.push({ secId:sec.id, modId:mod.id, icono:sec.icon||'📌',
+                   nombre:rdLimpio(t.name||t.id), sector:sec.name||sec.id, rows });
+      });
+    });
+  });
+  return out;
+}
+function iniCalcular(){
+  const pest = iniPestanasVisibles();
+  const hoy = todayISO();
+  const mes = hoy.slice(0,7);
+  const yo  = (CU && CU.nombre) || '';
+  const dias = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i);
+    let lab = d.toLocaleDateString('es-AR',{weekday:'short'}).replace('.','');
+    dias.push({ iso:_isoDeFecha(d), n:0, lab:lab.charAt(0).toUpperCase()+lab.slice(1,3) });
+  }
+  const idx = {}; dias.forEach((d,i)=>{ idx[d.iso] = i; });
+  let total=0, nHoy=0, nSemana=0, mio=0;
+  const porPestana = [], ultimos = [];
+  pest.forEach(p=>{
+    total += p.rows.length;
+    let n7 = 0;
+    p.rows.forEach(r=>{
+      const ms = recCargaMs(r);
+      if(!ms) return;
+      const iso = _isoDeFecha(new Date(ms));
+      if(iso === hoy) nHoy++;
+      if(idx[iso] !== undefined){ dias[idx[iso]].n++; nSemana++; n7++; }
+      if(iso.slice(0,7) === mes && String(r._por||'') === yo) mio++;
+      ultimos.push({ ms, por:r._por||'—', ts:r._ts||'', p });
+    });
+    if(n7) porPestana.push({ p, n:n7 });
+  });
+  ultimos.sort((a,b)=> b.ms - a.ms);
+  porPestana.sort((a,b)=> b.n - a.n);
+  return { total, nHoy, nSemana, mio, dias, nPest:pest.length,
+           porPestana:porPestana.slice(0,6), ultimos:ultimos.slice(0,8) };
+}
+function iniEsqueleto(){
+  let f = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  f = f.charAt(0).toUpperCase()+f.slice(1);
+  return `<div class="ini-wrap fade-in">
+    <div class="ini-head">
+      <div><h3>🏠 Panel de inicio</h3><p>${f}</p></div>
+      <button class="ini-ref" onclick="showInicio()">🔄 Actualizar</button>
+    </div>
+    <div id="iniCuerpo"><div class="ini-vacio">Armando el resumen…</div></div>
+  </div>`;
+}
+function iniPintar(){
+  const cont = document.getElementById('iniCuerpo');
+  if(!cont) return;
+  const d = iniCalcular();
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const maxN = Math.max(1, ...d.dias.map(x=>x.n));
+  const hoyISO = todayISO();
+
+  const kpis = `<div class="ini-kpis">
+    <div class="ini-kpi k-verde"><div class="ini-k-num">${d.nHoy}</div><div class="ini-k-lab">Cargado hoy</div><div class="ini-k-ico">🆕</div></div>
+    <div class="ini-kpi"><div class="ini-k-num">${d.nSemana}</div><div class="ini-k-lab">Últimos 7 días</div><div class="ini-k-ico">🗓️</div></div>
+    <div class="ini-kpi"><div class="ini-k-num">${d.total}</div><div class="ini-k-lab">Total cargado</div><div class="ini-k-ico">🗂️</div></div>
+    <div class="ini-kpi k-oro"><div class="ini-k-num">${d.mio}</div><div class="ini-k-lab">Tuyo este mes</div><div class="ini-k-ico">✍️</div></div>
+  </div>`;
+
+  const barras = `<div class="ini-sec">
+    <div class="ini-tit">📊 Movimiento de la semana</div>
+    <div class="ini-bars">${d.dias.map(x=>
+      `<div class="ini-b${x.iso===hoyISO?' hoy':''}">
+        <span class="ini-b-n">${x.n || ''}</span>
+        <div class="ini-b-col"><i style="height:${x.n ? Math.max(6, Math.round(x.n/maxN*100)) : 0}%"></i></div>
+        <span class="ini-b-l">${x.lab}</span>
+      </div>`).join('')}</div>
+  </div>`;
+
+  const top = d.porPestana.length ? `<div class="ini-sec">
+    <div class="ini-tit">🔥 Lo que más se movió esta semana</div>
+    <div class="ini-lista">${d.porPestana.map(x=>
+      `<button class="ini-item" onclick="selectSector('${x.p.secId}','${x.p.modId}')">
+        <span class="ii-ico">${x.p.icono}</span>
+        <span class="ii-txt"><b>${esc(x.p.nombre)}</b><small>${esc(x.p.sector)}</small></span>
+        <span class="ii-n">${x.n}</span>
+      </button>`).join('')}</div>
+  </div>` : '';
+
+  const ult = d.ultimos.length ? `<div class="ini-sec">
+    <div class="ini-tit">🕒 Últimos movimientos</div>
+    <div class="ini-lista">${d.ultimos.map(u=>
+      `<button class="ini-item" onclick="selectSector('${u.p.secId}','${u.p.modId}')">
+        <span class="ii-ico">${u.p.icono}</span>
+        <span class="ii-txt"><b>${esc(u.p.nombre)}</b><small>${esc(u.por)} · ${esc(u.ts)}</small></span>
+      </button>`).join('')}</div>
+  </div>` : '<div class="ini-sec"><div class="ini-vacio">Todavía no hay movimientos para mostrar.</div></div>';
+
+  // Avisos vigentes y eventos próximos: se leen de las pestañas de siempre.
+  let pendientes = '';
+  try{
+    const av = (typeof avVigentes === 'function') ? avVigentes() : [];
+    const ev = (typeof _eventosProximos === 'function') ? _eventosProximos() : [];
+    const filas = [];
+    // v1.5.73 — Un renglón solo lleva a una pestaña si esa persona la tiene
+    // habilitada. Avisos, por ejemplo, es solo de las administradoras: al resto
+    // el aviso se le muestra igual (ya lo ve en el cartel de arriba), pero como
+    // texto, sin llevarlo a una pestaña que no le corresponde.
+    const fila = (ico, tit, sub, secId) => {
+      const cuerpo = `<span class="ii-ico">${ico}</span>
+        <span class="ii-txt"><b>${tit}</b><small>${sub}</small></span>`;
+      return secId
+        ? `<button class="ini-item" onclick="selectSector('${secId}')">${cuerpo}</button>`
+        : `<div class="ini-item ii-fijo">${cuerpo}</div>`;
+    };
+    const verAvisos  = iniPuedeVer('AVISOS');
+    const verEventos = iniPuedeVer('EVENTOS');
+    av.slice(0,3).forEach(a=> filas.push(
+      fila('📢', esc(a.titulo||'Aviso'), 'Aviso vigente', verAvisos ? 'AVISOS' : null)));
+    ev.slice(0,3).forEach(e=> filas.push(
+      fila('🔔', esc(e.titulo||'Evento'),
+           esc(_textoCuando(e._dias)) + (e.lugar ? ' · '+esc(e.lugar) : ''),
+           verEventos ? 'EVENTOS' : null)));
+    if(filas.length) pendientes = `<div class="ini-sec">
+      <div class="ini-tit">📌 Para tener en cuenta</div>
+      <div class="ini-lista">${filas.join('')}</div></div>`;
+  }catch(e){ console.warn('Panel de inicio · avisos/eventos:', e); }
+
+  cont.innerHTML = kpis + barras + pendientes + top + ult +
+    `<div class="ini-vacio">Se están mirando ${d.nPest} pestaña${d.nPest!==1?'s':''} con datos cargados.</div>`;
+}
+function showInicio(){
+  try{
+    document.querySelectorAll('.sector-btn').forEach(b=>{ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
+    const ab = document.getElementById('sb_INICIO');
+    if(ab){ ab.classList.add('active'); ab.style.background='#1a3a5a'; ab.style.color='#fff'; }
+    const sh = document.getElementById('sectorHeader'); if(sh) sh.style.display = 'none';
+    const area = document.getElementById('dataArea'); if(!area) return;
+    area.innerHTML = iniEsqueleto();
+    // El cálculo se hace un instante después, así la pantalla aparece enseguida
+    // aunque haya muchas pestañas con datos.
+    setTimeout(()=>{
+      try{ iniPintar(); }
+      catch(e){
+        console.warn('Panel de inicio:', e);
+        const c = document.getElementById('iniCuerpo');
+        if(c) c.innerHTML = '<div class="ini-vacio">No se pudo armar el resumen. Entrá a las pestañas normalmente desde el menú.</div>';
+      }
+    }, 40);
+    try{ if(typeof avPintarBanner === 'function') avPintarBanner(); }catch(_){}
+    if(typeof closeSidebar === 'function') closeSidebar();
+  }catch(e){ console.warn('Inicio:', e); }
 }
 // ═════ Exámenes de Reclutamiento: desplegable ═════
 function toggleExams(id){
@@ -4478,7 +5604,8 @@ const INSTRUCTORES_SECCION = {
 // Mapea el nombre de sección ("Sección 1") al id del módulo de Secciones ("SECC_1")
 function _seccionAId(seccion){
   const n = (seccion||'').replace(/[^0-9]/g,'');
-  return n ? 'SECC_'+n : '';
+  // v1.5.62: apunta a las secciones de la convocatoria que está cursando.
+  return n ? 'SECC_'+n+convSuf() : '';
 }
 // Devuelve los aspirantes cargados en esa sección (desde el sector Secciones)
 function aspirantesDeSeccion(seccion){
@@ -4498,13 +5625,13 @@ function onEvalSeccionChange(){
   const wrap = document.getElementById('aspWrap');
   if(!wrap) return;
   if(!sec){
-    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="Elegí primero una sección" disabled style="opacity:.5">`;
+    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="Elegí primero una sección (${convNombre()})" disabled style="opacity:.5">`;
     const d=document.getElementById('f_dni'); if(d) d.value='';
     return;
   }
   const asp = aspirantesDeSeccion(sec);
   if(!asp.length){
-    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="No hay aspirantes cargados en ${sec}">
+    wrap.innerHTML = `<input class="fi" type="text" id="f_aspirante" placeholder="No hay aspirantes cargados en ${sec} de la ${convNombre()}">
       <small style="display:block;margin-top:4px;color:#fbbf24;font-size:11px">⚠️ Cargá los aspirantes de ${sec} en el sector "Secciones" y aparecerán acá automáticamente.</small>`;
     return;
   }
@@ -4554,7 +5681,7 @@ const _SECC_TABS = [
 function _getAspirantes(){
   const out=[];
   _SECC_TABS.forEach(t=>{
-    S.get('SECCIONES_GEN', t.id).forEach(r=>{
+    S.get('SECCIONES_GEN', t.id+convSuf()).forEach(r=>{
       if(r.apellidoNombre){
         out.push({nombre:r.apellidoNombre, dni:r.dni||'', seccion:t.sec, seccionId:t.id});
       }
@@ -4649,8 +5776,8 @@ function renderSeleccionAspirantes(tipo){
   if(!_getAspirantes().length){
     return `<div class="data-wrap"><div class="empty-state">
       <div class="empty-icon">🎽</div>
-      <p>No hay aspirantes cargados todavía</p>
-      <small>Cargá aspirantes en el sector "Secciones" (Sección 1 a 5) y aparecerán acá automáticamente</small>
+      <p>No hay aspirantes cargados en la ${convNombre()}</p>
+      <small>Cargalos en la pestaña "Secciones" → ${convNombre()} (Sección 1 a 5) y aparecen acá automáticamente</small>
     </div></div>`;
   }
 
@@ -4699,6 +5826,18 @@ function renderSeleccionAspirantes(tipo){
       <button class="sub-tab ${esHoy?'active':''}" style="${esHoy?`background:${color};color:#fff`:''}" onclick="setSelFecha('${tipo}','${today}')">Hoy</button>
     </div>`;
 
+  // v1.5.63 — Cartel fijo con la convocatoria de la que sale esta lista, así
+  // nunca se marca sobre la convocatoria equivocada. Solo las administradoras
+  // pueden cambiarla.
+  const avisoConv = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(122,175,212,.10);
+      border:1px solid rgba(122,175,212,.28);border-radius:9px;padding:8px 12px;font-size:12px;margin:0 2px 10px">
+      <span>🎯 Lista tomada de la <b>${convNombre()}</b> — Secciones 1 a 5 de esa convocatoria</span>
+      ${(CU && CU.permiso==='admin')
+        ? `<button class="sub-tab" style="font-size:11px;padding:3px 9px" onclick="convCambiar()">Cambiar convocatoria ✏️</button>`
+        : ''}
+    </div>`;
+
   const avisoDiaPasado = !esHoy ? `
     <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:8px;padding:8px 12px;font-size:12px;margin:0 2px 10px">
       📆 Estás cargando el día <b>${_fechaLabel(fechaVista)}</b> (no es hoy). Podés marcar y desmarcar normalmente. Tocá "Hoy" para volver.
@@ -4712,6 +5851,7 @@ function renderSeleccionAspirantes(tipo){
       </div>
 
       ${selectorFechas}
+      ${avisoConv}
       ${avisoDiaPasado}
 
       <div style="position:relative;padding:0 2px 10px;max-width:440px">
@@ -7418,6 +8558,449 @@ _mergeAllDynUsers();
 // se hace ADENTRO de pullAllFromSupabase. El wrap que había acá nunca se
 // enganchaba porque este bloque corre antes de que esa función exista.
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v1.5.64 — MEJORAS VISUALES
+//   1) Paleta del período: el acento de color rota cada 5 días.
+//   2) Saludo del día: frase distinta cada día, según la hora de ingreso.
+//   3) Corrector de contraste del modo claro: ninguna letra queda ilegible.
+// Nada de esto toca datos, permisos ni pestañas: es todo apariencia.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────
+// 1) PALETA DEL PERÍODO
+// El azul institucional del modo oscuro NO cambia. Lo único que rota es el
+// color de acento (el hilo dorado de los bordes, los títulos del menú y la
+// trama del fondo). Cada bloque de 5 días usa una paleta distinta y después
+// vuelve a empezar. Se puede dejar fija desde Configuración.
+// ─────────────────────────────────────────────────────────────────────────
+const SUEP_PALETAS = [
+  { nombre:'Dorado institucional', emoji:'🏅' },
+  { nombre:'Turquesa',            emoji:'🌊' },
+  { nombre:'Cobre',               emoji:'🍂' },
+  { nombre:'Verde bosque',        emoji:'🌿' },
+  { nombre:'Lavanda',             emoji:'💜' },
+  { nombre:'Cielo',               emoji:'🩵' },
+  { nombre:'Terracota',           emoji:'🧱' },
+  { nombre:'Malva',               emoji:'🌸' }
+];
+const PAL_DIAS = 5;                        // cuántos días dura cada paleta
+const PAL_BASE = new Date(2026, 0, 1);     // fecha de referencia del ciclo
+
+function palRotativa(){
+  try{ return localStorage.getItem('suep_paleta_rotativa') !== 'no'; }catch(_){ return true; }
+}
+function _palDiasCorridos(){
+  const hoy = new Date(); hoy.setHours(12,0,0,0);
+  const base = new Date(PAL_BASE.getTime()); base.setHours(12,0,0,0);
+  return Math.floor((hoy - base) / 86400000);
+}
+function palIndice(){
+  if(!palRotativa()) return 0;
+  const n = SUEP_PALETAS.length;
+  const bloque = Math.floor(_palDiasCorridos() / PAL_DIAS);
+  return ((bloque % n) + n) % n;
+}
+function palDiasQueFaltan(){
+  const d = _palDiasCorridos();
+  const falta = PAL_DIAS - (((d % PAL_DIAS) + PAL_DIAS) % PAL_DIAS);
+  return falta === 0 ? PAL_DIAS : falta;
+}
+function palAplicar(){
+  try{ document.body.setAttribute('data-paleta', String(palIndice())); }catch(_){}
+  palLabel();
+}
+function palLabel(){
+  const p = SUEP_PALETAS[palIndice()] || SUEP_PALETAS[0];
+  const ico = document.getElementById('palIcono');
+  const lab = document.getElementById('palLabel');
+  const sub = document.getElementById('palSub');
+  if(ico) ico.textContent = p.emoji;
+  if(lab) lab.textContent = 'Paleta: ' + p.nombre;
+  if(sub){
+    if(palRotativa()){
+      const f = palDiasQueFaltan();
+      sub.textContent = 'Cambia sola en ' + f + (f === 1 ? ' día' : ' días') + ' · tocá para dejarla fija';
+    }else{
+      sub.textContent = 'Fija en el dorado institucional · tocá para que vuelva a rotar';
+    }
+  }
+}
+function palToggle(){
+  try{ localStorage.setItem('suep_paleta_rotativa', palRotativa() ? 'no' : 'si'); }catch(_){}
+  palAplicar();
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 2) SALUDO DEL DÍA
+// Al entrar aparece una tarjeta con el saludo según la hora ("Buen día,
+// Mely") y una frase distinta cada día. Las frases no se repiten hasta que
+// se hayan usado todas. Cada persona puede elegir con qué nombre la saluda.
+// ─────────────────────────────────────────────────────────────────────────
+const SAL_APODOS = {
+  'melina.lafuente'   : 'Mely',
+  'eliana.velazquez'  : 'Eli',
+  'jefe.visor'        : 'Jefe/a'
+};
+
+const SAL_FRASES = [
+  'Un día ordenado empieza con una sola cosa hecha bien.',
+  'Lo que se hace acá sostiene a todo el Departamento.',
+  'Cada expediente prolijo le ahorra un dolor de cabeza a alguien.',
+  'No hace falta hacerlo todo hoy: alcanza con avanzar.',
+  'La constancia gana siempre por cansancio.',
+  'Un buen registro hoy es una respuesta rápida mañana.',
+  'Arrancá tranqui: el día rinde más sin apuro.',
+  'Lo urgente grita y lo importante espera. Elegí bien.',
+  'Una tarea a la vez y el día se acomoda solo.',
+  'El orden no es un lujo: es tiempo que se recupera.',
+  'Hoy es un buen día para cerrar eso que quedó abierto.',
+  'Nadie ve el trabajo bien hecho, pero todos notan cuando falta.',
+  'Un dato bien cargado vale más que diez memorias.',
+  'Si algo se resuelve en dos minutos, resolvelo ahora.',
+  'Preguntar a tiempo ahorra corregir después.',
+  'El respeto por el detalle es lo que distingue a esta casa.',
+  'Hoy sumás un ladrillo más. Después se ve la pared.',
+  'Las cosas simples, hechas todos los días, cambian todo.',
+  'La calma también es una forma de eficiencia.',
+  'Un equipo se nota en los días complicados.',
+  'Guardá lo que hiciste: mañana te lo vas a agradecer.',
+  'No te compares con ayer: mirá lo que dejaste andando.',
+  'Hacé lo difícil temprano y el resto del día es cuesta abajo.',
+  'Cada aspirante que pasa por acá se lleva algo de este trabajo.',
+  'Escribilo. La memoria es buena, pero el papel es mejor.',
+  'Todo sistema funciona porque alguien lo mantiene al día.',
+  'La prolijidad es una forma silenciosa de cuidar al otro.',
+  'Empezá por lo que te cuesta y después todo parece fácil.',
+  'Un día tranquilo también es un día productivo.',
+  'El trabajo que se hace bien no hay que hacerlo dos veces.',
+  'Confiá en el proceso: los números se acomodan solos.',
+  'Media hora de orden ahorra media semana de búsqueda.',
+  'Lo que se mide, mejora. Y acá se mide todo.',
+  'Buen momento para revisar lo que quedó pendiente ayer.',
+  'La paciencia también es una herramienta de trabajo.',
+  'Nadie hace todo. Por eso somos un equipo.',
+  'Si hoy salió bien, dejalo anotado para poder repetirlo.',
+  'La rutina bien llevada es la base de toda institución seria.',
+  'Un gracias a tiempo rinde más que diez recordatorios.',
+  'Antes de empezar, ordená el escritorio. Se piensa mejor.',
+  'Los grandes cambios entran por la puerta de los detalles.',
+  'Hoy tenés todo para que sea un buen día de trabajo.',
+  'Lo que hacés no es solo administrativo: es formación.',
+  'Hacer bien lo pequeño es la manera de merecer lo grande.',
+  'Cerrá una cosa antes de abrir otra. Se rinde el doble.',
+  'Un archivo ordenado es un problema menos para quien venga.',
+  'Que el apuro no se te lleve la calidad.',
+  'La institución se construye día por día, no de golpe.',
+  'Un buen registro te respalda cuando nadie se acuerda.',
+  'Si algo se repite mucho, quizás se pueda simplificar.',
+  'Hoy es una buena oportunidad para dejar todo al día.',
+  'La claridad al escribir es respeto por quien va a leer.',
+  'Guardá siempre. Nunca sobra.',
+  'Lo que empieza con orden termina bien.',
+  'Hacé una pausa cada tanto: la cabeza también trabaja.',
+  'Tomá agua, estirá las piernas y seguimos.',
+  'Cada tarea terminada es un peso menos.',
+  'Lo importante hoy: avanzar, aunque sea un poco.',
+  'Un problema anotado ya está medio resuelto.',
+  'Que el día te encuentre trabajando.',
+  'Nadie nace sabiendo: acá se aprende haciendo.',
+  'La experiencia se nota en cómo se resuelven los imprevistos.',
+  'El mejor momento para actualizar los datos es ahora.',
+  'Hoy alguien va a necesitar algo que vos cargaste bien.',
+  'Sostener lo cotidiano también es una forma de liderar.',
+  'Un poco cada día es más que mucho una sola vez.',
+  'Aprovechá la mañana: es cuando la cabeza rinde mejor.',
+  'Lo simple y bien hecho gana siempre.',
+  'El silencio del trabajo bien hecho es el mejor informe.',
+  'Anotá las ideas: se van más rápido de lo que llegan.',
+  'Que la exigencia no te robe las ganas.',
+  'Un equipo ordenado transmite tranquilidad.',
+  'Hoy también se puede aprender algo nuevo.',
+  'Lo que se posterga se agranda. Empezá de una.',
+  'Cuidar el detalle es cuidar a la gente.',
+  'Hacé la parte que te toca y confiá en el resto.',
+  'El día tiene horas suficientes si están bien usadas.',
+  'Un buen registro es la mejor memoria institucional.',
+  'Terminá lo de ayer antes de empezar lo de hoy.',
+  'La constancia no se ve, pero se acumula.',
+  'Buen día para ordenar papeles y despejar la cabeza.',
+  'Trabajar tranquilo también es trabajar bien.',
+  'Nada de lo que hacés acá pasa desapercibido.',
+  'El esfuerzo de hoy sostiene la promoción que viene.',
+  'Cada dato completo evita una llamada de más.',
+  'Que la prisa no te gane a la prolijidad.',
+  'Hoy toca hacer, mañana toca revisar.',
+  'Una lista corta se cumple; una larga se abandona.',
+  'Empezá por lo que ya sabés hacer y agarrá impulso.',
+  'Los sistemas no fallan solos: tampoco funcionan solos.',
+  'Todo lo que cargás hoy le sirve a alguien mañana.',
+  'Sostener la calidad todos los días es lo verdaderamente difícil.',
+  'Buena jornada para dejar las cosas mejor de como estaban.',
+  'Preguntá sin vergüenza: nadie sabe todo.',
+  'Un día bien empezado ya está medio ganado.',
+  'Cerrá el día sabiendo qué dejaste andando.',
+  'Lo mejor de este trabajo es que se nota cuando se hace bien.',
+  'Hacé pausas cortas: se rinde más que forzando la máquina.',
+  'El orden de hoy es la tranquilidad de mañana.',
+  'Gracias por sostener esto todos los días.'
+];
+
+function salEsc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function salNombre(u){
+  if(!u) return 'colega';
+  try{
+    const propio = (localStorage.getItem('suep_apodo_' + u.usuario) || '').trim();
+    if(propio) return propio;
+  }catch(_){}
+  if(SAL_APODOS[u.usuario]) return SAL_APODOS[u.usuario];
+  const partes = String(u.nombre || '').trim().split(/\s+/);
+  return partes[0] || 'colega';
+}
+function salMomento(){
+  const h = new Date().getHours();
+  if(h >= 5  && h < 13) return { texto:'Buen día',       emoji:'☀️' };
+  if(h >= 13 && h < 20) return { texto:'Buenas tardes',  emoji:'🌤️' };
+  return { texto:'Buenas noches', emoji:'🌙' };
+}
+// Frase del día: una sola por jornada. No se repite hasta agotar la lista.
+function salFraseDelDia(usuario){
+  const clave = 'suep_frases_' + usuario;
+  const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+  let st = {};
+  try{ st = JSON.parse(localStorage.getItem(clave) || '{}') || {}; }catch(_){ st = {}; }
+  if(st.fecha === hoy && typeof st.idx === 'number' && SAL_FRASES[st.idx]) return SAL_FRASES[st.idx];
+  let usadas = Array.isArray(st.usadas) ? st.usadas.filter(n => typeof n === 'number') : [];
+  if(usadas.length >= SAL_FRASES.length) usadas = [];
+  const libres = [];
+  for(let i = 0; i < SAL_FRASES.length; i++) if(usadas.indexOf(i) === -1) libres.push(i);
+  const idx = libres[Math.floor(Math.random() * libres.length)];
+  usadas.push(idx);
+  try{ localStorage.setItem(clave, JSON.stringify({ fecha:hoy, idx:idx, usadas:usadas })); }catch(_){}
+  return SAL_FRASES[idx];
+}
+var SAL_T = null;
+function salMostrar(){
+  const cont = document.getElementById('saludoDia');
+  if(!cont) return;
+  if(typeof CU === 'undefined' || !CU){ cont.innerHTML = ''; return; }
+  const m = salMomento();
+  const nombre = salNombre(CU);
+  const frase = salFraseDelDia(CU.usuario);
+  cont.innerHTML =
+    '<div class="sal-card" id="salCard">' +
+      '<div class="sal-emoji">' + m.emoji + '</div>' +
+      '<div class="sal-txt">' +
+        '<div class="sal-hola">' + m.texto + ', ' + salEsc(nombre) + ' 👋</div>' +
+        '<div class="sal-frase">' + salEsc(frase) + '</div>' +
+      '</div>' +
+      '<button class="sal-x" onclick="salCerrar()" title="Cerrar">×</button>' +
+    '</div>';
+  clearTimeout(SAL_T);
+  SAL_T = setTimeout(salCerrar, 15000);
+}
+function salCerrar(){
+  clearTimeout(SAL_T);
+  const c = document.getElementById('salCard');
+  if(!c) return;
+  c.classList.add('sal-sale');
+  setTimeout(()=>{ const k = document.getElementById('saludoDia'); if(k) k.innerHTML = ''; }, 400);
+}
+function salCambiarNombre(){
+  if(typeof CU === 'undefined' || !CU){ alert('Primero iniciá sesión.'); return; }
+  const actual = salNombre(CU);
+  const nuevo = prompt('¿Con qué nombre querés que te salude la app?\n\nPor ejemplo: Mely, Eli, Sergio…', actual);
+  if(nuevo === null) return;
+  const limpio = String(nuevo).trim().slice(0, 24);
+  try{
+    if(limpio) localStorage.setItem('suep_apodo_' + CU.usuario, limpio);
+    else localStorage.removeItem('suep_apodo_' + CU.usuario);
+  }catch(_){}
+  salLabel();
+  salMostrar();
+}
+function salLabel(){
+  const sub = document.getElementById('salSub');
+  if(!sub) return;
+  if(typeof CU !== 'undefined' && CU) sub.textContent = 'Ahora te saluda como "' + salNombre(CU) + '"';
+  else sub.textContent = 'Nombre del saludo diario';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 3) CORRECTOR DE CONTRASTE DEL MODO CLARO
+// Algunas pantallas tienen colores de letra escritos a mano, pensados para
+// el fondo oscuro. En modo claro esas letras quedaban casi blancas sobre
+// blanco. Este corrector recorre lo que está en pantalla y, SOLO cuando el
+// fondo real es claro y la letra no se llega a leer, la oscurece
+// manteniéndole el tono. Si el fondo es oscuro no toca nada, y al volver al
+// modo oscuro devuelve todos los colores como estaban.
+// ─────────────────────────────────────────────────────────────────────────
+var _ccObs = null, _ccTimer = null, _ccTocados = [], _ccCorriendo = false;
+const CC_RAICES = ['appScreen','modalOverlay','cfgPanel','notifPanel'];
+const CC_MINIMO = 3.2;   // por debajo de esto se considera ilegible
+const CC_META   = 4.6;   // hasta acá se oscurece
+
+function _ccRGB(str){
+  const m = String(str || '').match(/rgba?\(([^)]+)\)/);
+  if(!m) return null;
+  const p = m[1].split(',').map(x => parseFloat(x));
+  if(p.length < 3 || isNaN(p[0])) return null;
+  return { r:p[0], g:p[1], b:p[2], a:(p.length > 3 && !isNaN(p[3])) ? p[3] : 1 };
+}
+function _ccLum(c){
+  const f = v => { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+}
+function _ccContraste(a, b){
+  const l1 = _ccLum(a), l2 = _ccLum(b);
+  const hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function _ccMezclar(fg, bg){
+  const a = fg.a;
+  return { r: fg.r*a + bg.r*(1-a), g: fg.g*a + bg.g*(1-a), b: fg.b*a + bg.b*(1-a), a:1 };
+}
+// Fondo real del elemento: se suben los padres hasta encontrar uno opaco.
+function _ccFondo(el){
+  const capas = [];
+  let n = el, guarda = 0;
+  while(n && n.nodeType === 1 && guarda++ < 30){
+    const c = _ccRGB(getComputedStyle(n).backgroundColor);
+    if(c && c.a > 0){ capas.push(c); if(c.a >= 0.985) break; }
+    n = n.parentElement;
+  }
+  let base = { r:238, g:242, b:247, a:1 };   // fondo de la app en modo claro
+  for(let i = capas.length - 1; i >= 0; i--) base = _ccMezclar(capas[i], base);
+  return base;
+}
+function _ccOscurecer(c, bg){
+  const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b);
+  // Color casi gris o blanco → se lleva directo al azul oscuro institucional.
+  if(max - min < 26) return '#243b53';
+  let r = c.r, g = c.g, b = c.b;
+  for(let i = 0; i < 26; i++){
+    if(_ccContraste({ r:r, g:g, b:b }, bg) >= CC_META) break;
+    r *= 0.87; g *= 0.87; b *= 0.87;
+  }
+  return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
+}
+function _ccArreglar(el){
+  const tag = el.tagName;
+  if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'OPTION' || tag === 'SVG') return;
+  const cs = getComputedStyle(el);
+  if(cs.display === 'none' || cs.visibility === 'hidden') return;
+  if(el._ccPuesto && el._ccPuesto === cs.color) return;   // ya corregido, no se toca
+  const fg = _ccRGB(cs.color);
+  if(!fg) return;
+  const bg = _ccFondo(el);
+  if(_ccLum(bg) < 0.45) return;                            // fondo oscuro: queda igual
+  const fgReal = fg.a < 1 ? _ccMezclar(fg, bg) : fg;
+  if(_ccContraste(fgReal, bg) >= CC_MINIMO) return;        // ya se lee bien
+  // Zonas que ya están pensadas con letra blanca y sombra: no se tocan.
+  try{ if(el.closest && el.closest('.sh-top, .app-header, [data-cc-no]')) return; }catch(_){}
+  if(el._ccOrig === undefined){ el._ccOrig = el.style.color || ''; _ccTocados.push(el); }
+  el.style.color = _ccOscurecer(fgReal, bg);
+  el._ccPuesto = getComputedStyle(el).color;
+}
+function _ccRevisar(){
+  if(_ccCorriendo) return;
+  if(!document.body.classList.contains('light-mode')) return;
+  _ccCorriendo = true;
+  if(_ccObs){ try{ _ccObs.disconnect(); }catch(_){} }
+  try{
+    const vistos = new Set();
+    let cuenta = 0;
+    CC_RAICES.forEach(id => {
+      const raiz = document.getElementById(id);
+      if(!raiz || raiz.hasAttribute('hidden')) return;
+      const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+        acceptNode: t => (t.nodeValue && t.nodeValue.trim()) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+      });
+      let t;
+      while((t = w.nextNode())){
+        if(cuenta > 5000) break;
+        const el = t.parentElement;
+        if(!el || vistos.has(el)) continue;
+        vistos.add(el); cuenta++;
+        try{ _ccArreglar(el); }catch(_){}
+      }
+    });
+  }catch(e){ console.warn('Contraste modo claro:', e); }
+  _ccCorriendo = false;
+  if(_ccObs && document.body.classList.contains('light-mode')){
+    try{ _ccObs.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class'] }); }catch(_){}
+  }
+}
+function _ccProgramar(){
+  clearTimeout(_ccTimer);
+  _ccTimer = setTimeout(()=>{ try{ _ccRevisar(); }catch(_){} }, 250);
+}
+function _ccEncender(){
+  if(!_ccObs){
+    try{
+      _ccObs = new MutationObserver(_ccProgramar);
+    }catch(_){ _ccObs = null; }
+  }
+  if(_ccObs){
+    try{ _ccObs.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class'] }); }catch(_){}
+  }
+  _ccProgramar();
+}
+function _ccApagar(){
+  clearTimeout(_ccTimer);
+  if(_ccObs){ try{ _ccObs.disconnect(); }catch(_){} }
+  _ccTocados.forEach(el => {
+    try{ el.style.color = el._ccOrig || ''; el._ccPuesto = null; el._ccOrig = undefined; }catch(_){}
+  });
+  _ccTocados = [];
+}
+// El corrector se prende/apaga junto con el modo claro.
+(function(){
+  const original = window.toggleDarkMode;
+  window.toggleDarkMode = function(){
+    if(typeof original === 'function') original.apply(this, arguments);
+    if(document.body.classList.contains('light-mode')) _ccEncender();
+    else _ccApagar();
+    palAplicar();
+  };
+})();
+
+// ─── Arranque ─────────────────────────────────────────────────────────────
+// El saludo aparece cada vez que alguien entra a la app.
+(function(){
+  const original = window.iniciarSesion;
+  window.iniciarSesion = function(){
+    try{
+      return (typeof original === 'function') ? original.apply(this, arguments) : undefined;
+    } finally {
+      // Pase lo que pase adentro (por ejemplo, si la nube no responde), el
+      // saludo y la paleta se aplican igual: son solo apariencia.
+      try{ palAplicar(); salLabel(); salMostrar(); }catch(e){ console.warn('Saludo:', e); }
+      // v1.5.65 — El banner de avisos se pintaba recién al abrir una pestaña.
+      // Ahora aparece apenas se entra, junto con el saludo.
+      try{ if(typeof avPintarBanner === 'function') avPintarBanner(); }catch(_){}
+      try{ if(document.body.classList.contains('light-mode')) _ccEncender(); }catch(_){}
+    }
+  };
+})();
+// Al salir, se limpia el saludo para que no quede colgado en la pantalla.
+(function(){
+  const original = window.doLogout;
+  window.doLogout = function(){
+    try{ const k = document.getElementById('saludoDia'); if(k) k.innerHTML = ''; }catch(_){}
+    return (typeof original === 'function') ? original.apply(this, arguments) : undefined;
+  };
+})();
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  try{ palAplicar(); }catch(e){ console.warn('Paleta:', e); }
+  try{ if(document.body.classList.contains('light-mode')) _ccEncender(); }catch(_){}
+});
+
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -8711,7 +10294,12 @@ function showNavegacion(){
 (function(){
   if(typeof selectSector === 'function'){
     const _origSelSec = selectSector;
-    window.selectSector = function(id){ window._adminView = null; return _origSelSec(id); };
+    // v1.5.72 — ¡OJO! Esta envoltura se quedaba solo con el primer dato (el
+    // sector) y tiraba el segundo (la pestaña interna). Por eso, al entrar
+    // desde el menú a una pestaña interna que NO fuera la primera de su sector
+    // (por ejemplo Académica ▸ Clases), la app abría la primera del sector y
+    // parecía que la pestaña estaba vacía. Ahora pasa los dos datos.
+    window.selectSector = function(id, modId){ window._adminView = null; return _origSelSec(id, modId); };
   }
   if(typeof showAccesos === 'function'){
     const _origShowAcc = showAccesos;
@@ -9857,6 +11445,10 @@ async function dispBorrar(id){
 // ═══════════════════════════════════════════════════════════════════
 const LIC_S = 'LICENCIAS';
 const LIC_M = 'LICENCIAS';
+// v1.5.63 — Pestaña propia de Autorizaciones (Art. 12), con su propia clave de
+// datos: suep_AUTORIZACIONES_AUTORIZACIONES.
+const AUT_S = 'AUTORIZACIONES';
+const AUT_M = 'AUTORIZACIONES';
 const LIC_CUPOS_M = 'CUPOS';
 
 // Organigrama jerárquico (LISTADO PERSONAL POLICIAL 2026). NO cambiar el orden.
@@ -9959,8 +11551,10 @@ function _licMesDeAut(r){
 // como se venían contando hasta ahora.
 function _licPesoAut(r){ return String(r && r.dur) === '48' ? 2 : 1; }
 function _licAutsDelMes(lp, mesKey, exceptoId){
-  return _licDePersona(lp)
-    .filter(r=>r.tipo==='AUT_12' && r._id!==exceptoId && _licMesDeAut(r)===mesKey)
+  // v1.5.63: se cuentan las de la pestaña AUTORIZACIONES (antes estaban dentro
+  // de Licencias). La cuenta y el peso 24hs=1 / 48hs=2 no cambian.
+  return _autDePersona(lp)
+    .filter(r=>r._id!==exceptoId && _licMesDeAut(r)===mesKey)
     .reduce((t,r)=> t + _licPesoAut(r), 0);
 }
 // ─── RECORDATORIO DE PRESENTACIÓN (solo administradoras) ───
@@ -9994,10 +11588,10 @@ function _licFechaPresenta(r){
   const d = new Date(h); d.setDate(d.getDate()+1);
   return d;
 }
-function _licProximosAPresentarse(){
+function _licProximosAPresentarse(lista){
   const hoy = _licHoy0();
   const out = [];
-  _licRows().forEach(r=>{
+  (Array.isArray(lista) ? lista : _licRows()).forEach(r=>{
     const hasta = _licParseF(r.hasta);
     if(!hasta) return;                                   // sin fecha de fin, no hay aviso
     const diff = Math.round((hasta - hoy) / 86400000);   // días que faltan para terminar
@@ -10066,6 +11660,9 @@ function _licTipoLabel(id){
 // ─── Helpers ───
 function _licEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function _licRows(){ try{ return S.get(LIC_S, LIC_M); }catch(_){ return []; } }
+// v1.5.63 — Las Autorizaciones (Art. 12) tienen pestaña y clave propias.
+function _autRows(){ try{ return S.get(AUT_S, AUT_M); }catch(_){ return []; } }
+function _autDePersona(lp){ return _autRows().filter(r=>String(r.lp)===String(lp)); }
 function _licCupos(){ try{ return S.get(LIC_S, LIC_CUPOS_M); }catch(_){ return []; } }
 function _licDePersona(lp){ return _licRows().filter(r=>String(r.lp)===String(lp)); }
 function _licAnioActual(){ return new Date().getFullYear(); }
@@ -10248,6 +11845,7 @@ function licEnsureEstilos(){
 // ─── Vista principal (según el nivel de acceso) ───
 function renderLicencias(){
   licEnsureEstilos();
+  try{ autMigrarSiHaceFalta(); }catch(_){}   // v1.5.63: si quedó alguna AUT_12 acá, se muda sola
   const nivel = _licNivel();
 
   // RESTO DE USUARIOS → solo ven SU ficha
@@ -10281,7 +11879,7 @@ function renderLicencias(){
   const head = `
     <div class="lic-head">
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="lic-title">🏖️ Licencias y Autorizaciones del Personal</span>
+        <span class="lic-title">🏖️ Licencias del Personal</span>
         <span class="lic-sub">${LIC_PERSONAL.length} efectivos · ${rows.length} licencia${rows.length===1?'':'s'} cargada${rows.length===1?'':'s'}</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -10305,8 +11903,10 @@ function renderLicencias(){
       const cls = rest<=0 ? 'lic-badge-neg' : (rest<=5 ? 'lic-badge-low' : 'lic-badge-ok');
       saldoBadge = `<span class="lic-badge ${cls}" title="Días de Anual Ordinaria ${anioAct} que le restan usufructuar">${rest} día${rest===1?'':'s'} rest.</span>`;
     }
-    const cantBadge = lics.length
-      ? `<span class="lic-badge">${lics.length} lic.</span>`
+    // v1.5.63 — Acá solo licencias: las autorizaciones tienen su propia pestaña.
+    const nLic = lics.length;
+    const cantBadge = nLic
+      ? `<span class="lic-badge">${nLic} lic.</span>`
       : `<span class="lic-badge lic-badge-0">Sin licencias</span>`;
     return `<tbody data-buscar="${buscable}">
       <tr class="lic-row" onclick="licAbrirFicha('${p.lp}')">
@@ -10320,7 +11920,7 @@ function renderLicencias(){
 
   const foot = nivel==='admin'
     ? 'Tocá un efectivo para abrir su <b>ficha</b>: ahí ves sus licencias, le cargás nuevas y definís su cupo anual de Anual Ordinaria. El listado sigue el orden jerárquico del organigrama oficial.'
-    : 'Tocá un efectivo para abrir su <b>ficha</b>. Podés cargar <b>Autorizaciones (Art. 12)</b> únicamente al personal a tu cargo (el botón aparece solo en sus fichas). El resto de las licencias las cargan las administradoras.';
+    : 'Tocá un efectivo para abrir su <b>ficha</b> para ver sus licencias. Las licencias las cargan las administradoras; las <b>Autorizaciones (Art. 12)</b> se cargan en la pestaña <b>🪪 Autorizaciones</b> del Panel Institucional.';
 
   return `<div class="lic-wrap">${aviso}${head}
     <div class="lic-tablewrap">
@@ -10388,16 +11988,11 @@ function _licDetalleHTML(p){
     return `<div>${txt}${btnCupo}</div>`;
   }).join('');
 
-  // Autorizaciones (Art. 12) del mes contra el tope: dato SOLO ADMIN.
-  // Ni los jefes ni el propio efectivo ven este contador.
-  let lineaAut = '';
-  if(esAdmin){
-    const autsMes = _licAutsDelMes(p.lp, _licMesKeyHoy());
-    const excedido = autsMes > LIC_AUT_MAX_MES;
-    lineaAut = `<div>🪪 Autorizaciones (Art. 12) en ${_licMesLabel(_licMesKeyHoy())}: <span class="${excedido?'lic-aut-excedido':'lic-aut-ok'}"><b>${autsMes}</b> de ${LIC_AUT_MAX_MES} permitidas${excedido?' — ⚠️ SE PASÓ DEL MÁXIMO':''}</span></div>`;
-  }
+  // v1.5.63 — El contador del tope de autorizaciones se fue con ellas: está en
+  // la ficha de la pestaña 🪪 Autorizaciones (y sigue siendo solo para admin).
+  const lineaAut = '';
 
-  const tarjetas = lics.length ? lics.map(r=>{
+  const _card = r=>{
     const esLao = r.tipo==='LAO';
     const rango = (r.desde || r.hasta) ? `📆 ${_licFechaCorta(r.desde)||'…'} → ${_licFechaCorta(r.hasta)||'…'}` : '';
     const metaLao = esLao ? `🗓️ Año ${_licEsc(r.anio||'—')} · ${_licEsc(r.dias||'—')} día${r.dias==='1'?'':'s'} · ${_licEsc(r.viaje||'—')}` : '';
@@ -10416,13 +12011,28 @@ function _licDetalleHTML(p){
       <div class="lic-card-foot">${r._por ? 'Cargada por: '+_licEsc(r._por) : ''}${r._ts ? ' · '+_licEsc(r._ts) : ''}</div>
       ${acts}
     </div>`;
-  }).join('') : `<div style="color:#94a3b8;font-size:13px;padding:6px 2px">Este efectivo todavía no tiene licencias cargadas.</div>`;
+  };
+  // v1.5.63 — Esta ficha muestra SOLO licencias. Las autorizaciones (Art. 12)
+  // se ven y se cargan en su propia pestaña.
+  const _lics = lics.filter(r=>r.tipo!=='AUT_12');
+  const _bloque = (titulo, arr, vacio)=>
+    `<div style="display:flex;align-items:center;gap:7px;margin:12px 2px 6px;font-size:11.5px;
+      font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#7aafd4">
+      <span>${titulo}</span>
+      <span style="background:rgba(122,175,212,.16);border-radius:20px;padding:1px 8px;font-size:11px">${arr.length}</span>
+      <span style="flex:1;height:1px;background:rgba(122,175,212,.16)"></span>
+    </div>` +
+    (arr.length ? arr.map(_card).join('')
+                : `<div style="color:#94a3b8;font-size:12.5px;padding:2px 2px 4px">${vacio}</div>`);
+  const tarjetas = _bloque('🏖️ Licencias', _lics, 'Sin licencias cargadas.');
 
+  // v1.5.63 — Acá solo se cargan licencias (las administradoras). Las
+  // autorizaciones se dan desde la pestaña 🪪 Autorizaciones.
   let btnNueva = '';
   if(esAdmin){
-    btnNueva = `<button class="lic-btn-new" style="margin-top:6px" onclick="event.stopPropagation();licNueva('${p.lp}')">+ Cargar licencia</button>`;
-  }else if(nivel==='jefe' && _licCompete(p.lp)){
-    btnNueva = `<button class="lic-btn-new lic-btn-aut" style="margin-top:6px" onclick="event.stopPropagation();licNueva('${p.lp}', true)">+ Dar autorización (Art. 12)</button>`;
+    btnNueva = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="lic-btn-new" onclick="event.stopPropagation();licNueva('${p.lp}')">+ Cargar licencia</button>
+    </div>`;
   }
 
   return `<div class="lic-resumen">${resumen}${lineaAut}</div>${tarjetas}${btnNueva}`;
@@ -10471,7 +12081,12 @@ function licCerrarModal(){ const ov = document.getElementById('licModalOverlay')
 function _licVal(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
 function _licSelectTipos(sel){
-  const opts = LIC_TIPOS.map(g=>`<optgroup label="${_licEsc(g.grupo)}">${
+  // v1.5.63 — Las Autorizaciones (Art. 12) NO aparecen nunca en este
+  // desplegable: se cargan desde su propia pestaña, con su propio formulario.
+  const tipos = LIC_TIPOS
+    .map(g=>({ grupo:g.grupo, items:g.items.filter(i=> i.id!=='AUT_12') }))
+    .filter(g=>g.items.length);
+  const opts = tipos.map(g=>`<optgroup label="${_licEsc(g.grupo)}">${
     g.items.map(i=>`<option value="${i.id}" ${i.id===sel?'selected':''}>${_licEsc(i.short||i.label)}</option>`).join('')
   }</optgroup>`).join('');
   const desc = sel ? _licTipoLabel(sel) : '';
@@ -10754,9 +12369,13 @@ async function licGuardar(seguirCargando){
   }else{
     data.dias=''; data.viaje=''; data.anio='';
   }
+  // v1.5.63 — Según lo que se esté cargando, el registro va a su pestaña:
+  // Autorizaciones (Art. 12) → clave de AUTORIZACIONES · el resto → Licencias.
+  const _dS = (tipo === 'AUT_12') ? AUT_S : LIC_S;
+  const _dM = (tipo === 'AUT_12') ? AUT_M : LIC_M;
   try{
-    if(id){ if(typeof S.updSafe === 'function') await S.updSafe(LIC_S, LIC_M, id, data); else S.upd(LIC_S, LIC_M, id, data); }
-    else  { if(typeof S.addSafe === 'function') await S.addSafe(LIC_S, LIC_M, data); else S.add(LIC_S, LIC_M, data); }
+    if(id){ if(typeof S.updSafe === 'function') await S.updSafe(_dS, _dM, id, data); else S.upd(_dS, _dM, id, data); }
+    else  { if(typeof S.addSafe === 'function') await S.addSafe(_dS, _dM, data); else S.add(_dS, _dM, data); }
   }catch(e){ alert('No se pudo guardar: '+(e.message||e)); return; }
   // El control del tope es SOLO para las administradoras: si una admin carga
   // y detecta exceso, se le avisa a ella. Al jefe que carga NO se le muestra
@@ -10781,7 +12400,15 @@ async function licGuardar(seguirCargando){
     return;
   }
   licCerrarModal();
-  setTimeout(()=>{ try{ if(_licNivel()!=='propio') licToggleDetalle(lp); }catch(_){} }, 60);
+  setTimeout(()=>{ try{ if(_licNivel()!=='propio') _licReabrirFicha(lp); }catch(_){} }, 60);
+}
+
+// Vuelve a abrir la ficha de la pestaña en la que estás parada (Licencias o
+// Autorizaciones), así después de guardar seguís viendo lo mismo de antes.
+function _licReabrirFicha(lp){
+  const enAut = (typeof CS !== 'undefined' && CS && CS.custom === 'autorizaciones');
+  if(enAut && typeof autAbrirFicha === 'function') autAbrirFicha(lp);
+  else licAbrirFicha(lp);
 }
 
 async function licBorrar(id){
@@ -10866,6 +12493,408 @@ async function licCuposMasivosGuardar(anio){
   if(cambios) alert('✅ Se guardaron '+cambios+' cupo'+(cambios===1?'':'s')+' para el año '+anio+'.');
 }
 // ═══════ FIN MÓDULO LICENCIAS ═══════
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTORIZACIONES (Art. 12)   —   pestaña custom:'autorizaciones'   v1.5.63
+// ───────────────────────────────────────────────────────────────────
+// POR QUÉ EXISTE ESTA PESTAÑA: antes las autorizaciones se cargaban en dos
+// lugares distintos (mezcladas adentro de "Licencias y Autorizaciones" y en la
+// sub-pestaña "Autorizados" de Administrativa), así que el control quedaba
+// partido. Ahora tienen pestaña propia en el Panel Institucional y una clave de
+// datos propia; los registros de los dos lugares viejos se pasaron para acá
+// solos (migrarAutorizaciones) y de esos dos lugares se sacó la función.
+//
+// LAS REGLAS SON LAS MISMAS DE SIEMPRE:
+// • Duración 24 hs (1 día) o 48 hs (2 días) → el "Hasta" y la presentación se
+//   calculan solos (24 hs → Hasta = Desde · 48 hs → Hasta = Desde + 1).
+// • Tope de 2 por mes por efectivo: la de 24 hs pesa 1 y la de 48 hs pesa 2.
+//   NO bloquea la carga y es información SOLO de administradoras (el jefe que
+//   carga no ve el tope, ni el contador, ni el aviso).
+// • ADMINISTRADORAS: cargan, editan y borran a cualquier efectivo.
+//   JEFES: ven todo el listado y cargan SOLO sobre su personal (LIC_AUTORIZA).
+//   RESTO: ve únicamente sus propias autorizaciones.
+// ═══════════════════════════════════════════════════════════════════
+
+// Registros que quedaron sin poder identificar al efectivo (LP vacío o que no
+// figura en el organigrama). No se pierden: se muestran aparte para que una
+// administradora los asigne al efectivo que corresponda.
+function _autHuerfanas(){
+  return _autRows().filter(r=> !r || !r.lp || !_licPersona(r.lp));
+}
+
+function renderAutorizaciones(){
+  licEnsureEstilos();
+  try{ autMigrarSiHaceFalta(); }catch(_){}
+  const nivel = _licNivel();
+
+  // RESTO DE USUARIOS → solo ven las suyas
+  if(nivel === 'propio') return _autVistaPropia();
+
+  const rows = _autRows();
+  const mes  = _licMesKeyHoy();
+
+  // Carteles SOLO para administradoras
+  let aviso = '';
+  if(nivel === 'admin'){
+    const prox = _licProximosAPresentarse(rows);
+    if(prox.length){
+      const items = prox.map(x=>{
+        const cuando = x.diff===0
+          ? `termina <b>HOY</b> → se presenta <b>mañana ${_licDDMM(x.presenta)}</b>`
+          : `termina el <b>${_licDDMM(x.hasta)}</b> (en ${x.diff} día${x.diff===1?'':'s'}) → se presenta el <b>${_licDDMM(x.presenta)}</b>`;
+        return `<div style="margin-top:3px">• <b>${_licEsc(x.p.nombre)}</b> — Autorización de ${String(x.r.dur)==='48'?'48 hs':'24 hs'}: ${cuando}</div>`;
+      }).join('');
+      aviso += `<div class="lic-record">🔔 <b>Próximos a presentarse</b> (autorizaciones que terminan en ${LIC_AVISO_DIAS} días o menos):${items}</div>`;
+    }
+    const exc = _licExcedidosMesActual();
+    if(exc.length){
+      const lista = exc.map(x=>`<b>${_licEsc(x.p.nombre)}</b> (${x.cant} de ${LIC_AUT_MAX_MES})`).join(' · ');
+      aviso += `<div class="lic-aviso">⚠️ <b>Superaron el máximo de ${LIC_AUT_MAX_MES} autorizaciones (Art. 12) en ${_licMesLabel(mes)}:</b><br>${lista}
+        <br><small>La carga no se bloquea y el jefe que cargó NO ve este aviso: es información solo de administradoras.</small></div>`;
+    }
+  }
+
+  const head = `
+    <div class="lic-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="lic-title">🪪 Autorizaciones del Personal (Art. 12)</span>
+        <span class="lic-sub">${LIC_PERSONAL.length} efectivos · ${rows.length} autorización${rows.length===1?'':'es'} cargada${rows.length===1?'':'s'}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        ${rows.length ? xselBotonHTML() : ''}
+        <input id="autBuscar" class="lic-search" type="text" placeholder="Buscar nombre, jerarquía o LP…" oninput="autFiltrar(this.value)">
+      </div>
+    </div>`;
+
+  const filas = LIC_PERSONAL.map(p=>{
+    const auts = _autDePersona(p.lp);
+    const buscable = _licEsc((p.nombre+' '+p.jerarquia+' '+p.lp).toLowerCase());
+    const cantBadge = auts.length
+      ? `<span class="lic-badge" style="background:rgba(14,116,144,.22);color:#67e8f9;border-color:rgba(14,116,144,.4)">${auts.length} aut.</span>`
+      : `<span class="lic-badge lic-badge-0">Sin autorizaciones</span>`;
+    // El contador contra el tope del mes es dato SOLO de administradoras.
+    let mesBadge = '';
+    if(nivel === 'admin'){
+      const cant = _licAutsDelMes(p.lp, mes);
+      const cls = cant > LIC_AUT_MAX_MES ? 'lic-badge-neg' : (cant === LIC_AUT_MAX_MES ? 'lic-badge-low' : 'lic-badge-ok');
+      mesBadge = `<span class="lic-badge ${cls}" title="Computadas en ${_licMesLabel(mes)} — la de 24 hs cuenta 1 y la de 48 hs cuenta 2">${cant} de ${LIC_AUT_MAX_MES} este mes</span>`;
+    }
+    return `<tbody data-buscar="${buscable}">
+      <tr class="lic-row" onclick="autAbrirFicha('${p.lp}')">
+        <td class="lic-num">${p.n}</td>
+        <td><div style="font-weight:600">${_licEsc(p.nombre)}</div><div class="lic-jer">${_licEsc(p.jerarquia)}</div></td>
+        <td>${_licEsc(p.lp)}</td>
+        <td style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">${mesBadge}${cantBadge} <span class="lic-vermas">›</span></td>
+      </tr>
+    </tbody>`;
+  }).join('');
+
+  const foot = nivel==='admin'
+    ? 'Tocá un efectivo para abrir su <b>ficha</b>: ahí ves sus autorizaciones (Art. 12), le das una nueva, la editás o la borrás. El tope de 2 por mes es información solo de administradoras: la carga nunca se bloquea.'
+    : 'Tocá un efectivo para abrir su <b>ficha</b>. Podés dar <b>autorizaciones (Art. 12)</b> únicamente al personal a tu cargo: el botón aparece solo en esas fichas.';
+
+  return `<div class="lic-wrap">${aviso}${head}
+    <div class="lic-tablewrap">
+      <table class="lic-table">
+        <colgroup><col style="width:11%"><col style="width:45%"><col style="width:16%"><col style="width:28%"></colgroup>
+        <thead><tr>
+          <th class="lic-th">N°</th>
+          <th class="lic-th">Apellido y Nombre / Jerarquía</th>
+          <th class="lic-th">LP</th>
+          <th class="lic-th">Autorizaciones</th>
+        </tr></thead>
+        ${filas}
+      </table>
+    </div>
+    ${_autHuerfanasHTML()}
+    <div class="lic-foot">${foot}</div>
+  </div>`;
+}
+
+// Vista personal: el efectivo ve solo sus propias autorizaciones
+function _autVistaPropia(){
+  const lp = _licMiLP();
+  if(!lp){
+    return `<div class="lic-wrap"><div class="lic-propio-card" style="text-align:center;color:#94a3b8">
+      Tu usuario no figura en el organigrama.<br>Avisale a una administradora para que te sume.</div></div>`;
+  }
+  const p = _licPersona(lp);
+  return `<div class="lic-wrap">
+    <div class="lic-propio-card">
+      <div class="lic-propio-nom">${_licEsc(p.nombre)}</div>
+      <div class="lic-propio-jer">${_licEsc(p.jerarquia)} · LP ${_licEsc(p.lp)}</div>
+      ${_autDetalleHTML(p)}
+    </div>
+    <div class="lic-foot" style="max-width:640px;margin:10px auto 0;text-align:center">Acá ves las autorizaciones (Art. 12) que tenés cargadas. Las da tu jefe o una administradora.</div>
+  </div>`;
+}
+
+// Tarjeta de una autorización
+function _autCard(r, esAdmin){
+  const dur   = String(r.dur)==='48' ? '48 hs (2 días)' : '24 hs (1 día)';
+  const rango = (r.desde || r.hasta) ? `📆 ${_licFechaCorta(r.desde)||'…'} → ${_licFechaCorta(r.hasta)||'…'}` : '';
+  const pres  = _licFechaPresenta(r);
+  const metaPres = pres ? `↩️ Se presenta el ${_licDDMM(pres)}` : '';
+  const acts = esAdmin ? `<div class="lic-acts">
+      <button class="lic-da lic-da-edit" onclick="event.stopPropagation();autEditar('${r._id}')">✏️ Editar</button>
+      <button class="lic-da lic-da-del" onclick="event.stopPropagation();autBorrar('${r._id}')">🗑️ Borrar</button>
+    </div>` : '';
+  return `<div class="lic-card">
+    <div class="lic-card-tipo">Autorización — Art. 12</div>
+    <div class="lic-card-meta">${[`⏱️ ${dur}`, rango, metaPres].filter(Boolean).join(' · ')}</div>
+    ${r.obs ? `<div class="lic-card-obs">📝 ${_licEsc(r.obs)}</div>` : ''}
+    <div class="lic-card-foot">${r._por ? 'Cargada por: '+_licEsc(r._por) : ''}${r._ts ? ' · '+_licEsc(r._ts) : ''}${r._migradoDe ? ' · migrada de '+_licEsc(r._migradoDe) : ''}</div>
+    ${acts}
+  </div>`;
+}
+
+// Ficha de un efectivo: sus autorizaciones + el botón para dar una nueva
+function _autDetalleHTML(p){
+  const nivel = _licNivel();
+  const esAdmin = nivel==='admin';
+  const auts = _autDePersona(p.lp).slice()
+    .sort((a,b)=>String(b.desde||b._ts||'').localeCompare(String(a.desde||a._ts||'')));
+
+  // Contador contra el tope del mes: SOLO administradoras.
+  let lineaMes = '';
+  if(esAdmin){
+    const cant = _licAutsDelMes(p.lp, _licMesKeyHoy());
+    const excedido = cant > LIC_AUT_MAX_MES;
+    lineaMes = `<div>🪪 Computadas en ${_licMesLabel(_licMesKeyHoy())}: <span class="${excedido?'lic-aut-excedido':'lic-aut-ok'}"><b>${cant}</b> de ${LIC_AUT_MAX_MES} permitidas${excedido?' — ⚠️ SE PASÓ DEL MÁXIMO':''}</span></div>
+      <div style="font-size:11.5px;color:#94a3b8;margin-top:2px">La de 24 hs cuenta 1 y la de 48 hs cuenta 2. Este dato lo ven solo las administradoras.</div>`;
+  }
+
+  const encabezado = `<div style="display:flex;align-items:center;gap:7px;margin:12px 2px 6px;font-size:11.5px;
+      font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#7aafd4">
+      <span>🪪 Autorizaciones (Art. 12)</span>
+      <span style="background:rgba(122,175,212,.16);border-radius:20px;padding:1px 8px;font-size:11px">${auts.length}</span>
+      <span style="flex:1;height:1px;background:rgba(122,175,212,.16)"></span>
+    </div>`;
+  const tarjetas = auts.length
+    ? auts.map(r=>_autCard(r, esAdmin)).join('')
+    : `<div style="color:#94a3b8;font-size:12.5px;padding:2px 2px 4px">Sin autorizaciones cargadas.</div>`;
+
+  let btnNueva = '';
+  if(esAdmin || (nivel==='jefe' && _licCompete(p.lp))){
+    btnNueva = `<button class="lic-btn-new lic-btn-aut" style="margin-top:10px" onclick="event.stopPropagation();autNueva('${p.lp}')">+ Dar autorización (Art. 12)</button>`;
+  }
+
+  return (lineaMes ? `<div class="lic-resumen">${lineaMes}</div>` : '') + encabezado + tarjetas + btnNueva;
+}
+
+function autAbrirFicha(lp){
+  const p = _licPersona(lp); if(!p) return;
+  const html = `
+    <div class="lic-mh">
+      <h3>${_licEsc(p.nombre)}<br><small style="font-weight:400;color:#94a3b8">${_licEsc(p.jerarquia)} · LP ${_licEsc(p.lp)}</small></h3>
+      <button class="lic-x" onclick="licCerrarModal()">×</button>
+    </div>
+    <div class="lic-ficha">${_autDetalleHTML(p)}</div>`;
+  licAbrirModal(html);
+}
+
+function autFiltrar(q){ licFiltrar(q); }
+
+// Alta: usa el MISMO formulario de siempre en modo autorización (tipo fijo
+// Art. 12 + selector de 24/48 hs).
+function autNueva(lp){
+  _LIC_PRESENTA_TOCADA = false;
+  const nivel = _licNivel();
+  if(nivel==='propio'){ alert('No tenés permisos para dar autorizaciones.'); return; }
+  if(nivel==='jefe' && !_licCompete(lp)){ alert('Solo podés dar autorizaciones al personal a tu cargo.'); return; }
+  licAbrirModal(_licFormHTML(lp, null, true));
+  licAutDurChange();
+}
+
+function autEditar(id){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden editar autorizaciones.'); return; }
+  const r = _autRows().find(x=>x._id===id); if(!r) return;
+  _LIC_PRESENTA_TOCADA = !!r.presenta;
+  licAbrirModal(_licFormHTML(r.lp, r, true));
+  _licAvisoPresenta();
+}
+
+async function autBorrar(id){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden borrar autorizaciones.'); return; }
+  const r = _autRows().find(x=>x._id===id); if(!r) return;
+  if(!confirm('¿Borrar esta autorización? Esta acción no se puede deshacer.')) return;
+  // Se saca de la vista YA y la nube confirma el borrado por detrás
+  try{ _S_set_local(AUT_S, AUT_M, _autRows().filter(x=>x._id!==id)); }catch(_){}
+  renderTable();
+  try{
+    if(typeof S.delSafe === 'function') await S.delSafe(AUT_S, AUT_M, id);
+    else S.del(AUT_S, AUT_M, id);
+  }catch(e){ console.warn('Autorizaciones: el borrado se sincroniza cuando vuelva la conexión', e); }
+  setTimeout(()=>{ try{ if(r.lp && _licPersona(r.lp)) autAbrirFicha(r.lp); }catch(_){} }, 60);
+}
+
+// ─── Registros migrados sin efectivo identificado (solo administradoras) ───
+function _autHuerfanasHTML(){
+  if(_licNivel()!=='admin') return '';
+  const hs = _autHuerfanas();
+  if(!hs.length) return '';
+  const opciones = LIC_PERSONAL.map(p=>`<option value="${_licEsc(p.lp)}">${_licEsc(p.nombre)} (LP ${_licEsc(p.lp)})</option>`).join('');
+  const cards = hs.map(r=>`
+    <div class="lic-card">
+      <div class="lic-card-tipo">Autorización — Art. 12 · sin efectivo asignado</div>
+      <div class="lic-card-meta">${[`⏱️ ${String(r.dur)==='48'?'48 hs':'24 hs'}`,
+        (r.desde||r.hasta) ? `📆 ${_licFechaCorta(r.desde)||'…'} → ${_licFechaCorta(r.hasta)||'…'}` : ''].filter(Boolean).join(' · ')}</div>
+      ${r._nombreViejo ? `<div class="lic-card-obs">👤 Figuraba a nombre de: <b>${_licEsc(r._nombreViejo)}</b></div>` : ''}
+      ${r.obs ? `<div class="lic-card-obs">📝 ${_licEsc(r.obs)}</div>` : ''}
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <select id="autAsig_${r._id}" class="lic-sel" style="max-width:270px"><option value="">Asignar al efectivo…</option>${opciones}</select>
+        <button class="lic-da lic-da-edit" onclick="autAsignarLp('${r._id}')">✔️ Asignar</button>
+        <button class="lic-da lic-da-del" onclick="autBorrar('${r._id}')">🗑️ Borrar</button>
+      </div>
+      <div class="lic-card-foot">${r._migradoDe ? 'Migrada de '+_licEsc(r._migradoDe) : ''}${r._ts ? ' · '+_licEsc(r._ts) : ''}</div>
+    </div>`).join('');
+  return `<div style="margin:16px 2px 4px">
+    <div class="lic-aviso">⚠️ <b>${hs.length} autorización${hs.length===1?'':'es'} sin efectivo identificado.</b>
+      Vienen de la carga vieja y el nombre no coincide con nadie del organigrama. Asignalas al efectivo que corresponda para que entren en su ficha y en el control del mes.</div>
+    ${cards}
+  </div>`;
+}
+
+async function autAsignarLp(id){
+  if(_licNivel()!=='admin'){ alert('Solo las administradoras pueden asignar autorizaciones.'); return; }
+  const sel = document.getElementById('autAsig_'+id);
+  const lp = sel ? sel.value : '';
+  if(!lp){ alert('Elegí el efectivo al que corresponde esta autorización.'); return; }
+  try{
+    if(typeof S.updSafe === 'function') await S.updSafe(AUT_S, AUT_M, id, {lp});
+    else S.upd(AUT_S, AUT_M, id, {lp});
+  }catch(e){ alert('No se pudo asignar: '+(e.message||e)); return; }
+  renderTable();
+  setTimeout(()=>{ try{ autAbrirFicha(lp); }catch(_){} }, 60);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MIGRACIÓN DE LAS AUTORIZACIONES YA CARGADAS  (v1.5.63)
+// ───────────────────────────────────────────────────────────────────
+// De dónde salen: (1) los registros tipo AUT_12 que estaban dentro de Licencias
+// y (2) todo lo que había en Administrativa › Autorizados.
+// Cómo se hace: se copian a la clave de la pestaña nueva CONSERVANDO el _id
+// (así, si la migración corre dos veces, no se duplica nada) y después se
+// borran de la clave vieja, registro por registro y de forma atómica (la misma
+// vía que usa el borrado normal de la app, así no se pisa la carga de nadie).
+// Corre sola al iniciar sesión y también al abrir las pestañas de Licencias o
+// Autorizaciones, por si en algún dispositivo quedó algo sin pasar.
+// ═══════════════════════════════════════════════════════════════════
+const AUT_ADM_S = 'ADMINISTRATIVA';
+const AUT_ADM_M = 'AUTORIZADOS';
+
+function _autNorm(t){
+  return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+}
+// Del nombre que se cargaba en Administrativa ("Miguel Ángel Baracco") al LP del
+// organigrama ("BARACCO MIGUEL ANGEL"). Solo asigna si hay UNA coincidencia.
+function _autLpPorNombre(nombre){
+  const pal = _autNorm(nombre).split(' ').filter(x=>x.length>2);
+  if(!pal.length) return null;
+  const cand = LIC_PERSONAL.filter(p=>{ const n=_autNorm(p.nombre); return pal.every(w=>n.includes(w)); });
+  return cand.length===1 ? cand[0].lp : null;
+}
+// Un registro de Administrativa › Autorizados convertido al formato de la
+// pestaña nueva. No se descarta nada: lo que no tiene lugar propio queda escrito
+// en Observaciones.
+function _autDesdeAdministrativa(r){
+  const lp = _autLpPorNombre(r.apellidoNombre) || '';
+  const detalle = [];
+  if(r.autorizacion) detalle.push('Autorización: ' + r.autorizacion);
+  if(r.vigencia)     detalle.push('Vigencia hasta: ' + (_licFechaCorta(r.vigencia) || r.vigencia));
+  if(!lp && r.apellidoNombre) detalle.push('Efectivo: ' + r.apellidoNombre);
+  if(r.obs) detalle.push(r.obs);
+  return { ...r, lp, tipo:'AUT_12',
+    dur: r.dur || '24',
+    desde: r.desde || '',
+    hasta: r.hasta || r.vigencia || '',
+    presenta: r.presenta || '',
+    obs: detalle.join(' · '),
+    _sector: AUT_S, _mod: AUT_M,
+    _nombreViejo: r.apellidoNombre || '',
+    _migradoDe: 'Administrativa › Autorizados' };
+}
+
+// Copia de seguridad de TODO lo que se va a mover, tal como estaba, ANTES de
+// tocar nada. Queda en el dispositivo y en la nube bajo su propia clave, y no se
+// pisa nunca (si ya existe, no se vuelve a escribir). Es la red de contención:
+// si algo saliera mal con la migración, los registros originales están enteros.
+const AUT_RESPALDO_KEY = 'suep_respaldo_autorizaciones_v163';
+function _autGuardarRespaldo(licArt12, admRows){
+  try{
+    if(localStorage.getItem(AUT_RESPALDO_KEY)) return;   // ya hay respaldo
+    if(!licArt12.length && !admRows.length) return;
+    const respaldo = {
+      ts: new Date().toISOString(),
+      nota: 'Respaldo automático previo a la migración de Autorizaciones (Art. 12) a su pestaña propia — v1.5.63',
+      licencias_art12: licArt12,
+      administrativa_autorizados: admRows
+    };
+    localStorage.setItem(AUT_RESPALDO_KEY, JSON.stringify(respaldo));
+    if(typeof syncToSupabase === 'function') syncToSupabase(AUT_RESPALDO_KEY, respaldo);
+    console.log('🗄️ Respaldo previo guardado en ' + AUT_RESPALDO_KEY + ': ' +
+                licArt12.length + ' de Licencias + ' + admRows.length + ' de Administrativa.');
+  }catch(e){ console.warn('No se pudo guardar el respaldo previo:', e); }
+}
+
+async function migrarAutorizaciones(){
+  const licAll = S.get(LIC_S, LIC_M);
+  const mover  = licAll.filter(r => r && r.tipo === 'AUT_12' && r._id);
+  const admAll = S.get(AUT_ADM_S, AUT_ADM_M).filter(r => r && r._id);
+  if(!mover.length && !admAll.length) return 0;
+
+  // 0) Respaldo primero: recién después se mueve algo
+  _autGuardarRespaldo(mover, admAll);
+
+  const destino = _autRows();
+  const yaEstan = new Set(destino.map(r => r && r._id).filter(Boolean));
+  const nuevos = [];
+  mover.forEach(r=>{ if(!yaEstan.has(r._id)) nuevos.push({...r, _sector:AUT_S, _mod:AUT_M, _migradoDe:'Licencias y Autorizaciones'}); });
+  admAll.forEach(r=>{ if(!yaEstan.has(r._id)) nuevos.push(_autDesdeAdministrativa(r)); });
+
+  // 1) Primero el dispositivo (instantáneo y sin depender de la señal)
+  if(nuevos.length) _S_set_local(AUT_S, AUT_M, destino.concat(nuevos));
+  if(mover.length)  _S_set_local(LIC_S, LIC_M, licAll.filter(r => !(r && r.tipo === 'AUT_12')));
+  if(admAll.length) _S_set_local(AUT_ADM_S, AUT_ADM_M, []);
+  console.log('🪪 Autorizaciones: ' + nuevos.length + ' registro(s) pasados a la pestaña propia (' +
+              mover.length + ' de Licencias y ' + admAll.length + ' de Administrativa).');
+
+  // 2) Después la nube, registro por registro: primero el alta en la pestaña
+  //    nueva y recién después el borrado en la vieja, para que nada quede en el
+  //    aire si se corta la conexión en el medio.
+  for(const r of nuevos){
+    try{ await _sincronizarRegistro(AUT_S, AUT_M, r); }
+    catch(e){ console.warn('Migración: no se pudo subir la autorización', r._id, e); }
+  }
+  for(const r of mover){
+    try{ if(typeof S.delSafe === 'function') await S.delSafe(LIC_S, LIC_M, r._id); }
+    catch(e){ console.warn('Migración: quedó pendiente el borrado en Licencias de', r._id, e); }
+  }
+  for(const r of admAll){
+    try{ if(typeof S.delSafe === 'function') await S.delSafe(AUT_ADM_S, AUT_ADM_M, r._id); }
+    catch(e){ console.warn('Migración: quedó pendiente el borrado en Administrativa de', r._id, e); }
+  }
+  return nuevos.length;
+}
+
+// Dispara la migración solo si hay algo para pasar, sin trabar la pantalla.
+let _AUT_MIG_EN_CURSO = false;
+function autMigrarSiHaceFalta(){
+  if(_AUT_MIG_EN_CURSO) return;
+  let hay = false;
+  try{
+    hay = S.get(LIC_S, LIC_M).some(r => r && r.tipo === 'AUT_12')
+       || S.get(AUT_ADM_S, AUT_ADM_M).length > 0;
+  }catch(_){ return; }
+  if(!hay) return;
+  _AUT_MIG_EN_CURSO = true;
+  migrarAutorizaciones()
+    .then(n=>{ if(n){ try{ renderTable(); }catch(_){} } })
+    .catch(e=>console.warn('Migración de autorizaciones:', e))
+    .finally(()=>{ _AUT_MIG_EN_CURSO = false; });
+}
+// ═══════ FIN MÓDULO AUTORIZACIONES ═══════
 
 
 // Enganchar el detector después de cada render de tabla
@@ -11305,6 +13334,34 @@ function construirDocx(clave, valores, PLANTILLAS) {
 // ══════════════════════════════════════════════════════════════════
 const HOY = new Date().toISOString().slice(0, 10);
 
+// ─── Motivos de la CARTA DE PRESENTACIÓN ───────────────────────────────────
+// Cuatro motivos: curso de ascenso, traslado, pase y "otro" (este último se
+// completa a mano en el campo "Especificar motivo").
+// El modelo de Word sigue siendo uno de dos: el de curso, o el de traslado
+// (que sirve igual para pase y para cualquier otro motivo).
+// v1.5.63: el motivo VIEJO 'Traslado / se va de la unidad' ya NO se muestra en
+// ningún lado. Queda únicamente acá adentro para que las cartas guardadas con
+// la versión anterior se sigan leyendo bien: cartaMotivo() y gdMigrar() las
+// interpretan como 'Traslado'.
+const CARTA_MOTIVO_VIEJO = 'Traslado / se va de la unidad';
+const CARTA_MOTIVOS   = ['Curso de ascenso', 'Traslado', 'Pase', 'Otro'];
+const CARTA_NO_CURSO  = ['Traslado', 'Pase', 'Otro'];
+// Motivo "limpio": si viene el valor viejo guardado, se lee como 'Traslado'.
+function cartaMotivo(d){
+  const m = String((d || {}).motivo || '');
+  return m === CARTA_MOTIVO_VIEJO ? 'Traslado' : m;
+}
+function cartaEsCurso(d){ return CARTA_NO_CURSO.indexOf(cartaMotivo(d)) < 0; }
+// Qué cumplimenta el efectivo, tal cual se escribe en el texto de la carta.
+// Con motivo "Otro" manda lo que se haya escrito en "Especificar motivo".
+function cartaCumplimenta(d){
+  d = d || {};
+  const otro = String(d.motivoOtro || '').trim();
+  const tram = String(d.tramite || '').trim();
+  if(cartaMotivo(d) === 'Otro') return otro || tram || 'TRASLADO';
+  return tram || 'TRASLADO';
+}
+
 const TIPOS_DOC = {
 
   MEMO: {
@@ -11459,12 +13516,17 @@ const TIPOS_DOC = {
 
   CARTA: {
     nombre: 'Carta de presentación',
-    plantilla: d => d.motivo === 'Traslado / se va de la unidad' ? 'CARTA_TRASLADO' : 'CARTA_CURSO',
+    plantilla: d => cartaEsCurso(d) ? 'CARTA_CURSO' : 'CARTA_TRASLADO',
     archivo: d => 'Carta de presentacion ' + (d.apellidoNombre || ''),
     grupos: [
       { titulo: 'Motivo', campos: [
-        { id: 'motivo', et: 'Modelo a usar', tipo: 'select',
-          opciones: ['Curso de ascenso', 'Traslado / se va de la unidad'], v: 'Curso de ascenso' } ] },
+        { id: 'motivo', et: 'Motivo de la presentación', tipo: 'select',
+          opciones: CARTA_MOTIVOS, v: 'Curso de ascenso' },
+        // v1.5.63: con motivo "Otro" se escribe acá qué cumplimenta; eso mismo
+        // es lo que sale en el texto de la carta.
+        { id: 'motivoOtro', et: 'Especificar motivo (se escribe tal cual en el texto)',
+          tipo: 'combo', opciones: ['AGREGACIÓN', 'PASE EN COMISIÓN'],
+          v: '', solo: ['Otro'] } ] },
       { titulo: 'Encabezado', campos: [
         { id: 'unidad', et: 'Unidad que remite', v: 'DPTO CENTRO DE FORMACION Y CAPACITACIÓN CCO' },
         { id: 'fecha', et: 'Fecha', tipo: 'date', v: HOY },
@@ -11485,15 +13547,15 @@ const TIPOS_DOC = {
         { id: 'ciudad', et: 'Ciudad', v: '', solo: ['Curso de ascenso'] },
         { id: 'inicio', et: 'Día de inicio', tipo: 'date', v: '', solo: ['Curso de ascenso'] },
         { id: 'hora', et: 'Hora', tipo: 'time', v: '07:45', solo: ['Curso de ascenso'] } ] },
-      { titulo: 'Traslado', campos: [
-        { id: 'destinoUnidad', et: 'Unidad de destino', v: '', solo: ['Traslado / se va de la unidad'] },
+      { titulo: 'Traslado / Pase / Otro', campos: [
+        { id: 'destinoUnidad', et: 'Unidad de destino', v: '', solo: CARTA_NO_CURSO },
         { id: 'tramite', et: 'Qué cumplimenta (se escribe tal cual en el texto)', tipo: 'combo',
-          opciones: ['TRASLADO', 'PASE', 'COMISIÓN DE SERVICIO', 'AGREGACIÓN'], v: 'TRASLADO',
-          solo: ['Traslado / se va de la unidad'] },
-        { id: 'memoTraslado', et: 'Memorándum que lo ordena', v: '', solo: ['Traslado / se va de la unidad'] },
-        { id: 'cargaHoraria', et: 'Carga horaria', v: '', solo: ['Traslado / se va de la unidad'] },
+          opciones: ['TRASLADO', 'PASE'], v: 'TRASLADO',
+          solo: ['Traslado', 'Pase'] },
+        { id: 'memoTraslado', et: 'Memorándum que lo ordena', v: '', solo: CARTA_NO_CURSO },
+        { id: 'cargaHoraria', et: 'Carga horaria', v: '', solo: CARTA_NO_CURSO },
         { id: 'licencias', et: 'Licencias que resta usufructuar', tipo: 'texto', v: '',
-          solo: ['Traslado / se va de la unidad'] } ] },
+          solo: CARTA_NO_CURSO } ] },
       { titulo: 'Armamento y credencial', campos: [
         { id: 'pistola', et: 'Pistola (marca y modelo)', v: '' },
         { id: 'calibre', et: 'Calibre', v: '' },
@@ -11508,7 +13570,7 @@ const TIPOS_DOC = {
         { id: 'memoFecha', et: 'De fecha', tipo: 'date', v: '', solo: ['Curso de ascenso'] } ] },
     ],
     valores: d => {
-      const esCurso = d.motivo !== 'Traslado / se va de la unidad';
+      const esCurso = cartaEsCurso(d);
       const quien = '**' + [d.jerarquia, d.apellidoNombre].filter(Boolean).join(' ') +
                     (d.lp ? ' LP N°' + d.lp : '') + '**';
       const arma = 'Hago saber que se encuentra provisto de uniforme completo, armamento reglamentario Pistola ' +
@@ -11530,7 +13592,7 @@ const TIPOS_DOC = {
       } else {
         cuerpo = 'Me dirijo a Usted, llevando a su conocimiento que el portador de la presente, ' + quien +
           ', hace su presentación en ' + d.destinoUnidad +
-          ', Unidad a su cargo cumplimentando ' + (d.tramite || 'TRASLADO') + ', conforme lo ordenado por la superioridad mediante MEMORANDUM N° ' +
+          ', Unidad a su cargo cumplimentando ' + cartaCumplimenta(d) + ', conforme lo ordenado por la superioridad mediante MEMORANDUM N° ' +
           d.memoTraslado + '.-' +
           '\n' + arma + (d.cargaHoraria ? ', carga horaria ' + d.cargaHoraria : '') + '.' +
           (d.licencias ? ' ' + d.licencias : '');
@@ -11784,7 +13846,20 @@ function gdPlantilla(t, d){
   return cfg && cfg.plantilla ? cfg.plantilla(d || GD_D) : (t || GD_TIPO);
 }
 // Campos que no corresponden al motivo elegido no se muestran ni se exigen
-function gdAplica(c){ return !c.solo || c.solo.indexOf(GD_D.motivo) >= 0; }
+function gdAplica(c){
+  if(!c.solo) return true;
+  // En la carta el motivo se lee "limpio" (el valor viejo cuenta como Traslado)
+  const m = (GD_TIPO === 'CARTA') ? cartaMotivo(GD_D) : GD_D.motivo;
+  return c.solo.indexOf(m) >= 0;
+}
+
+// Documentos guardados con la versión vieja: el motivo de la carta se llamaba
+// 'Traslado / se va de la unidad'. Ahora ese motivo es simplemente 'Traslado',
+// así que al abrirlos se les acomoda el nombre (el contenido no se toca).
+function gdMigrar(t, d){
+  if(t === 'CARTA' && d && d.motivo === CARTA_MOTIVO_VIEJO) d.motivo = 'Traslado';
+  return d;
+}
 
 function gdDefaults(t){
   const d = {};
@@ -11824,6 +13899,7 @@ function gdAbrir(id){
   GD_RO = !gdPuedeEditar(r);          // v1.5.60
   GD_TIPO = r.tipo; GD_ID = id; GD_ESTADO = '';
   try{ GD_D = JSON.parse(r.datos || '{}'); }catch(_){ GD_D = gdDefaults(r.tipo); }
+  gdMigrar(r.tipo, GD_D);
   // por si la plantilla sumó campos nuevos después de haberlo guardado
   const base = gdDefaults(r.tipo);
   Object.keys(base).forEach(k => { if(GD_D[k] === undefined) GD_D[k] = base[k]; });
@@ -11853,6 +13929,7 @@ function gdDuplicar(id){
   GD_RO = false;                      // la copia es tuya: se edita normal
   GD_TIPO = r.tipo; GD_ID = null; GD_ESTADO = '';
   try{ GD_D = JSON.parse(r.datos || '{}'); }catch(_){ GD_D = gdDefaults(r.tipo); }
+  gdMigrar(r.tipo, GD_D);
   GD_D.fecha = todayISO();
   GD_VISTA = 'editor'; renderTable();
 }
@@ -11924,7 +14001,21 @@ function gdPintarEstado(){
 }
 
 // ─── Cambios en los campos ────────────────────────────────────────────────
-function gdSetMotivo(val){ GD_D.motivo = val; gdPintarForm(); gdTocado(); }
+function gdSetMotivo(val){
+  GD_D.motivo = val;
+  // En la carta, el texto escribe tal cual lo que dice "Qué cumplimenta". Al
+  // elegir el motivo lo dejamos acorde: Traslado → TRASLADO, Pase → PASE y
+  // "Otro" lo deja en blanco para completarlo a mano. Si ya había algo escrito
+  // a mano (distinto de TRASLADO/PASE) no se toca.
+  if(GD_TIPO === 'CARTA'){
+    const auto = ['', 'TRASLADO', 'PASE'];
+    const actual = String(GD_D.tramite || '').trim().toUpperCase();
+    if(val === 'Traslado' && auto.indexOf(actual) >= 0) GD_D.tramite = 'TRASLADO';
+    else if(val === 'Pase' && auto.indexOf(actual) >= 0) GD_D.tramite = 'PASE';
+    else if(val === 'Otro' && auto.indexOf(actual) >= 0) GD_D.tramite = '';
+  }
+  gdPintarForm(); gdTocado();
+}
 function gdSet(id, val){ GD_D[id] = val; gdPintarPrevia(); gdTocado(); }
 function gdSetSexo(val){
   GD_D.sexo = val; GD_D._sexoManual = true; gdConcordar(val);
@@ -12297,7 +14388,7 @@ function gdPrevia(){
        <div style="margin-top:16px;font-style:italic">${gdHtml(d.iniciales)}</div>`;
   }
   if(t === 'CARTA'){
-    const esCurso = d.motivo !== 'Traslado / se va de la unidad';
+    const esCurso = cartaEsCurso(d);
     const quien = '<b>' + gdEsc([d.jerarquia, d.apellidoNombre].filter(Boolean).join(' ') +
                   (d.lp ? ' LP N°' + d.lp : '')) + '</b>';
     const arma = 'Hago saber que se encuentra provisto de uniforme completo, armamento reglamentario Pistola ' +
@@ -12316,7 +14407,7 @@ function gdPrevia(){
          ', y del listado de elementos.')
       : ('Me dirijo a Usted, llevando a su conocimiento que el portador de la presente, ' + quien +
          ', hace su presentación en ' + gdEsc(d.destinoUnidad) +
-         ', Unidad a su cargo cumplimentando ' + gdEsc(d.tramite || 'TRASLADO') + ', conforme lo ordenado por la superioridad mediante MEMORANDUM N° ' +
+         ', Unidad a su cargo cumplimentando ' + gdEsc(cartaCumplimenta(d)) + ', conforme lo ordenado por la superioridad mediante MEMORANDUM N° ' +
          gdEsc(d.memoTraslado) + '.-</div><div style="' + just + '">' + arma +
          (d.cargaHoraria ? ', carga horaria ' + gdEsc(d.cargaHoraria) : '') + '.' +
          (d.licencias ? ' ' + gdEsc(d.licencias) : '') + '</div>' +
@@ -12449,6 +14540,19 @@ function avVigentes(){
 }
 
 // ─── El banner ────────────────────────────────────────────────────────────
+// v1.5.61: en el celular un aviso largo ocupaba la pantalla entera y tapaba
+// las pestañas. Ahora el aviso arranca PLEGADO: se ve el título y la primera
+// línea del mensaje, y se abre tocándolo o con "Ver más". Abierto tampoco
+// pasa del 45% del alto de la pantalla: si el texto sigue, scrollea adentro
+// del propio recuadro. Los avisos cortos se muestran completos como siempre.
+// La × sigue ocultándolo por el resto del día.
+var AV_ABIERTO = {};   // avisos desplegados a mano (dura mientras la app esté abierta)
+
+function avEsLargo(t){
+  const s = String(t == null ? '' : t);
+  return s.length > 85 || s.indexOf('\n') !== -1;
+}
+
 function avPintarBanner(){
   const cont = document.getElementById('avisoBanner');
   if(!cont) return;
@@ -12457,21 +14561,63 @@ function avPintarBanner(){
   const vis = avVigentes().filter(a => localStorage.getItem('suep_aviso_oculto_' + a._id) !== hoy);
   cont.innerHTML = vis.map(a => {
     const c = avColor(a.color);
+    const largo   = avEsLargo(a.texto);
+    const abierto = !largo || AV_ABIERTO[a._id] === true;
+
+    const cuerpo = abierto
+      ? `<div style="font-size:12.5px;line-height:1.5;color:var(--av-txt);white-space:pre-wrap;
+           margin-top:4px;max-height:45vh;overflow:auto;-webkit-overflow-scrolling:touch">${avEsc(a.texto)}</div>
+         ${a.hasta ? `<div style="font-size:10.5px;color:var(--av-txt2);margin-top:6px">Hasta el ${avEsc(avFechaCorta(a.hasta))}</div>` : ''}`
+      : `<div style="font-size:12.5px;line-height:1.45;color:var(--av-txt);margin-top:2px;
+           display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${avEsc(String(a.texto == null ? '' : a.texto).replace(/\s+/g, ' ').trim())}</div>`;
+
+    const toggle = largo
+      ? `<button onclick="avToggle('${a._id}')"
+          style="background:none;border:none;color:${c.texto};font-size:11.5px;font-weight:700;
+          cursor:pointer;padding:5px 0 0;font-family:inherit;opacity:.9">${abierto ? 'Ver menos ▲' : 'Ver más ▼'}</button>`
+      : '';
+
     return `<div style="background:${c.fondo};border:1px solid ${c.borde};border-left:4px solid ${c.borde};
-      border-radius:10px;padding:11px 13px;margin:0 0 10px;display:flex;gap:10px;align-items:flex-start">
+      border-radius:10px;padding:9px 11px;margin:0 0 8px;display:flex;gap:9px;align-items:flex-start">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12.5px;font-weight:700;color:${c.texto};margin-bottom:3px">${avEsc(a.titulo)}</div>
-        <div style="font-size:12.5px;line-height:1.5;color:#c8d8e8;white-space:pre-wrap">${avEsc(a.texto)}</div>
-        ${a.hasta ? `<div style="font-size:10.5px;color:#7f9fb8;margin-top:5px">Hasta el ${avEsc(avFechaCorta(a.hasta))}</div>` : ''}
+        <div ${largo ? `onclick="avToggle('${a._id}')"` : ''} style="cursor:${largo ? 'pointer' : 'default'}">
+          <div style="font-size:12.5px;font-weight:700;color:${c.texto};overflow:hidden;
+            text-overflow:ellipsis;${abierto ? '' : 'white-space:nowrap'}">${avEsc(a.titulo)}</div>
+          ${cuerpo}
+        </div>
+        ${toggle}
       </div>
       <button onclick="avOcultarHoy('${a._id}')" title="Ocultar por hoy"
         style="background:none;border:none;color:${c.texto};font-size:17px;line-height:1;cursor:pointer;padding:0 2px">×</button>
     </div>`;
   }).join('');
 }
+function avToggle(id){
+  AV_ABIERTO[id] = !AV_ABIERTO[id];
+  avPintarBanner();
+}
 function avOcultarHoy(id){
   localStorage.setItem('suep_aviso_oculto_' + id, todayISO());
   avPintarBanner();
+}
+// v1.5.65 — Cuántos avisos oculté hoy en ESTE dispositivo (con la ×).
+function avOcultosHoy(){
+  const hoy = todayISO();
+  let n = 0;
+  try{
+    avVigentes().forEach(a => {
+      if(localStorage.getItem('suep_aviso_oculto_' + a._id) === hoy) n++;
+    });
+  }catch(_){}
+  return n;
+}
+// v1.5.65 — Volver a mostrar los avisos que oculté hoy, sin esperar a mañana.
+function avMostrarOcultos(){
+  try{
+    avVigentes().forEach(a => localStorage.removeItem('suep_aviso_oculto_' + a._id));
+  }catch(_){}
+  avPintarBanner();
+  if(typeof renderTable === 'function') renderTable();
 }
 
 // ─── Pantalla de administración (solo administradoras) ────────────────────
@@ -12544,6 +14690,12 @@ function renderAvisos(){
       padding:11px 13px;font-size:12.5px;line-height:1.55;color:#a9c8e4;margin-bottom:14px">
       El aviso se muestra arriba de todo, en cualquier pestaña, hasta la fecha que le pongas.
       Cada usuario lo puede ocultar por el día, pero al otro día vuelve a aparecer.
+      ${avOcultosHoy() ? `<div style="margin-top:9px">
+        <button onclick="avMostrarOcultos()" style="background:rgba(96,165,250,.16);
+          border:1px solid rgba(96,165,250,.4);color:#bfd7ea;padding:8px 13px;border-radius:8px;
+          font-size:12.5px;cursor:pointer;font-family:inherit">
+          👁️ Volver a mostrar los ${avOcultosHoy()} aviso(s) que oculté hoy
+        </button></div>` : ''}
     </div>
     ${form}
     <div style="font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#60a5fa;font-weight:700;margin-bottom:11px">
@@ -12584,6 +14736,212 @@ async function avBorrar(id){
   else S.del(AV_S, AV_M, id);
   if(AV_EDIT === id) AV_EDIT = null;
   renderTable(); avPintarBanner();
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REVISIÓN DE DATOS  (v1.5.68) — solo administradoras
+// ───────────────────────────────────────────────────────────────────────────
+// Para qué sirve: contesta la pregunta "¿esta pestaña está vacía porque nadie
+// cargó nada, o porque a ESTE equipo no le bajaron los datos?".
+// Recorre todas las pestañas de la app, cuenta cuántos registros hay guardados
+// en el dispositivo y los compara con lo que hay en la nube.
+// No borra, no edita y no sube nada: solo mira y cuenta.
+// ═══════════════════════════════════════════════════════════════════════════
+var RD_NUBE = null;      // { clave: cantidad } traído de Supabase
+var RD_FILTRO = 'todo';  // 'todo' | 'problemas'
+
+function rdEsc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function rdLimpio(t){                       // saca el emoji del principio del nombre
+  return String(t || '').replace(/^[^\wÁÉÍÓÚÜÑáéíóúüñ0-9]+\s*/, '').trim();
+}
+// Todas las pestañas de la app, con su clave de guardado.
+function rdInventario(){
+  const out = [];
+  (typeof SECTORS === 'undefined' ? [] : SECTORS).forEach(sec => {
+    (sec.modules || []).forEach(mod => {
+      const destinos = mod.subTabs ? mod.subTabs : [mod];
+      destinos.forEach(t => {
+        let locales = 0;
+        try{ const r = S.get(sec.id, t.id); locales = Array.isArray(r) ? r.length : 0; }catch(_){}
+        out.push({
+          sector: sec.name || sec.id,
+          icono:  sec.icon || '📌',
+          modulo: rdLimpio(t.name || t.id) + (mod.subTabs ? ' · ' + rdLimpio(mod.name) : ''),
+          clave:  S.key(sec.id, t.id),
+          locales: locales
+        });
+      });
+    });
+  });
+  return out.sort((a,b)=> (a.sector+a.modulo).localeCompare(b.sector+b.modulo, 'es'));
+}
+
+function showRevisionDatos(){
+  document.querySelectorAll('.sector-btn').forEach(b=>{ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
+  const ab = document.getElementById('sb_REVISION');
+  if(ab){ ab.classList.add('active'); ab.style.background='#1a3a5a'; ab.style.color='#fff'; }
+  document.getElementById('sectorHeader').style.display = 'block';
+  document.getElementById('shIcon').textContent = '🩺';
+  document.getElementById('shName').textContent = 'Revisión de datos';
+  document.getElementById('shCount').textContent = 'Solo visible para Administradoras';
+  const _add = document.getElementById('addBtn');    if(_add) _add.style.display='none';
+  const _exc = document.getElementById('exportBtn'); if(_exc) _exc.style.display='none';
+  const _pdf = document.getElementById('exportPdfBtn'); if(_pdf) _pdf.style.display='none';
+  document.getElementById('modTabs').innerHTML = '';
+  const _sub = document.getElementById('subTabs'); if(_sub){ _sub.classList.remove('visible'); _sub.innerHTML=''; }
+  rdRender();
+  if(typeof closeSidebar === 'function') closeSidebar();
+}
+
+function rdRender(){
+  const area = document.getElementById('dataArea');
+  if(!area) return;
+  const inv = rdInventario();
+  const conNube = !!RD_NUBE;
+
+  let vacias = 0, faltan = 0, conDatos = 0;
+  inv.forEach(f => {
+    f.nube = conNube ? (RD_NUBE[f.clave] || 0) : null;
+    f.falta = conNube && f.nube > f.locales;
+    if(f.falta) faltan++;
+    if(f.locales > 0) conDatos++;
+    if(f.locales === 0 && (!conNube || f.nube === 0)) vacias++;
+  });
+
+  const filas = inv.filter(f => RD_FILTRO === 'todo' ? true : (f.falta || (conNube && f.nube !== f.locales)));
+
+  const resumen = `
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="rd-chip">📋 ${inv.length} pestañas</div>
+      <div class="rd-chip">✅ ${conDatos} con registros en este equipo</div>
+      <div class="rd-chip">🕳️ ${vacias} vacías</div>
+      ${conNube ? `<div class="rd-chip${faltan ? ' rd-mal' : ' rd-bien'}">${faltan ? '⚠️ ' + faltan + ' con datos que no bajaron' : '✅ Todo al día con la nube'}</div>` : ''}
+    </div>`;
+
+  const acciones = `
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="rd-btn rd-btn-fuerte" onclick="rdCompararNube()">☁️ Comparar con la nube</button>
+      <button class="rd-btn" onclick="rdBajarTodo()">⬇️ Volver a bajar todo</button>
+      ${conNube ? `<button class="rd-btn" onclick="rdToggleFiltro()">${RD_FILTRO === 'todo' ? '🔎 Ver solo las que no coinciden' : '📋 Ver todas'}</button>` : ''}
+    </div>`;
+
+  const cuerpo = !filas.length
+    ? `<div style="text-align:center;color:#6f92ae;font-size:13.5px;padding:26px 10px">
+         ${conNube ? 'Todas las pestañas coinciden con la nube.' : 'No hay pestañas para mostrar.'}
+       </div>`
+    : filas.map(f => {
+        let estado, clase;
+        if(f.falta){                       estado = 'Faltan ' + (f.nube - f.locales) + ' en este equipo'; clase = 'rd-mal'; }
+        else if(conNube && f.locales > f.nube){ estado = 'Hay ' + (f.locales - f.nube) + ' sin subir';    clase = 'rd-medio'; }
+        else if(f.locales === 0){          estado = 'Sin registros';                                      clase = 'rd-gris'; }
+        else {                             estado = 'Al día';                                             clase = 'rd-bien'; }
+        return `<div class="rd-fila">
+          <div class="rd-nom">
+            <div class="rd-mod">${rdEsc(f.icono)} ${rdEsc(f.modulo)}</div>
+            <div class="rd-sec">${rdEsc(f.sector)}</div>
+          </div>
+          <div class="rd-num"><b>${f.locales}</b><span>acá</span></div>
+          <div class="rd-num">${conNube ? `<b>${f.nube}</b><span>nube</span>` : `<b>—</b><span>nube</span>`}</div>
+          <div class="rd-estado ${clase}">${estado}</div>
+        </div>`;
+      }).join('');
+
+  area.innerHTML = `
+    <style>
+      .rd-chip{background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.20);border-radius:20px;
+        padding:6px 13px;font-size:12.5px;font-weight:600;color:#c8dff0}
+      .light-mode .rd-chip{background:#eef4f9;border-color:#d7e2ec;color:#33536f}
+      .rd-btn{background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.28);border-radius:9px;
+        color:#cfe3f5;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+      .rd-btn:hover{background:rgba(122,175,212,.20)}
+      .rd-btn-fuerte{background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.5);color:#dbeafe}
+      .light-mode .rd-btn{background:#f1f6fb;border-color:#cfdcea;color:#2a4a6b}
+      .light-mode .rd-btn-fuerte{background:#e3edfa;border-color:#b7cfea;color:#1d4ed8}
+      .rd-fila{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:10px;
+        background:rgba(13,25,40,.6);border:1px solid rgba(122,175,212,.12);margin-bottom:7px;flex-wrap:wrap}
+      .light-mode .rd-fila{background:#ffffff;border-color:#e3ebf3}
+      .rd-nom{flex:1;min-width:190px}
+      .rd-mod{font-size:13.5px;font-weight:700;color:#e8eef6}
+      .light-mode .rd-mod{color:#15314f}
+      .rd-sec{font-size:11px;color:#7f9fb8;margin-top:2px}
+      .light-mode .rd-sec{color:#5a7a9a}
+      .rd-num{text-align:center;min-width:52px}
+      .rd-num b{display:block;font-size:16px;font-weight:800;color:#e8eef6}
+      .light-mode .rd-num b{color:#15314f}
+      .rd-num span{display:block;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:#7f9fb8}
+      .rd-estado{min-width:150px;text-align:right;font-size:12px;font-weight:700}
+      .rd-bien{color:#4ade80} .light-mode .rd-bien{color:#15803d}
+      .rd-mal{color:#f87171}  .light-mode .rd-mal{color:#b91c1c}
+      .rd-medio{color:#fbbf24}.light-mode .rd-medio{color:#a15c04}
+      .rd-gris{color:#7f9fb8} .light-mode .rd-gris{color:#6b87a3}
+      @media(max-width:560px){.rd-estado{min-width:0;text-align:left;width:100%}}
+    </style>
+    <div style="padding:4px 2px 30px">
+      <div style="background:rgba(37,99,235,.08);border:1px solid rgba(96,165,250,.28);border-radius:11px;
+        padding:11px 13px;font-size:12.5px;line-height:1.55;color:#a9c8e4;margin-bottom:14px">
+        Esta pantalla solo mira y cuenta: no borra, no edita y no sube nada.
+        <b>"Acá"</b> es lo que tiene guardado este equipo; <b>"Nube"</b> es lo que hay en Supabase.
+        Si una pestaña se ve vacía pero en la nube tiene registros, es que a este dispositivo no le bajaron:
+        se arregla con <b>Volver a bajar todo</b>.
+      </div>
+      ${acciones}
+      ${resumen}
+      ${cuerpo}
+    </div>`;
+}
+
+function rdToggleFiltro(){
+  RD_FILTRO = (RD_FILTRO === 'todo') ? 'problemas' : 'todo';
+  rdRender();
+}
+
+// Trae de la nube la lista completa de claves y cuenta los registros de cada una.
+async function rdCompararNube(){
+  if(typeof clienteS === 'undefined' || !clienteS){
+    alert('No hay conexión con la nube en este momento.');
+    return;
+  }
+  const area = document.getElementById('dataArea');
+  if(area) area.insertAdjacentHTML('afterbegin',
+    '<div id="rdCargando" style="padding:12px;color:#7aafd4;font-size:13px">☁️ Leyendo la nube…</div>');
+  try{
+    const { data, error } = await clienteS.from('app_data').select('key,value');
+    if(error) throw error;
+    const mapa = {};
+    (data || []).forEach(row => {
+      mapa[row.key] = Array.isArray(row.value) ? row.value.length : (row.value == null ? 0 : 1);
+    });
+    RD_NUBE = mapa;
+  }catch(e){
+    console.error('Revisión de datos:', e);
+    alert('No se pudo leer la nube. Probá de nuevo con mejor señal.');
+  }
+  const c = document.getElementById('rdCargando'); if(c) c.remove();
+  rdRender();
+}
+
+// Fuerza una descarga completa desde la nube (no borra nada local que esté sin subir).
+async function rdBajarTodo(){
+  if(!confirm('Se va a volver a bajar todo lo que hay en la nube a este equipo.\n\nNo se borra nada de lo que cargaste. ¿Seguimos?')) return;
+  try{
+    localStorage.removeItem('suep_pull_cursor');   // sin cursor = descarga completa
+  }catch(_){}
+  const ok = await pullAllFromSupabase({ full:true });
+  if(ok){
+    RD_NUBE = null;
+    try{ if(typeof buildSidebar === 'function') buildSidebar(); }catch(_){}
+    try{ if(typeof refreshBadge === 'function') refreshBadge(); }catch(_){}
+    rdRender();
+    alert('✅ Listo. Se volvió a bajar todo lo que hay en la nube.');
+  }else{
+    alert('⚠️ No se pudo conectar con la nube. Seguís viendo la copia de este equipo.');
+  }
 }
 
 </script>
