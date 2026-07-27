@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.74">
+<meta name="app-version" content="1.5.76">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1112,6 +1112,23 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 .light-mode .data-wrap{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 55%,rgba(74,128,168,0) 95%)}
 .light-mode .notif-panel{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 60%,rgba(74,128,168,0))}
 .light-mode .modal{background-image:linear-gradient(90deg,var(--acc-ink),var(--sec) 60%,rgba(74,128,168,0))}
+
+/* v1.5.76 — EL HILO DORADO QUE SE COMÍA EL PANEL EN MODO CLARO
+   El degradado de arriba está pensado como un hilo de 2 px pegado al borde
+   superior (background-size:100% 2px; no-repeat). Pero las reglas del modo
+   claro escriben el fondo con la forma corta "background:#ffffff", y esa
+   forma corta, además del color, REINICIA el tamaño y la repetición. Como
+   pesa más que la regla original, el hilo pasaba a medir todo el panel y a
+   repetirse: el panel entero quedaba lavado en dorado/celeste y las letras
+   oscuras encima no se leían (por eso el corrector no lo agarraba: él mira
+   el color de fondo, que seguía siendo blanco, no el degradado).
+   Acá se le devuelve el tamaño, la posición y el "no repetir". */
+.light-mode .data-wrap,
+.light-mode .notif-panel,
+.light-mode .modal{background-position:top;background-repeat:no-repeat}
+.light-mode .data-wrap{background-size:100% 2.5px}
+.light-mode .notif-panel{background-size:100% 2px}
+.light-mode .modal{background-size:100% 2.5px}
 .light-mode .sb-label{color:var(--acc-ink)}
 
 /* ── 2) MENÚ LATERAL ──────────────────────────────────────────────── */
@@ -1136,8 +1153,8 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
    flecha que gira. Cada carpeta define su color en --gc. */
 .sb-grupo{margin-bottom:6px;position:relative;padding-left:9px}
 .sb-grupo::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:3px;
-  background:var(--gc,#7aafd4);opacity:.55;transition:opacity .2s,box-shadow .2s}
-.sb-grupo:hover::before{opacity:1;box-shadow:0 0 10px var(--gc,#7aafd4)}
+  background:var(--gc-txt,var(--gc,#7aafd4));opacity:.55;transition:opacity .2s,box-shadow .2s}
+.sb-grupo:hover::before{opacity:1;box-shadow:0 0 10px var(--gc-txt,var(--gc,#7aafd4))}
 .sb-grupo.sb-sola{padding-left:9px}
 
 .sb-gh{width:100%;display:flex;align-items:center;gap:8px;background:rgba(122,175,212,.05);
@@ -1150,13 +1167,13 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 .sb-gh.sb-gh-sub:hover{background:rgba(122,175,212,.08)}
 .sb-gh.sb-gh-sub.abierta{background:rgba(122,175,212,.05)}
 
-.sb-chev{width:11px;flex:none;display:inline-block;text-align:center;color:var(--gc,#7aafd4);
+.sb-chev{width:11px;flex:none;display:inline-block;text-align:center;color:var(--gc-txt,var(--gc,#7aafd4));
   transition:transform .22s cubic-bezier(.3,.8,.3,1.2)}
 .sb-chev.abierto{transform:rotate(90deg)}
 .sb-gh-ico{flex:none;font-size:14px;line-height:1;filter:saturate(1.1)}
 .sb-gh-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;white-space:normal}
 .sb-gh-ac{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:none;
-  color:var(--gc,#7aafd4);opacity:.92;line-height:1.25}
+  color:var(--gc-txt,var(--gc,#7aafd4));opacity:.92;line-height:1.25}
 
 .light-mode .sb-grupo::before{opacity:.85}
 .light-mode .sb-gh{background:#f6f9fc;border-color:#e3ebf3;color:#3d5f80}
@@ -4016,6 +4033,9 @@ function buildSidebar(){
         </button>
       </div>`);
   }
+  // v1.5.75 — Recién armado el menú, se calcula el color legible de cada carpeta
+  // para el modo que esté puesto (oscuro o claro).
+  try{ sbColorCarpetas(); }catch(_){}
 }
 // v1.5.63 — Segundo parámetro opcional: el módulo al que hay que entrar. Lo usan
 // las pestañas internas que ahora se listan directamente en el menú (por ejemplo
@@ -8876,7 +8896,9 @@ function _ccFondo(el){
     if(c && c.a > 0){ capas.push(c); if(c.a >= 0.985) break; }
     n = n.parentElement;
   }
-  let base = { r:238, g:242, b:247, a:1 };   // fondo de la app en modo claro
+  let base = document.body.classList.contains('light-mode')
+    ? { r:238, g:242, b:247, a:1 }    // fondo de la app en modo claro
+    : { r:8,   g:17,  b:31,  a:1 };   // v1.5.75: fondo de la app en modo oscuro
   for(let i = capas.length - 1; i >= 0; i--) base = _ccMezclar(capas[i], base);
   return base;
 }
@@ -8891,6 +8913,52 @@ function _ccOscurecer(c, bg){
   }
   return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
 }
+// v1.5.75 — El gemelo del anterior, para el MODO OSCURO. Varios colores de la
+// app (los de las carpetas del menú, por ejemplo) son tonos oscuros pensados
+// para fondo blanco: sobre el fondo azul noche quedaban invisibles. Acá se
+// aclaran mezclándolos con blanco, sin cambiarles el tono: la carpeta violeta
+// sigue siendo violeta, pero se lee.
+function _ccAclarar(c, bg){
+  const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b);
+  // Color casi gris o negro → se lleva directo al celeste institucional claro.
+  if(max - min < 26) return '#c8dcee';
+  let r = c.r, g = c.g, b = c.b;
+  for(let i = 0; i < 26; i++){
+    if(_ccContraste({ r:r, g:g, b:b }, bg) >= CC_META) break;
+    r = r + (255 - r) * 0.16;
+    g = g + (255 - g) * 0.16;
+    b = b + (255 - b) * 0.16;
+  }
+  return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
+}
+
+// v1.5.75 — COLOR DE CADA CARPETA DEL MENÚ, LEGIBLE EN LOS DOS MODOS
+// Cada carpeta trae su color propio en --gc. Varios son tonos oscuros (violeta,
+// verde botella, gris pizarra) que sobre el fondo azul noche no se veían, y
+// otros son pasteles que sobre el blanco tampoco. Acá se calcula, para el modo
+// que esté puesto, una variante del MISMO color con contraste suficiente y se
+// guarda en --gc-txt: la usan la flechita, el "A/C" y la barrita de la carpeta.
+// El color original no se pierde: si el contraste ya alcanza, no se toca nada.
+function _ccHex(str){
+  const m = String(str || '').trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if(!m) return null;
+  let h = m[1];
+  if(h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return { r:parseInt(h.slice(0,2),16), g:parseInt(h.slice(2,4),16), b:parseInt(h.slice(4,6),16), a:1 };
+}
+function sbColorCarpetas(){
+  try{
+    const claro = document.body.classList.contains('light-mode');
+    const fondo = claro ? { r:246, g:249, b:252, a:1 } : { r:13, g:22, b:35, a:1 };
+    document.querySelectorAll('.sb-grupo').forEach(el => {
+      const c = _ccHex(el.style.getPropertyValue('--gc'));
+      if(!c || _ccContraste(c, fondo) >= CC_MINIMO){ el.style.removeProperty('--gc-txt'); return; }
+      el.style.setProperty('--gc-txt', claro ? _ccOscurecer(c, fondo) : _ccAclarar(c, fondo));
+    });
+  }catch(e){ console.warn('Color de carpetas:', e); }
+}
+window.sbColorCarpetas = sbColorCarpetas;
+
 function _ccArreglar(el){
   const tag = el.tagName;
   if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'OPTION' || tag === 'SVG') return;
@@ -8900,18 +8968,22 @@ function _ccArreglar(el){
   const fg = _ccRGB(cs.color);
   if(!fg) return;
   const bg = _ccFondo(el);
-  if(_ccLum(bg) < 0.45) return;                            // fondo oscuro: queda igual
+  // v1.5.75: antes acá se cortaba si el fondo era oscuro y el modo oscuro quedaba
+  // sin corregir. Ahora se corrige en los dos sentidos: sobre fondo claro la letra
+  // se oscurece, sobre fondo oscuro se aclara. El umbral es el mismo (3,2), así que
+  // los grises tenues del diseño (que están arriba de 5) no se tocan: solo se
+  // levantan las letras que realmente no se leen.
+  const fondoClaro = _ccLum(bg) >= 0.45;
   const fgReal = fg.a < 1 ? _ccMezclar(fg, bg) : fg;
   if(_ccContraste(fgReal, bg) >= CC_MINIMO) return;        // ya se lee bien
   // Zonas que ya están pensadas con letra blanca y sombra: no se tocan.
   try{ if(el.closest && el.closest('.sh-top, .app-header, [data-cc-no]')) return; }catch(_){}
   if(el._ccOrig === undefined){ el._ccOrig = el.style.color || ''; _ccTocados.push(el); }
-  el.style.color = _ccOscurecer(fgReal, bg);
+  el.style.color = fondoClaro ? _ccOscurecer(fgReal, bg) : _ccAclarar(fgReal, bg);
   el._ccPuesto = getComputedStyle(el).color;
 }
 function _ccRevisar(){
   if(_ccCorriendo) return;
-  if(!document.body.classList.contains('light-mode')) return;
   _ccCorriendo = true;
   if(_ccObs){ try{ _ccObs.disconnect(); }catch(_){} }
   try{
@@ -8934,7 +9006,7 @@ function _ccRevisar(){
     });
   }catch(e){ console.warn('Contraste modo claro:', e); }
   _ccCorriendo = false;
-  if(_ccObs && document.body.classList.contains('light-mode')){
+  if(_ccObs){
     try{ _ccObs.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class'] }); }catch(_){}
   }
 }
@@ -8966,9 +9038,12 @@ function _ccApagar(){
   const original = window.toggleDarkMode;
   window.toggleDarkMode = function(){
     if(typeof original === 'function') original.apply(this, arguments);
-    if(document.body.classList.contains('light-mode')) _ccEncender();
-    else _ccApagar();
-    palAplicar();
+    // v1.5.75 — Antes el corrector solo se prendía en modo claro y el oscuro
+    // quedaba sin arreglar. Ahora, en cualquiera de los dos modos: se devuelven
+    // los colores originales y se recalculan contra el fondo nuevo.
+    try{ palAplicar(); }catch(_){}
+    try{ sbColorCarpetas(); }catch(_){}
+    try{ _ccApagar(); _ccEncender(); }catch(_){}
   };
 })();
 
@@ -8986,7 +9061,8 @@ function _ccApagar(){
       // v1.5.65 — El banner de avisos se pintaba recién al abrir una pestaña.
       // Ahora aparece apenas se entra, junto con el saludo.
       try{ if(typeof avPintarBanner === 'function') avPintarBanner(); }catch(_){}
-      try{ if(document.body.classList.contains('light-mode')) _ccEncender(); }catch(_){}
+      try{ sbColorCarpetas(); }catch(_){}
+      try{ _ccEncender(); }catch(_){}   // v1.5.75: en los dos modos
     }
   };
 })();
@@ -9001,7 +9077,8 @@ function _ccApagar(){
 
 window.addEventListener('DOMContentLoaded', ()=>{
   try{ palAplicar(); }catch(e){ console.warn('Paleta:', e); }
-  try{ if(document.body.classList.contains('light-mode')) _ccEncender(); }catch(_){}
+  try{ sbColorCarpetas(); }catch(_){}
+  try{ _ccEncender(); }catch(_){}     // v1.5.75: en los dos modos
 });
 
 </script>
