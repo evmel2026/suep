@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.73">
+<meta name="app-version" content="1.5.74">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8800,8 +8800,11 @@ function salMostrar(){
       '</div>' +
       '<button class="sal-x" onclick="salCerrar()" title="Cerrar">×</button>' +
     '</div>';
+  // v1.5.74: la tarjeta de saludo YA NO se cierra sola. Antes desaparecía a los
+  // 15 segundos; ahora queda en pantalla todo el tiempo que dure la sesión y
+  // solo se va si el usuario toca la × (o al cerrar sesión).
   clearTimeout(SAL_T);
-  SAL_T = setTimeout(salCerrar, 15000);
+  SAL_T = null;
 }
 function salCerrar(){
   clearTimeout(SAL_T);
@@ -9328,12 +9331,54 @@ async function _sincronizarRegistro(s, m, registro){
 // migración: la fusión anti–"el último gana" sigue siendo la misma
 // (_guardarModuloSeguro), solo que ahora ordenada en cola.
 var _colaSync = {};
-function _refrescarSiVisible(key){
+// ─── v1.5.74 · NO REARMAR LA PANTALLA ENCIMA DE QUIEN ESTÁ ESCRIBIENDO ─────
+// EL PROBLEMA QUE RESOLVÍA (lo que pasaba en el acta de notificación): cada vez
+// que el guardado automático terminaba de subir el registro, esto llamaba a
+// renderTable() y volvía a dibujar TODA la pestaña. En la pestaña de
+// Documentación Institucional eso rearma el formulario entero, así que el campo
+// donde estabas escribiendo se destruía y se creaba de nuevo: se perdía el
+// cursor y las letras tipeadas en ese instante. Se sentía como "escribo una
+// letra, dice guardando y no me deja seguir".
+// AHORA: si hay alguien con el cursor puesto en un campo, el refresco NO se
+// hace: queda anotado como pendiente y se aplica solo cuando termina de
+// escribir. Los datos se guardan igual que siempre (eso no cambió).
+var _refrescoPendiente = {}, _refrescoT = null;
+
+function _estaEscribiendo(){
+  try{
+    if(typeof gdEscribiendoAhora === 'function' && gdEscribiendoAhora()) return true;
+    if(typeof GD_VISTA !== 'undefined' && GD_VISTA === 'editor') return true;
+    const a = document.activeElement;
+    if(!a) return false;
+    const t = (a.tagName || '').toLowerCase();
+    return t === 'input' || t === 'textarea' || t === 'select' || a.isContentEditable === true;
+  }catch(_){ return false; }
+}
+
+function _aplicarRefrescoPendiente(){
+  _refrescoT = null;
+  if(_estaEscribiendo()){ _programarRefresco(); return; }   // sigue escribiendo: esperar
+  const keys = Object.keys(_refrescoPendiente);
+  _refrescoPendiente = {};
+  if(!keys.length) return;
   try{
     if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM
-       && S.key(CS.id, CM.id) === key && typeof renderTable==='function'){
+       && keys.indexOf(S.key(CS.id, CM.id)) >= 0 && typeof renderTable==='function'){
       renderTable();
     }
+  }catch(_){}
+}
+function _programarRefresco(){
+  if(_refrescoT) return;
+  _refrescoT = setTimeout(_aplicarRefrescoPendiente, 2500);
+}
+
+function _refrescarSiVisible(key){
+  try{
+    if(!(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM
+         && S.key(CS.id, CM.id) === key && typeof renderTable==='function')) return;
+    if(_estaEscribiendo()){ _refrescoPendiente[key] = true; _programarRefresco(); return; }
+    renderTable();
   }catch(_){}
 }
 function _enColaModulo(s, m, fn){
@@ -9358,12 +9403,16 @@ S.addSafe = async function(s, m, data){
   _enColaModulo(s, m, async ()=>{ await _sincronizarRegistro(s, m, r); _refrescarSiVisible(S.key(s, m)); });
   return r;
 };
-S.updSafe = async function(s, m, id, data){
+S.updSafe = async function(s, m, id, data, opts){
   const local = S.get(s, m).map(r => r._id===id ? {...r, ...data, _editPor: CU?.nombre, _editTs: new Date().toISOString()} : r);
   _S_set_local(s, m, local);   // 1) guardado local INMEDIATO
   // ✅ Notificar también las ediciones (todos deben ver lo que se modificó)
+  // v1.5.74: el autoguardado del editor de documentos pasa {sinNotif:true}. Antes,
+  // mientras se escribía un acta se generaba una notificación cada dos segundos
+  // (una por tanda de tecleo) y todas viajaban a Supabase: ruido y lentitud al
+  // por mayor. El documento sigue notificándose cuando se crea.
   const recEditado = local.find(r => r._id===id);
-  if(recEditado) newNotif(s, m, recEditado, 'edito');
+  if(recEditado && !(opts && opts.sinNotif)) newNotif(s, m, recEditado, 'edito');
   // 2) nube en segundo plano: viaja SOLO el registro editado (atómico)
   _enColaModulo(s, m, async ()=>{ await _sincronizarRegistro(s, m, recEditado || S.get(s, m).find(r=>r._id===id)); _refrescarSiVisible(S.key(s, m)); });
 };
@@ -9878,7 +9927,10 @@ window.doLogin = async function(){
       if(ok){
         // Si ya hay un usuario en pantalla (sesión activa), refrescar la tabla visible
         if(typeof CU !== 'undefined' && CU){
-          try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function') renderTable(); }catch(_){}
+          // v1.5.74: si alguien está cargando un documento en este instante, NO
+          // le rearmamos la pantalla debajo del dedo (le movía el cursor de lugar).
+          try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function'
+                  && !(typeof gdEscribiendoAhora==='function' && gdEscribiendoAhora())) renderTable(); }catch(_){}
           try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
         }
       }
@@ -9905,7 +9957,9 @@ document.addEventListener('visibilitychange', ()=>{
   _lastVisPull = _ahora;
   pullAllFromSupabase().then(ok=>{
     if(ok && typeof CU !== 'undefined' && CU){
-      try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function') renderTable(); }catch(_){}
+      // v1.5.74: misma protección al volver a la app estando en pleno tipeo.
+      try{ if(typeof CS!=='undefined' && CS && typeof CM!=='undefined' && CM && typeof renderTable==='function'
+              && !(typeof gdEscribiendoAhora==='function' && gdEscribiendoAhora())) renderTable(); }catch(_){}
       try{ if(typeof refreshBadge==='function') refreshBadge(); }catch(_){}
     }
   }).catch(()=>{});
@@ -13948,10 +14002,18 @@ function gdTieneContenido(){
 
 // ─── Guardado automático ──────────────────────────────────────────────────
 function gdTocado(){
-  if(!GD_ID && !gdHayContenido()){ GD_ESTADO = ''; gdPintarEstado(); return; }
-  GD_ESTADO = 'guardando'; gdPintarEstado();
+  // v1.5.74: se anota que hay alguien escribiendo (lo usa la sincronización).
+  GD_ESCRIBIENDO = Date.now();
+  if(!GD_ID && !gdHayContenido()){
+    if(GD_ESTADO !== ''){ GD_ESTADO = ''; gdPintarEstado(); }
+    return;
+  }
+  // v1.5.74: el guardado sale 1,6 s después de la ÚLTIMA tecla (antes 0,9 s) y
+  // el cartelito "guardando…" se escribe una sola vez, no en cada letra. Así
+  // escribir una frase entera dispara UN viaje a Supabase en lugar de varios.
+  if(GD_ESTADO !== 'guardando'){ GD_ESTADO = 'guardando'; gdPintarEstado(); }
   clearTimeout(GD_TIMER);
-  GD_TIMER = setTimeout(gdGuardarYa, 900);
+  GD_TIMER = setTimeout(gdGuardarYa, 1600);
 }
 // ¿Se cargó algo, o el documento sigue igual que recién abierto? Mientras
 // esté igual NO se crea el registro: entrar a mirar no tiene que dejar rastro.
@@ -13978,7 +14040,7 @@ async function gdGuardarYa(){
   };
   try{
     if(GD_ID){
-      if(typeof S.updSafe === 'function') await S.updSafe(GD_S, GD_M, GD_ID, reg);
+      if(typeof S.updSafe === 'function') await S.updSafe(GD_S, GD_M, GD_ID, reg, {sinNotif:true});
       else S.upd(GD_S, GD_M, GD_ID, reg);
     } else {
       const r = (typeof S.addSafe === 'function') ? await S.addSafe(GD_S, GD_M, reg) : S.add(GD_S, GD_M, reg);
@@ -14230,14 +14292,83 @@ function gdVistaEditor(){
   </div>`;
 }
 
+// ─── v1.5.74 · CARGA FLUIDA (que no se salga del campo ni se ponga lento) ──
+// EL PROBLEMA QUE RESUELVE: al cargar un acta, CADA LETRA rearmaba la vista
+// previa completa, que arranca con el membrete en imagen. En el celular eso
+// hacía dos cosas molestas: se sentía lenta y la pantalla se movía sola, así
+// que el cursor "se salía" del campo que se estaba llenando.
+//
+// AHORA: la vista previa se rearma UNA sola vez, recién ~400 ms después de que
+// se deja de escribir, y con la altura trabada para que nada salte de lugar.
+// Y cada vez que hace falta rearmar el formulario (elegir sexo, motivo, sumar
+// una fila), se anota en qué campo estaba el cursor, en qué letra y a qué
+// altura estaba la pantalla, y se vuelve a poner todo igual.
+// No cambia ni un dato ni una coma del Word que sale: es solo comodidad.
+var GD_PREV_T = null, GD_ESCRIBIENDO = 0;
+
+// El scroll de la app no es el de la ventana: es el del panel .data-area.
+function gdScroller(){ return document.querySelector('.data-area'); }
+
+// Rearma lo que haga falta sin mover al usuario de donde estaba.
+function gdPreservando(fn){
+  const act = document.activeElement;
+  const id  = (act && act.id) ? act.id : null;
+  let ini = null, fin = null;
+  try{ ini = act.selectionStart; fin = act.selectionEnd; }catch(_){ }
+  const sc = gdScroller();
+  const st = sc ? sc.scrollTop : 0;
+  const sy = window.scrollY || window.pageYOffset || 0;
+  try{ fn(); }finally{
+    if(id){
+      const el = document.getElementById(id);
+      if(el){
+        try{ el.focus({preventScroll:true}); }catch(_){ try{ el.focus(); }catch(_){ } }
+        if(ini != null){ try{ el.setSelectionRange(ini, fin); }catch(_){ } }
+      }
+    }
+    if(sc) sc.scrollTop = st;
+    if(sy) window.scrollTo(0, sy);
+  }
+}
+
 function gdPintarForm(){
-  const c = document.getElementById('gdForm');
-  if(c){ c.innerHTML = gdForm(); gdPintarPrevia(); }
+  gdPreservando(()=>{
+    const c = document.getElementById('gdForm');
+    if(c) c.innerHTML = gdForm();
+  });
+  gdPintarPreviaYa();
 }
-function gdPintarPrevia(){
+
+// Rearma la vista previa AHORA (al abrir el documento o al cambiar de campo).
+function gdPintarPreviaYa(){
+  clearTimeout(GD_PREV_T); GD_PREV_T = null;
   const c = document.getElementById('gdPrevia');
-  if(c) c.innerHTML = gdPrevia();
+  if(!c) return;
+  const alto = c.offsetHeight;              // traba la altura: nada salta
+  if(alto) c.style.minHeight = alto + 'px';
+  gdPreservando(()=>{ c.innerHTML = gdPrevia(); });
+  requestAnimationFrame(()=>{ try{ c.style.minHeight = ''; }catch(_){ } });
 }
+
+// Mientras se escribe: se espera a que la mano pare y ahí se rearma una vez.
+function gdPintarPrevia(){
+  GD_ESCRIBIENDO = Date.now();
+  clearTimeout(GD_PREV_T);
+  GD_PREV_T = setTimeout(gdPintarPreviaYa, 400);
+}
+
+// ¿Se está escribiendo un documento en este momento? Lo usa la sincronización
+// con Supabase para NO rearmar la pantalla encima de alguien que está cargando.
+function gdEscribiendoAhora(){
+  return (typeof GD_VISTA !== 'undefined' && GD_VISTA === 'editor') &&
+         (Date.now() - GD_ESCRIBIENDO < 4000);
+}
+window.gdEscribiendoAhora = gdEscribiendoAhora;
+
+// v1.5.74: campos que se llevan el renglón completo porque el texto es largo
+// (antes Domicilio quedaba angosto y Teléfono, al caer solo en el último
+// renglón, se estiraba a lo ancho: parecía que uno era más importante que otro).
+const GD_FULL = ['motivo', 'domicilio', 'tipoLicencia'];
 
 function gdForm(){
   const lab = t => `<div style="font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:#8fb4d0;margin:0 0 5px">${gdEsc(t)}</div>`;
@@ -14246,10 +14377,11 @@ function gdForm(){
   return (TIPOS_DOC[GD_TIPO].grupos||[]).filter(g => g.campos.some(gdAplica)).map(g => `
     <div style="background:rgba(13,25,40,.85);border:1px solid rgba(122,175,212,.15);border-radius:12px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:${GD_AC};font-weight:700;margin-bottom:11px">${gdEsc(g.titulo)}</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px;align-items:start">
       ${g.campos.filter(gdAplica).map(c => {
         const v = GD_D[c.id];
-        const ancho = (c.tipo === 'texto' || c.tipo === 'lista' || c.tipo === 'listaTexto');
+        const ancho = (c.tipo === 'texto' || c.tipo === 'lista' || c.tipo === 'listaTexto')
+                   || GD_FULL.indexOf(c.id) >= 0;
         let ctl;
         if(c.tipo === 'lista'){
           ctl = (v||[]).map((fila, i) => `
@@ -14303,7 +14435,7 @@ function gdForm(){
           const fn = (c.id === 'apellidoNombre') ? 'gdNombre(this.value)' : `gdSet('${c.id}',this.value)`;
           ctl = `<input id="gdf_${c.id}" type="${c.tipo || 'text'}" value="${gdEsc(String(v||''))}" oninput="${fn}" style="${inp}">`;
         }
-        return `<div id="gdCampo_${c.id}" style="${ancho ? 'flex-basis:100%' : 'flex:1;min-width:160px'};margin-bottom:11px">
+        return `<div id="gdCampo_${c.id}" style="${ancho ? 'grid-column:1/-1' : 'min-width:0'};margin-bottom:0">
                   ${lab(c.et)}${ctl}
                 </div>`;
       }).join('')}
