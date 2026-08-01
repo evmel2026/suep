@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.84">
+<meta name="app-version" content="1.5.86">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -5393,6 +5393,28 @@ function iniPintar(){
     };
     const verAvisos  = iniPuedeVer('AVISOS');
     const verEventos = iniPuedeVer('EVENTOS');
+    // v1.5.86 — AUTORIZADOS EN ESTE MOMENTO. Va primero de todo: es la
+    // información que más le cambia el día al resto (quién no está de servicio).
+    // A diferencia de las presentaciones, esto NO se filtra por permiso: lo ve
+    // todo el mundo, aunque la pestaña de Autorizaciones no le corresponda. Si no
+    // la tiene habilitada, el renglón se muestra como texto y no lleva a ningún
+    // lado (mismo criterio que ya se usa con los avisos).
+    try{
+      _autVigentes().slice(0,12).forEach(x=>{
+        const nom = x.p
+          ? ((x.p.jerarquia ? x.p.jerarquia + ' ' : '') + x.p.nombre)
+          : (x.r._nombreViejo || ('LP ' + (x.r.lp || '—')));
+        const dur = String(x.r.dur) === '48' ? '48 hs' : '24 hs';
+        const unSoloDia = _licDDMM(x.desde) === _licDDMM(x.hasta);
+        const per = unSoloDia ? ('el ' + _licDDMM(x.desde))
+                              : ('del ' + _licDDMM(x.desde) + ' al ' + _licDDMM(x.hasta));
+        // "último día" solo tiene sentido si la autorización abarca más de un día
+        const termHoy = !unSoloDia && Math.round((x.hasta - _licHoy0()) / 86400000) === 0;
+        filas.push(fila('🪪', esc(nom),
+          esc('Autorizado (Art. 12) · ' + dur + ' · ' + per + (termHoy ? ' · último día' : '')),
+          iniPuedeVer('AUTORIZACIONES') ? 'AUTORIZACIONES' : null));
+      });
+    }catch(e){ console.warn('Panel de inicio · autorizados vigentes:', e); }
     // v1.5.78 — PRESENTACIONES. Antes esto salía solo dentro de Licencias y de
     // Autorizaciones, y como ahí es información de administradoras, había gente
     // que no se enteraba de que tenía que presentarse. Ahora sale también acá:
@@ -5429,7 +5451,7 @@ function iniPintar(){
       <div class="ini-lista">${filas.length ? filas.join('')
         : `<div class="ini-item ii-fijo"><span class="ii-ico">✅</span>
              <span class="ii-txt"><b>Por ahora no hay nada pendiente</b>
-             <small>Acá salen las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</small></span>
+             <small>Acá salen quiénes están autorizados hoy, las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</small></span>
            </div>`}</div></div>`;
   }catch(e){ console.warn('Panel de inicio · avisos/eventos:', e); }
 
@@ -10190,6 +10212,64 @@ async function flushWrites(){
 function _getPullCursor(){ return localStorage.getItem('suep_pull_cursor') || ''; }
 function _setPullCursor(v){ if(v) localStorage.setItem('suep_pull_cursor', v); }
 
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.85 — POR QUÉ SE TOCÓ ESTO
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA: el cursor avanzaba con CUALQUIER aviso de realtime que llegara,
+// incluso con los que después se descartaban (los propios, los logs de acceso y
+// navegación, las claves con cambios locales sin subir). Un aviso de realtime
+// dice "cambió ESTA fila", no "ya tenés todo hasta este momento": si un aviso
+// no llegaba —conexión cortada, app suspendida por Android— pero sí llegaba el
+// de otra fila escrita un segundo después, el cursor pasaba de largo y la
+// descarga incremental (updated_at > cursor) NO volvía a pedir lo perdido. Ese
+// cambio quedaba invisible en ese equipo hasta la reconciliación del día
+// siguiente. Se notaba más en la app instalada, porque Android la suspende y la
+// revive mucho más que una pestaña.
+// AHORA: el cursor avanza ÚNICAMENTE cuando una descarga trajo todo lo
+// posterior a esa marca, y se le resta un margen de seguridad.
+// ═══════════════════════════════════════════════════════════════════
+const PULL_MARGEN_MS = 3 * 60 * 1000;      // margen de seguridad del cursor
+
+// Convierte milisegundos a la marca que entiende Supabase (ISO en UTC).
+function _cursorDesdeMs(ms){
+  try{ return new Date(ms).toISOString(); }catch(_){ return ''; }
+}
+// Retrocede el cursor la cantidad de milisegundos indicada. Se usa cuando la
+// conexión de realtime estuvo caída: así la próxima descarga incremental vuelve
+// a pedir la ventana que pudo haberse perdido.
+function _retrocederCursor(ms){
+  try{
+    const c = _getPullCursor(); if(!c) return;
+    const t = Date.parse(c); if(!isFinite(t)) return;
+    localStorage.setItem('suep_pull_cursor', _cursorDesdeMs(t - ms));
+  }catch(_){}
+}
+// ─── Estado de la conexión de realtime ───
+var _RT_ESTADO = '';
+function _rtCaido(){
+  try{
+    if(localStorage.getItem('suep_rt_caido') === '1') return true;
+    return !!(_RT_ESTADO && _RT_ESTADO !== 'SUBSCRIBED');
+  }catch(_){ return false; }
+}
+function _rtMarcarCaido(){ try{ localStorage.setItem('suep_rt_caido','1'); }catch(_){} }
+function _rtMarcarOk(){ try{ localStorage.removeItem('suep_rt_caido'); }catch(_){} }
+
+// ─── Reconciliación de UNA sola vez al pasar a la 1.5.85 ───
+// El cursor guardado en este equipo puede haber quedado adelantado por el
+// problema de arriba, así que se descarta para que la primera descarga baje TODO
+// y reaparezca lo que se había salteado. Pasa una vez por dispositivo.
+// No borra ni modifica nada de lo cargado: solo la marca de sincronización.
+(function _reconciliarUnaVez(){
+  try{
+    if(localStorage.getItem('suep_fix_cursor_185') === '1') return;
+    localStorage.removeItem('suep_pull_cursor');
+    localStorage.removeItem('suep_last_full');
+    localStorage.setItem('suep_fix_cursor_185', '1');
+    console.log('🔄 v1.5.85: descarga completa por única vez para reconciliar lo que faltaba.');
+  }catch(_){}
+})();
+
 async function pullAllFromSupabase(opts){
   // full = bajar TODO (primera vez, o reconciliación forzada). Si no, bajar solo lo nuevo.
   const cursor = _getPullCursor();
@@ -10267,13 +10347,21 @@ async function pullAllFromSupabase(opts){
     // el login; el wrap viejo de _origPullAll nunca llegaba a engancharse porque
     // corría antes de que esta función existiera).
     if(typeof _mergeAllDynUsers === 'function'){ try{ _mergeAllDynUsers(); }catch(_){ } }
-    // Avanzar el cursor al updated_at más nuevo que bajamos (para la próxima vez pedir solo lo nuevo)
+    // Avanzar el cursor al updated_at más nuevo que bajamos, MENOS un margen de
+    // seguridad (v1.5.85). El margen hace que la próxima descarga vuelva a pasar
+    // por los últimos minutos: si dos escrituras se confirmaron fuera de orden o
+    // hay desfase de reloj entre equipos, ninguna queda del lado de afuera. Lo
+    // que se vuelve a bajar ya se fusiona igual que siempre, así que no duplica
+    // ni pisa nada.
     if(data && data.length){
-      let maxTs = cursor;
-      data.forEach(r=>{ if(r.updated_at && (!maxTs || r.updated_at > maxTs)) maxTs = r.updated_at; });
-      _setPullCursor(maxTs);
+      let maxMs = 0;
+      data.forEach(r=>{
+        const t = r.updated_at ? Date.parse(r.updated_at) : NaN;
+        if(isFinite(t) && t > maxMs) maxMs = t;
+      });
+      if(maxMs) _setPullCursor(_cursorDesdeMs(maxMs - PULL_MARGEN_MS));
     }
-    if(full) localStorage.setItem('suep_last_full', String(Date.now()));
+    if(full){ localStorage.setItem('suep_last_full', String(Date.now())); _rtMarcarOk(); }
     const n = (data && data.length) || 0;
     syncStatus(full ? ('✓ Datos al día ('+n+' claves)') : (n ? ('✓ '+n+' cambio'+(n!==1?'s':'')) : '✓ Sin cambios'), '#34d399');
     return true;
@@ -10293,11 +10381,13 @@ function subscribeRealtime(){
         (payload) => {
           const row = payload.new || payload.old;
           if(!row) return;
-          // Avanzar el cursor con cualquier cambio visto por realtime (propio o ajeno),
-          // así la próxima descarga incremental no vuelve a bajar lo que ya tenemos.
-          if(payload.new && payload.new.updated_at && typeof _setPullCursor==='function'){
-            const c = _getPullCursor(); if(!c || payload.new.updated_at > c) _setPullCursor(payload.new.updated_at);
-          }
+          // ⛔ v1.5.85 — ACÁ ESTABA EL PROBLEMA. Antes, el cursor se adelantaba con
+          // cualquier aviso de realtime, incluso con los que más abajo se descartan.
+          // Un aviso informa que cambió UNA fila, no que ya tengamos todo hasta ese
+          // momento; si otro aviso se perdía, el cursor lo dejaba atrás para siempre.
+          // Ahora el cursor lo mueve SOLO pullAllFromSupabase, que sí baja todo lo
+          // posterior a la marca. Nada cambia en la velocidad: los avisos se siguen
+          // aplicando en el acto igual que antes.
           // Ignorar nuestras propias escrituras (vienen del mismo dispositivo)
           if(payload.new && payload.new.device_id === DEVICE_ID) return;
           // ✅ Marca de purga (vaciado de logs por el admin): se respeta en todos
@@ -10397,7 +10487,16 @@ function subscribeRealtime(){
           syncStatus('🔄 Actualizado desde otro dispositivo', '#7aafd4');
         }
     )
-    .subscribe();
+    .subscribe((estado)=>{
+      // v1.5.85 — Se anota si la conexión de avisos se cae. Mientras está caída no
+      // llegan cambios de otros equipos, así que al volver a la app se recupera la
+      // ventana perdida (ver el visibilitychange de más abajo).
+      try{
+        _RT_ESTADO = String(estado || '');
+        if(_RT_ESTADO === 'SUBSCRIBED'){ _rtMarcarOk(); }
+        else if(_RT_ESTADO){ _rtMarcarCaido(); console.warn('📡 Avisos en vivo:', _RT_ESTADO); }
+      }catch(_){}
+    });
 }
 
 // ─── Engancharse al login para sincronizar al entrar ───
@@ -10488,8 +10587,13 @@ document.addEventListener('visibilitychange', ()=>{
   // minutos al volver. Antes bajaba TODO cada 15s al ir y volver de WhatsApp, lo
   // que disparaba el consumo de "Salida". Ahora: incremental y como mucho cada 3 min.
   var _ahora = Date.now();
-  if(_ahora - _lastVisPull < 180000) return;
+  // v1.5.85 — Si los avisos en vivo estuvieron caídos, no alcanza con pedir "lo
+  // nuevo": se retrocede media hora el cursor para recuperar lo que pasó mientras
+  // el equipo estaba desconectado, y se permite sincronizar más seguido.
+  var _rtEstuvoCaido = _rtCaido();
+  if(_ahora - _lastVisPull < (_rtEstuvoCaido ? 45000 : 180000)) return;
   _lastVisPull = _ahora;
+  if(_rtEstuvoCaido){ _retrocederCursor(30 * 60 * 1000); _rtMarcarOk(); }
   pullAllFromSupabase().then(ok=>{
     if(ok && typeof CU !== 'undefined' && CU){
       // v1.5.74: misma protección al volver a la app estando en pleno tipeo.
@@ -12274,6 +12378,31 @@ function _licRows(){ try{ return S.get(LIC_S, LIC_M); }catch(_){ return []; } }
 // v1.5.63 — Las Autorizaciones (Art. 12) tienen pestaña y clave propias.
 function _autRows(){ try{ return S.get(AUT_S, AUT_M); }catch(_){ return []; } }
 function _autDePersona(lp){ return _autRows().filter(r=>String(r.lp)===String(lp)); }
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.86 — QUIÉNES ESTÁN AUTORIZADOS HOY
+// ───────────────────────────────────────────────────────────────────
+// Las Autorizaciones (Art. 12) las carga un grupo chico, pero al resto del
+// Departamento le hace falta saber quién está autorizado en este momento (es
+// personal que hoy no está prestando servicio). Esta función devuelve las
+// autorizaciones cuyo período incluye el día de hoy, ordenadas por la que
+// termina primero. El Panel de inicio la muestra a TODOS los usuarios.
+// Solo lee lo que ya está cargado en la pestaña: no escribe ni modifica nada.
+// ═══════════════════════════════════════════════════════════════════
+function _autVigentes(){
+  const hoy = _licHoy0();
+  const out = [];
+  (Array.isArray(_autRows()) ? _autRows() : []).forEach(r=>{
+    if(!r) return;
+    const desde = _licParseF(r.desde);
+    const hasta = _licParseF(r.hasta) || desde;   // sin fecha de fin: vale el día de inicio
+    const ini   = desde || hasta;
+    if(!ini || !hasta) return;                    // sin fechas no se puede saber
+    if(hoy < ini || hoy > hasta) return;          // hoy queda afuera del período
+    out.push({ r, p: _licPersona(r.lp), desde: ini, hasta });
+  });
+  out.sort((a,b)=> (a.hasta - b.hasta) || (a.desde - b.desde));
+  return out;
+}
 function _licCupos(){ try{ return S.get(LIC_S, LIC_CUPOS_M); }catch(_){ return []; } }
 function _licDePersona(lp){ return _licRows().filter(r=>String(r.lp)===String(lp)); }
 function _licAnioActual(){ return new Date().getFullYear(); }
