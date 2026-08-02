@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.86">
+<meta name="app-version" content="1.5.87">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1654,6 +1654,78 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 .light-mode .ini-item .ii-n{background:#e3edf7;color:#15314f}
 .light-mode .ini-ref{background:#eef4fa;border-color:#d6e2ee;color:#33526f}
 .light-mode .ini-b-col{background:#eef4fa}
+/* ── v1.5.87 · PIZARRA DEL PANEL DE INICIO ──────────────────────────────────
+   Antes esto era una lista de renglones que cortaba el texto con puntos
+   suspensivos. Ahora es un tablero: fondo cuadriculado como una pizarra, riel
+   dorado arriba con la fecha del día, y cada cosa anotada en su propia nota con
+   un color por tipo (dorado = autorizado hoy, azul = se presenta, rojo = aviso,
+   violeta = evento). En celular las notas se apilan de a una. */
+.pz-board{background:#0a1526;border:1px solid rgba(122,175,212,.16);border-radius:16px;margin-bottom:10px;overflow:hidden;padding-bottom:13px;
+  background-image:linear-gradient(rgba(122,175,212,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(122,175,212,.05) 1px,transparent 1px);
+  background-size:100% 27px,27px 100%}
+.pz-rail{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;
+  border-bottom:1px solid rgba(199,154,58,.35);background-image:linear-gradient(90deg,rgba(199,154,58,.17),rgba(199,154,58,.02))}
+.pz-rail-tit{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;font-weight:800;color:#e8be62}
+.pz-rail-fecha{font-size:11px;color:#b6cde0;text-transform:capitalize}
+.pz-chips{display:flex;flex-wrap:wrap;gap:6px;padding:11px 14px 0}
+.pz-chip{font-size:11px;color:#cfe0ee;background:rgba(122,175,212,.10);border:1px solid rgba(122,175,212,.18);border-radius:20px;padding:3px 10px}
+.pz-chip b{font-weight:800}
+.pz-chip.pz-autorizado{color:#e8be62;background:rgba(232,190,98,.10);border-color:rgba(232,190,98,.32)}
+.pz-chip.pz-presenta{color:#7cc0f0;background:rgba(124,192,240,.10);border-color:rgba(124,192,240,.30)}
+.pz-chip.pz-aviso{color:#f2a08a;background:rgba(242,160,138,.10);border-color:rgba(242,160,138,.30)}
+.pz-chip.pz-evento{color:#bda8f5;background:rgba(189,168,245,.10);border-color:rgba(189,168,245,.30)}
+.pz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(218px,1fr));gap:9px;padding:11px 14px 0}
+.pz-nota{position:relative;display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;font-family:inherit;cursor:pointer;
+  background:rgba(20,30,46,.96);border:1px solid rgba(122,175,212,.14);border-left:3px solid #7aafd4;border-radius:12px;
+  padding:11px 12px;transition:transform .15s,box-shadow .15s,background .15s}
+.pz-nota:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.35);background:rgba(28,42,64,.98)}
+.pz-nota:focus-visible{outline:2px solid #7aafd4;outline-offset:2px}
+.pz-nota.pz-fija{cursor:default}
+.pz-nota.pz-fija:hover{transform:none;box-shadow:none;background:rgba(20,30,46,.96)}
+.pz-pin{position:absolute;top:10px;right:11px;width:8px;height:8px;border-radius:50%;background:#7aafd4;box-shadow:0 0 0 3px rgba(122,175,212,.15)}
+.pz-rot{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#9fc0da;padding-right:18px}
+.pz-nom{font-size:13.5px;font-weight:700;color:#eef5fb;line-height:1.25}
+.pz-det{font-size:11.5px;color:#adc6dc;line-height:1.35}
+.pz-ir{font-size:10.5px;font-weight:700;color:#7aafd4;margin-top:3px}
+.pz-nota.pz-autorizado{border-left-color:#e8be62}
+.pz-nota.pz-autorizado .pz-rot{color:#e8be62}
+.pz-nota.pz-autorizado .pz-pin{background:#e8be62;box-shadow:0 0 0 3px rgba(232,190,98,.16)}
+.pz-nota.pz-presenta{border-left-color:#5aa6dd}
+.pz-nota.pz-presenta .pz-rot{color:#7cc0f0}
+.pz-nota.pz-presenta .pz-pin{background:#5aa6dd;box-shadow:0 0 0 3px rgba(90,166,221,.16)}
+.pz-nota.pz-aviso{border-left-color:#ef7f5e}
+.pz-nota.pz-aviso .pz-rot{color:#f2a08a}
+.pz-nota.pz-aviso .pz-pin{background:#ef7f5e;box-shadow:0 0 0 3px rgba(239,127,94,.16)}
+.pz-nota.pz-evento{border-left-color:#a78bfa}
+.pz-nota.pz-evento .pz-rot{color:#bda8f5}
+.pz-nota.pz-evento .pz-pin{background:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.16)}
+.pz-nota.pz-ok{border-left-color:#4ade80}
+.pz-nota.pz-ok .pz-rot{color:#6ee7a0}
+.pz-nota.pz-ok .pz-pin{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.16)}
+.light-mode .pz-board{background:#f7fafd;border-color:#dbe6f1;
+  background-image:linear-gradient(rgba(21,49,79,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(21,49,79,.05) 1px,transparent 1px)}
+.light-mode .pz-rail{border-bottom-color:rgba(199,154,58,.5);background-image:linear-gradient(90deg,rgba(199,154,58,.22),rgba(199,154,58,.04))}
+.light-mode .pz-rail-tit{color:#8a6410}
+.light-mode .pz-rail-fecha{color:#6b87a3}
+.light-mode .pz-chip{background:#eef4fa;border-color:#dbe6f1;color:#33526f}
+.light-mode .pz-chip.pz-autorizado{color:#a15c04;background:#fdf5e4;border-color:#eddcb4}
+.light-mode .pz-chip.pz-presenta{color:#14568f;background:#eaf3fc;border-color:#cbe0f4}
+.light-mode .pz-chip.pz-aviso{color:#b23c17;background:#fdeee9;border-color:#f4d3c7}
+.light-mode .pz-chip.pz-evento{color:#5b34c4;background:#f1ecfe;border-color:#ddd2f7}
+.light-mode .pz-nota{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}
+.light-mode .pz-nota:hover{background:#fff;box-shadow:0 8px 18px rgba(21,49,79,.12)}
+.light-mode .pz-nota.pz-fija:hover{background:#fff;box-shadow:0 2px 6px rgba(21,49,79,.05)}
+.light-mode .pz-rot{color:#5c7c99}
+.light-mode .pz-nom{color:#15314f}
+.light-mode .pz-det{color:#5b7997}
+.light-mode .pz-ir{color:#1f6fb8}
+.light-mode .pz-nota.pz-autorizado .pz-rot{color:#a15c04}
+.light-mode .pz-nota.pz-presenta .pz-rot{color:#14568f}
+.light-mode .pz-nota.pz-aviso .pz-rot{color:#b23c17}
+.light-mode .pz-nota.pz-evento .pz-rot{color:#5b34c4}
+.light-mode .pz-nota.pz-ok .pz-rot{color:#15803d}
+@media(max-width:520px){.pz-grid{grid-template-columns:1fr;padding:11px 11px 0}.pz-chips{padding:11px 11px 0}.pz-rail{padding:10px 11px}}
+@media(prefers-reduced-motion:reduce){.pz-nota{transition:none}.pz-nota:hover{transform:none}}
 .sb-inicio .s-icon{background:rgba(199,154,58,.16);border-color:rgba(199,154,58,.3)}
 
 @media(max-width:820px){
@@ -1857,6 +1929,15 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
     <div class="cfg-item-content">
       <span>Cambiar mi contraseña</span>
       <span class="cfg-sub">Modificar la contraseña de tu cuenta</span>
+    </div>
+  </button>
+  <!-- v1.5.87 — Si la huella se apaga por lo que fuera, desde acá se vuelve a
+       prender sin esperar a que la app lo pregunte sola. -->
+  <button class="cfg-item" id="cfgHuellaItem" onclick="cfgHuellaToggle()" style="display:none">
+    <span class="cfg-icon">🔐</span>
+    <div class="cfg-item-content">
+      <span id="cfgHuellaLabel">Activar el ingreso con huella</span>
+      <span class="cfg-sub" id="cfgHuellaSub">Entrar con la huella en vez de la contraseña</span>
     </div>
   </button>
   <button class="cfg-item admin" id="cfgResetItem" onclick="openResetPwd()" style="display:none">
@@ -4069,60 +4150,156 @@ async function huellaDisponible(){
   }catch(e){ return false; }
 }
 
-// Lista de usuarios con huella registrada en ESTE dispositivo
-function _huellasGuardadas(){ return JSON.parse(localStorage.getItem('suep_huellas')||'{}'); }
-function _guardarHuella(usuario,credId){ const h=_huellasGuardadas(); h[usuario]=credId; localStorage.setItem('suep_huellas',JSON.stringify(h)); }
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.87 — POR QUÉ LA HUELLA SE "APAGABA" SOLA
+// ───────────────────────────────────────────────────────────────────
+// El botón de huella desaparecía cada tanto sin que nadie tocara nada. No era
+// el dedo ni el lector: hasta la 1.5.86 el dato de la huella se guardaba SOLO
+// en el almacenamiento del navegador (localStorage), y ese almacenamiento se
+// borra solo en situaciones de lo más normales:
+//   • iPhone/Safari lo limpia si pasan varios días sin abrir la app;
+//   • el celular lo borra cuando se queda sin espacio;
+//   • y el caso más común acá: abrir la app desde el ÍCONO del escritorio y
+//     abrirla desde el NAVEGADOR usan dos almacenamientos distintos, así que la
+//     huella registrada en uno no existe para el otro.
+// Sin ese dato, el botón se escondía y parecía que la huella se había borrado.
+// AHORA la huella se registra como LLAVE RESIDENTE: la guarda el teléfono junto
+// con la dirección de la app, no la app. Aunque se limpie el navegador o se
+// entre desde el ícono en vez del navegador, el teléfono la sigue teniendo y el
+// ingreso funciona igual. El listado local queda como atajo, ya no es
+// imprescindible, y el botón ahora se muestra en todo celular compatible.
+// ═══════════════════════════════════════════════════════════════════
+
+// Lista de usuarios con huella registrada en ESTE dispositivo (atajo, no es la
+// fuente de verdad: la llave real la guarda el teléfono)
+function _huellasGuardadas(){ try{ return JSON.parse(localStorage.getItem('suep_huellas')||'{}'); }catch(_){ return {}; } }
+function _guardarHuella(usuario,credId){ try{ const h=_huellasGuardadas(); h[usuario]=credId; localStorage.setItem('suep_huellas',JSON.stringify(h)); }catch(_){ } }
+function _olvidarHuellas(){ try{ localStorage.removeItem('suep_huellas'); }catch(_){ } }
+// Apagado a mano desde Configuración. Como la llave la guarda el teléfono y no
+// la app, la app no puede borrarla: lo que hace es dejar anotado que en este
+// dispositivo no se usa, y así el botón no aparece.
+function _huellaApagada(){ try{ return localStorage.getItem('suep_huella_off')==='1'; }catch(_){ return false; } }
+function _setHuellaApagada(v){ try{ v ? localStorage.setItem('suep_huella_off','1') : localStorage.removeItem('suep_huella_off'); }catch(_){ } }
+// El nombre de usuario viaja DENTRO de la llave, así se lo puede recuperar
+// aunque el navegador haya borrado el listado local.
+function _txtABuf(s){ return new TextEncoder().encode(String(s)); }
+function _bufATxt(b){ try{ return new TextDecoder().decode(new Uint8Array(b)); }catch(_){ return ''; } }
 
 // Registrar huella para un usuario (tras login con contraseña)
 async function ofrecerRegistroHuella(usuario){
+  if(_huellaApagada()) return;                      // la apagaron a mano en este equipo
   if(!(await huellaDisponible())) return;          // celu no compatible → no hace nada
   if(_huellasGuardadas()[usuario]) return;          // ya tiene huella en este equipo
-  setTimeout(async ()=>{
-    if(!confirm('¿Querés activar el ingreso con huella digital en este dispositivo para la próxima vez?')) return;
-    try{
-      const challenge=crypto.getRandomValues(new Uint8Array(32));
-      const userId=crypto.getRandomValues(new Uint8Array(16));
-      const cred=await navigator.credentials.create({publicKey:{
-        challenge, rp:{name:'SUEP', id:location.hostname},
-        user:{id:userId, name:usuario, displayName:usuario},
-        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
-        timeout:60000, attestation:'none'
-      }});
-      _guardarHuella(usuario, _bufToB64(cred.rawId));
-      alert('✅ Huella activada. La próxima vez vas a poder ingresar con la huella.');
-      actualizarBotonHuella();
-    }catch(e){ /* el usuario canceló o falló: no pasa nada */ }
-  }, 800);
+  setTimeout(()=>{ registrarHuella(usuario, false); }, 800);
+}
+
+// Alta de la huella. `manual` = la pidió la persona desde Configuración (en ese
+// caso sí se le avisa cuando algo no sale, para que no quede en la duda).
+async function registrarHuella(usuario, manual){
+  if(!(await huellaDisponible())){
+    if(manual) alert('Este dispositivo no tiene lector de huella disponible para la app.\nEn celular funciona con huella o reconocimiento facial; en PC, solo si el equipo tiene lector.');
+    return false;
+  }
+  if(!manual && !confirm('¿Querés activar el ingreso con huella digital en este dispositivo para la próxima vez?')) return false;
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge, rp:{name:'SUEP', id:location.hostname},
+      // El id lleva el usuario adentro: es lo que permite recuperarlo después.
+      user:{id:_txtABuf(usuario), name:usuario, displayName:usuario},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{
+        authenticatorAttachment:'platform',
+        residentKey:'preferred',      // ← llave residente: la guarda el teléfono
+        userVerification:'required'
+      },
+      timeout:60000, attestation:'none'
+    }});
+    _guardarHuella(usuario, _bufToB64(cred.rawId));
+    alert('✅ Huella activada. La próxima vez vas a poder ingresar con la huella.');
+    actualizarBotonHuella();
+    return true;
+  }catch(e){
+    if(manual) alert('No se pudo activar la huella esta vez.\nProbá de nuevo; si sigue igual, revisá que el celular tenga la huella configurada en sus ajustes.');
+    return false;                    // canceló o falló: no pasa nada
+  }
 }
 
 // Ingresar usando la huella
 async function loginConHuella(){
-  const err=document.getElementById('loginError');
+  if(!(await huellaDisponible())){
+    alert('Este dispositivo no tiene lector de huella disponible para la app.');
+    return;
+  }
   const huellas=_huellasGuardadas();
   const usuarios=Object.keys(huellas);
-  if(usuarios.length===0){ alert('Todavía no hay ninguna huella registrada en este dispositivo.\nIngresá una vez con usuario y contraseña y aceptá activar la huella.'); return; }
   try{
     const challenge=crypto.getRandomValues(new Uint8Array(32));
-    const allowCredentials=usuarios.map(u=>({type:'public-key', id:_b64ToBuf(huellas[u])}));
-    const assertion=await navigator.credentials.get({publicKey:{
-      challenge, allowCredentials, userVerification:'required', timeout:60000, rpId:location.hostname
-    }});
+    const opciones={ challenge, userVerification:'required', timeout:60000, rpId:location.hostname };
+    // Si hay huellas anotadas en este navegador, se le pide esas. Si no hay
+    // ninguna (se limpió el navegador, o se está entrando desde el ícono en vez
+    // del navegador), se le pregunta al teléfono cuáles tiene guardadas para
+    // SUEP: eso es lo que antes fallaba y dejaba a la persona sin huella.
+    if(usuarios.length) opciones.allowCredentials=usuarios.map(u=>({type:'public-key', id:_b64ToBuf(huellas[u])}));
+    const assertion=await navigator.credentials.get({publicKey:opciones});
     const idUsado=_bufToB64(assertion.rawId);
-    const usuario=usuarios.find(u=>huellas[u]===idUsado);
+    let usuario=usuarios.find(u=>huellas[u]===idUsado);
+    if(!usuario){
+      // No estaba en el listado local: el usuario viene dentro de la llave.
+      const handle=assertion.response && assertion.response.userHandle;
+      const nom=handle ? _bufATxt(handle) : '';
+      if(nom && USERS.some(x=>x.usuario===nom)){ usuario=nom; _guardarHuella(usuario, idUsado); }
+    }
     const user=USERS.find(x=>x.usuario===usuario);
-    if(user){ iniciarSesion(user); }
-    else { alert('No se pudo identificar al usuario de esta huella.'); }
-  }catch(e){ /* canceló o falló la verificación */ }
+    if(user){ iniciarSesion(user); return; }
+    alert('La huella se verificó, pero no se pudo identificar tu usuario en este dispositivo.\nIngresá esta vez con usuario y contraseña: la huella se vuelve a activar sola.');
+  }catch(e){
+    // Cancelada o vencida: no se muestra nada. Si había huellas anotadas y
+    // ninguna sirvió, se limpia el atajo para que el próximo intento le
+    // pregunte directo al teléfono.
+    if(usuarios.length && e && e.name==='NotAllowedError') _olvidarHuellas();
+  }
 }
 
 // Mostrar/ocultar el botón de huella según el dispositivo
+// v1.5.87 — Se muestra en TODO dispositivo compatible, tenga o no huellas
+// anotadas en este navegador: el teléfono puede tener la llave igual.
 async function actualizarBotonHuella(){
   const btn=document.getElementById('btnHuella');
   if(!btn) return;
-  const disp=await huellaDisponible();
-  const hayRegistradas=Object.keys(_huellasGuardadas()).length>0;
-  btn.style.display = (disp && hayRegistradas) ? 'flex' : 'none';
+  btn.style.display = (!_huellaApagada() && await huellaDisponible()) ? 'flex' : 'none';
+}
+
+// ─── Ingreso con huella desde Configuración (activar / desactivar a mano) ───
+// Si la huella se apagó por lo que fuera, desde acá se vuelve a prender sin
+// tener que esperar a que la app lo pregunte sola.
+async function cfgHuellaEstado(){
+  const it=document.getElementById('cfgHuellaItem');
+  if(!it) return;
+  const lab=document.getElementById('cfgHuellaLabel');
+  const sub=document.getElementById('cfgHuellaSub');
+  if(!(await huellaDisponible())){ it.style.display='none'; return; }
+  it.style.display='flex';
+  const activa = !_huellaApagada() && CU && !!_huellasGuardadas()[CU.usuario];
+  if(lab) lab.textContent = activa ? 'Desactivar el ingreso con huella' : 'Activar el ingreso con huella';
+  if(sub) sub.textContent = activa
+    ? 'Está activa en este dispositivo'
+    : 'Entrar con la huella en vez de la contraseña';
+}
+async function cfgHuellaToggle(){
+  if(!CU) return;
+  if(!_huellaApagada() && _huellasGuardadas()[CU.usuario]){
+    if(!confirm('¿Desactivar el ingreso con huella en este dispositivo?\nVas a poder entrar con usuario y contraseña, y activarla de nuevo cuando quieras.')) return;
+    const h=_huellasGuardadas(); delete h[CU.usuario];
+    try{ localStorage.setItem('suep_huellas', JSON.stringify(h)); }catch(_){ }
+    _setHuellaApagada(true);
+    alert('Huella desactivada en este dispositivo.');
+  } else {
+    _setHuellaApagada(false);
+    await registrarHuella(CU.usuario, true);
+  }
+  cfgHuellaEstado();
+  actualizarBotonHuella();
 }
 function registrarSalida(){
   const accId = localStorage.getItem('suep_acceso_actual');
@@ -5384,12 +5561,16 @@ function iniPintar(){
     // habilitada. Avisos, por ejemplo, es solo de las administradoras: al resto
     // el aviso se le muestra igual (ya lo ve en el cartel de arriba), pero como
     // texto, sin llevarlo a una pestaña que no le corresponde.
-    const fila = (ico, tit, sub, secId) => {
-      const cuerpo = `<span class="ii-ico">${ico}</span>
-        <span class="ii-txt"><b>${tit}</b><small>${sub}</small></span>`;
-      return secId
-        ? `<button class="ini-item" onclick="selectSector('${secId}')">${cuerpo}</button>`
-        : `<div class="ini-item ii-fijo">${cuerpo}</div>`;
+    // v1.5.87 — Cada renglón pasó a ser una NOTA de la pizarra: guarda lo mismo
+    // de antes (icono, título, detalle y a qué pestaña lleva) más el tipo, que
+    // es lo que le da el color y el rótulo. Y se anota con una clave, así lo
+    // mismo no puede entrar dos veces aunque llegue por dos caminos distintos.
+    const puestas = new Set();
+    const fila = (ico, tit, sub, secId, tipo, clave) => {
+      const k = clave || (tipo + '|' + tit + '|' + sub);
+      if(puestas.has(k)) return;
+      puestas.add(k);
+      filas.push({ ico, tit, sub, secId: secId || null, tipo: tipo || 'aviso' });
     };
     const verAvisos  = iniPuedeVer('AVISOS');
     const verEventos = iniPuedeVer('EVENTOS');
@@ -5397,8 +5578,16 @@ function iniPintar(){
     // información que más le cambia el día al resto (quién no está de servicio).
     // A diferencia de las presentaciones, esto NO se filtra por permiso: lo ve
     // todo el mundo, aunque la pestaña de Autorizaciones no le corresponda. Si no
-    // la tiene habilitada, el renglón se muestra como texto y no lleva a ningún
+    // la tiene habilitada, la nota se muestra como texto y no lleva a ningún
     // lado (mismo criterio que ya se usa con los avisos).
+    // ⛔ v1.5.87 — ACÁ ESTABA EL DUPLICADO. La misma autorización aparecía DOS
+    // veces: una acá (porque está vigente hoy) y otra abajo, en presentaciones
+    // (porque termina dentro de los próximos días). Pasaba sobre todo con las de
+    // 24 hs, que empiezan y terminan casi juntas. Ahora la autorización se
+    // muestra UNA sola vez, en esta nota, y el día en que la persona se presenta
+    // va adentro del mismo detalle en vez de ocupar una nota aparte.
+    const autYaPuestas = new Set();
+    const autClave = r => 'aut:' + (r ? (r._id || ((r.lp||'') + '|' + (r.desde||'') + '|' + (r.hasta||''))) : '?');
     try{
       _autVigentes().slice(0,12).forEach(x=>{
         const nom = x.p
@@ -5410,16 +5599,24 @@ function iniPintar(){
                               : ('del ' + _licDDMM(x.desde) + ' al ' + _licDDMM(x.hasta));
         // "último día" solo tiene sentido si la autorización abarca más de un día
         const termHoy = !unSoloDia && Math.round((x.hasta - _licHoy0()) / 86400000) === 0;
-        filas.push(fila('🪪', esc(nom),
-          esc('Autorizado (Art. 12) · ' + dur + ' · ' + per + (termHoy ? ' · último día' : '')),
-          iniPuedeVer('AUTORIZACIONES') ? 'AUTORIZACIONES' : null));
+        // El día de presentación viaja en la MISMA nota.
+        let pres = '';
+        try{
+          const fp = (typeof _licFechaPresenta === 'function') ? _licFechaPresenta(x.r) : null;
+          if(fp) pres = ' · se presenta el ' + _licDDMM(fp);
+        }catch(_){}
+        autYaPuestas.add(autClave(x.r));
+        fila('🪪', esc(nom),
+          esc('Art. 12 · ' + dur + ' · ' + per + (termHoy ? ' · último día' : '') + pres),
+          iniPuedeVer('AUTORIZACIONES') ? 'AUTORIZACIONES' : null,
+          'autorizado', autClave(x.r));
       });
     }catch(e){ console.warn('Panel de inicio · autorizados vigentes:', e); }
     // v1.5.78 — PRESENTACIONES. Antes esto salía solo dentro de Licencias y de
     // Autorizaciones, y como ahí es información de administradoras, había gente
     // que no se enteraba de que tenía que presentarse. Ahora sale también acá:
     // las administradoras y los jefes ven las de todos; cada uno de los demás,
-    // las suyas. Va primero de todo, arriba de los avisos y los eventos.
+    // las suyas.
     try{
       const nivel = (typeof _licNivel==='function') ? _licNivel() : 'propio';
       const miLP  = (typeof _licMiLP==='function')  ? _licMiLP()  : null;
@@ -5430,29 +5627,65 @@ function iniPintar(){
         : ('Termina el ' + _licDDMM(x.hasta) + ' · se presenta el ' + _licDDMM(x.presenta));
       filtrarLic(_licProximosAPresentarse(null, INI_PRESENTA_DIAS)).slice(0,6).forEach(x=>{
         let t = 'Licencia'; try{ t = _licTipoLabel(x.r.tipo) || 'Licencia'; }catch(_){}
-        filas.push(fila('🏖️', esc(x.p.nombre), esc(t + ' · ' + cuando(x)), iniPuedeVer('LICENCIAS') ? 'LICENCIAS' : null));
+        fila('🏖️', esc(x.p.nombre), esc(t + ' · ' + cuando(x)),
+          iniPuedeVer('LICENCIAS') ? 'LICENCIAS' : null,
+          'presenta', 'lic:' + (x.r._id || (x.r.lp + '|' + x.r.hasta)));
       });
       filtrar(_licProximosAPresentarse(_autRows(), INI_PRESENTA_DIAS)).slice(0,6).forEach(x=>{
-        filas.push(fila('🪪', esc(x.p.nombre),
-          esc('Autorización (Art. 12) de ' + (String(x.r.dur)==='48'?'48 hs':'24 hs') + ' · ' + cuando(x)),
-          iniPuedeVer('AUTORIZACIONES') ? 'AUTORIZACIONES' : null));
+        if(autYaPuestas.has(autClave(x.r))) return;   // ya está arriba como "autorizado hoy"
+        fila('🪪', esc(x.p.nombre),
+          esc('Art. 12 de ' + (String(x.r.dur)==='48'?'48 hs':'24 hs') + ' · ' + cuando(x)),
+          iniPuedeVer('AUTORIZACIONES') ? 'AUTORIZACIONES' : null,
+          'presenta', autClave(x.r));
       });
     }catch(e){ console.warn('Panel de inicio · presentaciones:', e); }
-    av.slice(0,3).forEach(a=> filas.push(
-      fila('📢', esc(a.titulo||'Aviso'), 'Aviso vigente', verAvisos ? 'AVISOS' : null)));
-    ev.slice(0,3).forEach(e=> filas.push(
-      fila('🔔', esc(e.titulo||'Evento'),
-           esc(_textoCuando(e._dias)) + (e.lugar ? ' · '+esc(e.lugar) : ''),
-           verEventos ? 'EVENTOS' : null)));
-    // v1.5.80 — El recuadro se muestra SIEMPRE, aunque no haya nada. Si
-    // desaparece, nadie sabe si está vacío o si dejó de funcionar.
-    pendientes = `<div class="ini-sec">
-      <div class="ini-tit">📌 Para tener en cuenta</div>
-      <div class="ini-lista">${filas.length ? filas.join('')
-        : `<div class="ini-item ii-fijo"><span class="ii-ico">✅</span>
-             <span class="ii-txt"><b>Por ahora no hay nada pendiente</b>
-             <small>Acá salen quiénes están autorizados hoy, las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</small></span>
-           </div>`}</div></div>`;
+    av.slice(0,3).forEach(a=> fila('📢', esc(a.titulo||'Aviso'), 'Vigente',
+      verAvisos ? 'AVISOS' : null, 'aviso', 'av:' + (a._id || a.titulo)));
+    ev.slice(0,3).forEach(e=> fila('🔔', esc(e.titulo||'Evento'),
+      esc(_textoCuando(e._dias)) + (e.lugar ? ' · '+esc(e.lugar) : ''),
+      verEventos ? 'EVENTOS' : null, 'evento', 'ev:' + (e._id || e.titulo)));
+    // ═══════════════════════════════════════════════════════════════
+    // v1.5.87 — PIZARRA. Lo que antes era una lista de renglones ahora es un
+    // tablero: cada cosa es una nota con su color, su rótulo y su detalle
+    // completo (antes el texto largo se cortaba con puntos suspensivos). Arriba
+    // van los contadores, para saber de un vistazo cuánta gente está autorizada
+    // hoy sin tener que contar renglones. El tablero se muestra SIEMPRE, aunque
+    // no haya nada: si desaparece, nadie sabe si está vacío o si se rompió.
+    // ═══════════════════════════════════════════════════════════════
+    const ROT = { autorizado:'Autorizado hoy', presenta:'Se presenta', aviso:'Aviso', evento:'Evento' };
+    const nota = n => {
+      const cuerpo = `<span class="pz-pin"></span>` +
+        `<span class="pz-rot">${n.ico} ${ROT[n.tipo]||'Nota'}</span>` +
+        `<span class="pz-nom">${n.tit}</span>` +
+        `<span class="pz-det">${n.sub}</span>` +
+        (n.secId ? `<span class="pz-ir">Abrir la pestaña ›</span>` : '');
+      return n.secId
+        ? `<button class="pz-nota pz-${n.tipo}" onclick="selectSector('${n.secId}')">${cuerpo}</button>`
+        : `<div class="pz-nota pz-${n.tipo} pz-fija">${cuerpo}</div>`;
+    };
+    const chips = [['autorizado','autorizado hoy','autorizados hoy'],
+                   ['presenta','presentación','presentaciones'],
+                   ['aviso','aviso','avisos'],
+                   ['evento','evento','eventos']]
+      .map(([t,uno,varios])=>{
+        const n = filas.filter(f=>f.tipo===t).length;
+        return n ? `<span class="pz-chip pz-${t}"><b>${n}</b> ${n===1?uno:varios}</span>` : '';
+      }).join('');
+    let pzFecha = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'});
+    pzFecha = pzFecha.charAt(0).toUpperCase()+pzFecha.slice(1);
+    pendientes = `<div class="pz-board">
+      <div class="pz-rail">
+        <span class="pz-rail-tit">📌 Pizarra · para tener en cuenta</span>
+        <span class="pz-rail-fecha">${pzFecha}</span>
+      </div>
+      ${chips ? `<div class="pz-chips">${chips}</div>` : ''}
+      <div class="pz-grid">${filas.length ? filas.map(nota).join('')
+        : `<div class="pz-nota pz-ok pz-fija"><span class="pz-pin"></span>
+             <span class="pz-rot">✅ Sin novedades</span>
+             <span class="pz-nom">Hoy no hay nada anotado</span>
+             <span class="pz-det">Acá salen quiénes están autorizados hoy, las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</span>
+           </div>`}</div>
+    </div>`;
   }catch(e){ console.warn('Panel de inicio · avisos/eventos:', e); }
 
   // v1.5.78 — Calendario: los meses en miniatura de acá hasta diciembre. Se toca
@@ -8347,6 +8580,7 @@ function toggleCfg(){
   if(cfgOpen){
     ntOpen=false;
     document.getElementById('notifPanel').classList.remove('show');
+    try{ cfgHuellaEstado(); }catch(_){ }   // v1.5.87
   }
 }
 
