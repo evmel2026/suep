@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.87">
+<meta name="app-version" content="1.5.89">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -926,7 +926,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .light-mode #pf_pestanas_list label,.light-mode #pf_sectores_list label{background:#f1f5f9!important;border-color:#dbe4ee!important;color:#33536f!important}
 
 /* ═════ BANNER DE ACTUALIZACIÓN ═════ */
-#updateBanner{position:fixed;bottom:0;left:0;right:0;z-index:9999;display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:linear-gradient(135deg,#1a3a5c,#0f2540);border-top:2px solid #7aafd4;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
+#updateBanner{position:fixed;bottom:0;left:0;right:0;z-index:9999;display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;box-sizing:border-box;padding-bottom:calc(13px + env(safe-area-inset-bottom,0px));background:linear-gradient(135deg,#1a3a5c,#0f2540);border-top:2px solid #7aafd4;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
 #updateBanner.show{display:flex;animation:slideUp .35s ease}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 .upd-text{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
@@ -938,7 +938,19 @@ textarea.fi{resize:vertical;min-height:72px}
 .upd-btn-ok:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(122,175,212,.35)}
 .upd-btn-skip{padding:9px 14px;border-radius:9px;border:1.5px solid rgba(122,175,212,.3);background:transparent;color:#7aafd4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
 .upd-btn-skip:hover{border-color:#7aafd4;color:#c8dff0}
-@media(max-width:480px){#updateBanner{flex-direction:column;align-items:flex-start}.upd-actions{width:100%}.upd-btn-ok,.upd-btn-skip{flex:1;text-align:center}}
+@media(max-width:640px){
+  /* v1.5.89 — En el celular el banner iba abajo y los botones quedaban tapados
+     por la barra de navegación del teléfono: se veía el aviso pero NO se podía
+     tocar «Actualizar ahora». Ahora va ARRIBA, a lo ancho, con los dos botones
+     grandes y a la vista. */
+  #updateBanner{top:0;bottom:auto;border-top:none;border-bottom:2px solid #7aafd4;
+    box-shadow:0 6px 24px rgba(0,0,0,.55);flex-direction:column;align-items:stretch;gap:10px;
+    padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px}
+  #updateBanner.show{animation:slideDown .3s ease}
+  .upd-actions{width:100%;gap:8px}
+  .upd-btn-ok,.upd-btn-skip{flex:1;text-align:center;padding:12px 10px;font-size:13.5px}
+}
+@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
 /* v1.5.82 — Cartel de "ya estás en la versión nueva" */
 #verNuevaCartel{position:fixed;top:0;left:0;right:0;z-index:10001;display:flex;align-items:flex-start;gap:12px;
   padding:12px 16px;background:linear-gradient(135deg,#0f766e,#0a4f4a);border-bottom:2px solid #34d399;
@@ -1956,6 +1968,15 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
   </button>
   <!-- v1.5.77 — Cartel de versión: sirve para saber, sin adivinar, qué archivo
        está corriendo el navegador en este momento. -->
+  <!-- v1.5.89 — Botón para buscar y bajar la versión nueva a mano, sin depender
+       de que aparezca el cartel. -->
+  <button class="cfg-item" id="cfgUpdItem" onclick="cfgBuscarActualizacion()">
+    <span class="cfg-icon">🔄</span>
+    <div class="cfg-item-content">
+      <span>Buscar actualización</span>
+      <span class="cfg-sub" id="cfgUpdSub">Baja la última versión publicada</span>
+    </div>
+  </button>
   <div class="cfg-item" id="cfgVersion" style="cursor:default">
     <span class="cfg-icon">🏷️</span>
     <div class="cfg-item-content">
@@ -2212,6 +2233,40 @@ async function _versionPublicadaEnGitHub(){
   }catch(e){ return null; }   // sin conexión: se reintenta en el próximo ciclo
 }
 
+// v1.5.89 — Un solo lugar arma el texto del cartel, y siempre dice QUÉ versión
+// tenés y CUÁL está publicada. Si el dispositivo ya intentó actualizar y quedó
+// igual, se agrega el aviso de que está sirviendo una copia vieja.
+function _updPintarBanner(remota){
+  const banner = document.getElementById('updateBanner');
+  if(!banner) return;
+  const msg = banner.querySelector('.upd-msg');
+  let trabado = false;
+  try{
+    const f = JSON.parse(localStorage.getItem(UPD_FORZADO_KEY) || 'null');
+    trabado = !!(f && f.ver === remota && f.desde === APP_VERSION);
+  }catch(_){}
+  if(msg){
+    msg.innerHTML = '<strong>Hay una versión nueva de SUEP</strong>' +
+      'Tenés la <b>' + APP_VERSION + '</b> y ya está publicada la <b>' + remota + '</b>. ' +
+      'Tocá <b>⚡ Actualizar ahora</b>: tarda unos segundos y no se pierde nada de lo cargado.' +
+      (trabado
+        ? '<br><b style="color:#fbbf24">El teléfono sigue abriendo la copia guardada.</b> ' +
+          'Cerrá la app del todo (sacala de las aplicaciones abiertas), volvé a entrar y tocá Actualizar ahora.'
+        : '');
+  }
+  banner.classList.add('show');
+}
+// Si ya estamos en la versión publicada, el cartel no tiene por qué seguir ahí.
+function _updOcultarSiAlDia(remota){
+  if(_verMayor(remota, APP_VERSION) === 1) return false;
+  try{ localStorage.removeItem('suep_upd_try'); }catch(_){}
+  try{ localStorage.removeItem(UPD_FORZADO_KEY); }catch(_){}
+  _updCancelarCuenta();
+  const b = document.getElementById('updateBanner');
+  if(b) b.classList.remove('show');
+  return true;
+}
+
 // Consulta GitHub y, si hay una versión más nueva publicada, muestra el banner.
 async function checkForUpdates(){
   if(APP_EN_PRUEBA) return;                                             // 🧪 probando: no avisar nada
@@ -2221,17 +2276,12 @@ async function checkForUpdates(){
     // <meta app-version>) en vez de bajarlo entero, así el chequeo pesa casi nada.
     const remota = await _versionPublicadaEnGitHub();
     if(!remota) return;
+    if(_updOcultarSiAlDia(remota)) return;   // v1.5.89 — ya estamos al día
     if(_verMayor(remota, APP_VERSION) === 1){
       _versionRemotaPendiente = remota;
       // Mostramos igual el cartel manual (sirve de respaldo si la actualización
       // automática no pudiera aplicarse por caché vieja del dispositivo).
-      const banner = document.getElementById('updateBanner');
-      if(banner){
-        const msg = banner.querySelector('.upd-msg');
-        if(msg) msg.innerHTML = '<strong>No te olvides de actualizar</strong> Ya está la versión ' + remota +
-          '. Tocá Actualizar ahora — tarda unos segundos y no se pierde nada de lo cargado.';
-        banner.classList.add('show');
-      }
+      _updPintarBanner(remota);
       // Y la aplicamos SOLA (con tope anti-bucle).
       if(_puedeAutoActualizar(remota)) _autoAplicarUpdate(remota);
     }
@@ -2245,16 +2295,57 @@ setInterval(checkForUpdates, 90 * 1000);
 // Revisar también cuando el usuario vuelve a la app (clave en celular)
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdates(); });
 
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.89 — POR QUÉ EL CARTEL DE ACTUALIZAR NO SE IBA NUNCA
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA: en el celular, con la app INSTALADA, el aparato guarda su propia
+// copia del archivo (el "service worker" y la caché del navegador). Al tocar
+// «Actualizar ahora» se recargaba… y el teléfono volvía a servir la MISMA copia
+// vieja. Entonces la app seguía anunciando la versión de antes, GitHub seguía
+// teniendo una más nueva, y el cartel volvía a salir una y otra vez.
+// LA SOLUCIÓN: antes de recargar se borra TODO lo guardado del archivo —se
+// desregistra el service worker y se vacían las cachés— y la recarga se pide con
+// una dirección distinta (?v=…) para que el teléfono no tenga de dónde sacar la
+// copia vieja y esté obligado a bajar el archivo nuevo de internet.
+// ⚠️ Esto NO toca ningún dato: los registros viven en Supabase y se vuelven a
+// bajar solos. Solo se reemplaza el ARCHIVO de la app.
+// ═══════════════════════════════════════════════════════════════════
+const UPD_FORZADO_KEY = 'suep_upd_forzado';
+async function _forzarRecargaLimpia(destino){
+  const objetivo = destino || _versionRemotaPendiente || APP_VERSION;
+  try{ localStorage.setItem(UPD_FORZADO_KEY, JSON.stringify({ ver:objetivo, desde:APP_VERSION, ts:Date.now() })); }catch(_){}
+  // 1) Desregistrar el service worker (se vuelve a registrar solo al abrir la app)
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>{ try{ return r.unregister(); }catch(_){ return null; } }));
+    }
+  }catch(_){}
+  // 2) Vaciar todas las cachés guardadas en el dispositivo
+  try{
+    if('caches' in window){
+      const ks = await caches.keys();
+      await Promise.all(ks.map(k=>caches.delete(k)));
+    }
+  }catch(_){}
+  // 3) Recargar pidiendo la dirección con un dato distinto al final
+  try{
+    const base = location.href.split('#')[0].split('?')[0];
+    const hash = location.hash || '';
+    location.replace(base + '?v=' + encodeURIComponent(objetivo) + '&_=' + Date.now() + hash);
+  }catch(_){ try{ location.reload(); }catch(__){} }
+}
+
 function applyUpdate(){
   localStorage.setItem('suep_app_version', _versionRemotaPendiente || APP_VERSION);
-  document.getElementById('updateBanner').classList.remove('show');
-  // Vaciar todas las cachés del navegador/PWA antes de recargar (sino el celu sigue viejo)
-  if('caches' in window){
-    caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k))))
-      .finally(()=> location.reload(true));
-  } else {
-    location.reload(true);
+  _updCancelarCuenta();
+  const b = document.getElementById('updateBanner');
+  if(b){
+    const msg = b.querySelector('.upd-msg');
+    if(msg) msg.innerHTML = '<strong>Actualizando…</strong> Bajando la versión nueva. ' +
+      'No cierres la app: en unos segundos vuelve sola.';
   }
+  _forzarRecargaLimpia(_versionRemotaPendiente);
 }
 function dismissUpdate(){
   // v1.5.82 — Si la persona dice "ahora no", se corta la cuenta regresiva. El
@@ -2324,11 +2415,8 @@ function _puedeAutoActualizar(remota){
 const UPD_ESPERA = 12;          // segundos que el cartel queda a la vista
 let _UPD_TIMER = null;
 function _updRecargar(){
-  if('caches' in window){
-    caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))).finally(()=> location.reload(true));
-  } else {
-    location.reload(true);
-  }
+  // v1.5.89 — Misma limpieza profunda que el botón «Actualizar ahora».
+  _forzarRecargaLimpia(_versionRemotaPendiente);
 }
 function _updCancelarCuenta(){
   if(_UPD_TIMER){ clearInterval(_UPD_TIMER); _UPD_TIMER = null; }
@@ -2421,12 +2509,7 @@ async function _recibirVersionRemota(valor){
       return;
     }
     _versionRemotaPendiente = remota;
-    const banner = document.getElementById('updateBanner');
-    if(banner){
-      const msg = banner.querySelector('.upd-msg');
-      if(msg) msg.innerHTML = '<strong>¡Nueva actualización disponible!</strong> Versión ' + remota + ' lista. Recargá para obtener las últimas mejoras.';
-      banner.classList.add('show');
-    }
+    _updPintarBanner(remota);
     if(_puedeAutoActualizar(remota)) _autoAplicarUpdate(remota);
   }catch(_){}
 }
@@ -2435,6 +2518,11 @@ async function _recibirVersionRemota(valor){
 try{
   const _t = _leerIntentosUpdate();
   if(_t && _t.ver && _verMayor(APP_VERSION, _t.ver) >= 0) localStorage.removeItem('suep_upd_try');
+  // v1.5.89 — Si la recarga limpia funcionó (ya estamos en la versión buscada,
+  // o en una más nueva), se borra la marca para que no salga el aviso de
+  // "el teléfono sigue abriendo la copia guardada".
+  const _f = JSON.parse(localStorage.getItem('suep_upd_forzado') || 'null');
+  if(_f && _f.ver && _verMayor(APP_VERSION, _f.ver) >= 0) localStorage.removeItem('suep_upd_forzado');
 }catch(_){}
 
 // Para cambiar usuario/contraseña: editá esta lista
@@ -9795,6 +9883,41 @@ window.addEventListener('DOMContentLoaded', ()=>{
   }catch(_){}
 });
 
+// ─── v1.5.89 · BUSCAR ACTUALIZACIÓN A MANO (Configuración) ─────────────────
+// Consulta GitHub en el momento y, si hay una versión más nueva, la baja con la
+// limpieza profunda (service worker + cachés + dirección nueva). Sirve cuando el
+// cartel no aparece, o cuando el teléfono se quedó pegado en una versión vieja.
+async function cfgBuscarActualizacion(){
+  const s = document.getElementById('cfgUpdSub');
+  const poner = t => { if(s) s.textContent = t; };
+  if(typeof APP_EN_PRUEBA !== 'undefined' && APP_EN_PRUEBA){
+    poner('Estás en una copia de prueba: no se buscan actualizaciones');
+    alert('Estás abriendo una copia de prueba del archivo, no la app publicada.\n\nEntrá por la dirección de siempre para poder actualizar.');
+    return;
+  }
+  poner('Consultando…');
+  let remota = null;
+  try{
+    _verPublicadaCache = { ver:null, ts:0 };     // que no use el dato guardado
+    remota = await _versionPublicadaEnGitHub();
+  }catch(_){}
+  if(!remota){ poner('No se pudo consultar — revisá la conexión'); return; }
+  if(_verMayor(remota, APP_VERSION) === 1){
+    _versionRemotaPendiente = remota;
+    poner('Está publicada la ' + remota + ' — actualizando…');
+    if(confirm('Tenés la versión ' + APP_VERSION + ' y ya está publicada la ' + remota + '.\n\n' +
+               '¿Actualizar ahora? Tarda unos segundos y NO se pierde nada de lo cargado.')){
+      applyUpdate();
+    }else{
+      _updPintarBanner(remota);
+      poner('Está publicada la ' + remota + ' — tocá acá cuando quieras');
+    }
+  }else{
+    _updOcultarSiAlDia(remota);
+    poner('Ya tenés la última versión publicada (' + remota + ')');
+  }
+}
+
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -14537,10 +14660,18 @@ function acaEsAdmin(){ return !!(CU && CU.permiso==='admin'); }
 // manejan todos los accesos.
 const ACA_CARGAN = ['marcos.blanco','elias.munoz','eliana.velazquez','adriana.sanchez',
                     'juana.catricura','ariel.cumillan'];
+// v1.5.88 — Además de los de arriba, cargan y editan TODOS los INSTRUCTORES.
+// No se listan uno por uno a propósito: se toma el "rol" del usuario, así que
+// si mañana se da de alta un instructor nuevo (o se le cambia el rol a alguien
+// desde Configuración ▸ Usuarios), queda habilitado solo, sin tocar el código.
+function acaEsInstructor(u){
+  const rol = String((u && u.rol) || '').toLowerCase();
+  return rol.indexOf('instructor') >= 0;
+}
 function acaPuedeCargar(){
   if(!CU) return false;
   if(typeof esVisor==='function' && esVisor()) return false;
-  return CU.permiso==='admin' || ACA_CARGAN.indexOf(CU.usuario) >= 0;
+  return CU.permiso==='admin' || ACA_CARGAN.indexOf(CU.usuario) >= 0 || acaEsInstructor(CU);
 }
 function acaPuedeEditar(r){ return acaPuedeCargar(); }
 function acaCuenta(r, est){
@@ -14563,29 +14694,33 @@ function _acaMesAbierto(k){
   if(Object.prototype.hasOwnProperty.call(ACA_MESES._cerrados, k)) return !ACA_MESES._cerrados[k];
   return k === ACA_MESES._reciente;
 }
+// v1.5.88 — Los tres toggles trabajan igual en la vista de tabla (compu) que en
+// la de tarjetas (celular): buscan por los atributos data-*, no por <tbody>.
 function acaToggleMes(k){
   ACA_MESES._cerrados[k] = _acaMesAbierto(k);
   const abierto = _acaMesAbierto(k);
-  document.querySelectorAll(`.aca-table tbody[data-mes="${k}"]`).forEach(tb=>{ tb.style.display = abierto ? '' : 'none'; });
-  const h = document.querySelector(`.aca-table tbody.aca-folder[data-folder="${k}"] .aca-fchev`);
-  if(h) h.textContent = abierto ? '▾' : '▸';
+  document.querySelectorAll(`.aca-wrap [data-mes="${k}"]`).forEach(tb=>{ tb.style.display = abierto ? '' : 'none'; });
+  document.querySelectorAll(`.aca-wrap [data-folder="${k}"] .aca-fchev`).forEach(h=>{ h.textContent = abierto ? '▾' : '▸'; });
+  document.querySelectorAll(`.aca-wrap [data-folder="${k}"] .aca-fico`).forEach(i=>{ i.textContent = abierto ? '📂' : '📁'; });
 }
 function acaToggleDet(id){
   const d = document.getElementById('acadet_'+id);
   const c = document.getElementById('acachev_'+id);
   if(!d) return;
   const abierto = d.style.display !== 'none';
-  d.style.display = abierto ? 'none' : 'table-row';
+  d.style.display = abierto ? 'none' : (d.tagName === 'TR' ? 'table-row' : 'block');
   if(c) c.style.transform = abierto ? '' : 'rotate(90deg)';
 }
 function acaFiltrar(q){
   const t = String(q||'').toLowerCase().trim();
-  document.querySelectorAll('.aca-table tbody[data-buscar]').forEach(tb=>{
+  document.querySelectorAll('.aca-wrap [data-buscar]').forEach(tb=>{
     if(!t){ tb.style.display = _acaMesAbierto(tb.getAttribute('data-mes')) ? '' : 'none'; return; }
     tb.style.display = tb.getAttribute('data-buscar').includes(t) ? '' : 'none';
   });
-  document.querySelectorAll('.aca-table tbody.aca-folder').forEach(h=>{ h.style.display=''; });
+  document.querySelectorAll('.aca-wrap .aca-folder').forEach(h=>{ h.style.display=''; });
 }
+// ¿Pantalla chica? Mismo criterio que usa el resto de la app (≤820 px).
+function acaEsMovil(){ try{ return window.innerWidth <= 820; }catch(_){ return false; } }
 
 // ─────────────────────────── VISTA ───────────────────────────
 function renderAcademias(){
@@ -14613,8 +14748,8 @@ function renderAcademias(){
       <div class="aca-vacio">Todavía no hay academias cargadas.${acaPuedeCargar()?' Tocá <b>+ Nueva academia</b> para cargar la primera.':''}</div></div>`;
   }
 
-  const filaTbody = r=>{
-    const buscable = acaEsc([r.tema, r.disertante, r.lugar, r.obs, _acaFechaCorta(r.fecha)].join(' ').toLowerCase());
+  // v1.5.88 — El detalle es el mismo para las dos vistas (tabla y tarjetas).
+  const detalleHTML = r=>{
     const pres = acaPresentes(r), aus = acaCuenta(r,'A'), just = acaCuenta(r,'J');
     const asis = (r.asis||{});
     const lista = LIC_PERSONAL.filter(p=>asis[p.lp]).map(p=>{
@@ -14646,33 +14781,80 @@ function renderAcademias(){
       <div class="aca-plista">${lista || '<div class="aca-pl">Todavía no se marcó la asistencia.</div>'}</div>
       <div class="aca-foot">${r._por?'Cargada por: '+acaEsc(r._por):''}</div>
       <div class="aca-detacts">${acts}</div>`;
+    return detalle;
+  };
+
+  const _acaBuscable = r=> acaEsc([r.tema, r.disertante, r.lugar, r.obs, _acaFechaCorta(r.fecha)].join(' ').toLowerCase());
+  const _acaHorario = r=> [r.hora, r.horaFin].filter(Boolean).join(' a ');
+
+  // ── VISTA COMPU: la tabla de siempre ──
+  const filaTbody = r=>{
+    const buscable = _acaBuscable(r);
+    const pres = acaPresentes(r);
     const mes = _acaMesKey(r);
     const oculto = _acaMesAbierto(mes) ? '' : ' style="display:none"';
     return `<tbody data-buscar="${buscable}" data-mes="${mes}"${oculto}>
       <tr class="aca-row" onclick="acaToggleDet('${r._id}')">
-        <td class="aca-fec"><span class="aca-chev" id="acachev_${r._id}">▶</span> ${_acaFechaCorta(r.fecha)}${r.hora?`<small> ${acaEsc(r.hora)}</small>`:''}</td>
+        <td class="aca-fec"><span class="aca-chev" id="acachev_${r._id}">▶</span> ${_acaFechaCorta(r.fecha)}${_acaHorario(r)?`<small> ${acaEsc(_acaHorario(r))}</small>`:''}</td>
         <td class="aca-tema">${acaEsc(r.tema)||'—'}</td>
         <td>${acaEsc(r.disertante)||'—'}</td>
         <td><span class="aca-badge">${pres}/${LIC_PERSONAL.length}</span></td>
       </tr>
-      <tr class="aca-detalle" id="acadet_${r._id}" style="display:none"><td colspan="4">${detalle}</td></tr>
+      <tr class="aca-detalle" id="acadet_${r._id}" style="display:none"><td colspan="4">${detalleHTML(r)}</td></tr>
     </tbody>`;
   };
 
+  // ── VISTA CELULAR (v1.5.88): tarjetas ──
+  // En pantalla chica la tabla de 4 columnas quedaba encimada y cortada (no se
+  // llegaban a ver ni el horario ni la asistencia). Cada academia pasa a ser una
+  // tarjeta con todo a la vista: fecha, horario completo, tema, instructor a
+  // cargo, lugar y asistencia. Los datos y el detalle son exactamente los mismos.
+  const tarjeta = r=>{
+    const buscable = _acaBuscable(r);
+    const pres = acaPresentes(r);
+    const mes = _acaMesKey(r);
+    const oculto = _acaMesAbierto(mes) ? '' : ' style="display:none"';
+    const hor = _acaHorario(r);
+    const icoMod = /virtual|remot|zoom|meet|videoll/i.test(String(r.modalidad||'')) ? '💻 ' : '🏫 ';
+    const extras = [ hor ? '🕒 '+hor : '', r.lugar ? '📍 '+r.lugar : '', r.modalidad ? icoMod+r.modalidad : '' ]
+                    .filter(Boolean).map(t=>`<span class="aca-cchip">${acaEsc(t)}</span>`).join('');
+    return `<div class="aca-cgrp" data-buscar="${buscable}" data-mes="${mes}"${oculto}>
+      <div class="aca-card" onclick="acaToggleDet('${r._id}')">
+        <div class="aca-c-top">
+          <span class="aca-c-fecha"><span class="aca-chev" id="acachev_${r._id}">▶</span> 📅 ${_acaFechaCorta(r.fecha)}</span>
+          <span class="aca-badge">${pres}/${LIC_PERSONAL.length}</span>
+        </div>
+        <div class="aca-c-tema">${acaEsc(r.tema)||'—'}</div>
+        <div class="aca-c-inst">👤 ${acaEsc(r.disertante)||'Sin instructor a cargo'}</div>
+        ${extras?`<div class="aca-cchips">${extras}</div>`:''}
+        <div class="aca-c-ver">Tocá para ver el detalle y la asistencia ▾</div>
+      </div>
+      <div class="aca-cdet" id="acadet_${r._id}" style="display:none">${detalleHTML(r)}</div>
+    </div>`;
+  };
+
+  const movil = acaEsMovil();
   const grupos = {};
   rows.forEach(r=>{ const k=_acaMesKey(r); (grupos[k]=grupos[k]||[]).push(r); });
   const claves = Object.keys(grupos).sort((a,b)=>{ if(a==='Sin fecha')return 1; if(b==='Sin fecha')return -1; return b.localeCompare(a); });
   ACA_MESES._reciente = claves.find(k=>k!=='Sin fecha') || claves[0] || null;
+
   const filas = claves.map(k=>{
     const g = grupos[k];
     const abierto = _acaMesAbierto(k);
+    if(movil){
+      const header = `<div class="aca-folder aca-cfolder" data-folder="${k}" onclick="acaToggleMes('${k}')">
+        <span class="aca-fchev">${abierto?'▾':'▸'}</span> <span class="aca-fico">${abierto?'📂':'📁'}</span> ${_acaMesLabel(k)} <span class="aca-fcount">${g.length}</span></div>`;
+      return header + g.map(tarjeta).join('');
+    }
     const header = `<tbody class="aca-folder" data-folder="${k}"><tr onclick="acaToggleMes('${k}')">
-      <td colspan="4"><span class="aca-fchev">${abierto?'▾':'▸'}</span> ${abierto?'📂':'📁'} ${_acaMesLabel(k)} <span class="aca-fcount">${g.length}</span></td></tr></tbody>`;
+      <td colspan="4"><span class="aca-fchev">${abierto?'▾':'▸'}</span> <span class="aca-fico">${abierto?'📂':'📁'}</span> ${_acaMelLabelSafe(k)} <span class="aca-fcount">${g.length}</span></td></tr></tbody>`;
     return header + g.map(filaTbody).join('');
   }).join('');
 
-  return `<div class="aca-wrap">${head}
-    <div class="aca-tablewrap">
+  const cuerpo = movil
+    ? `<div class="aca-cards">${filas}</div>`
+    : `<div class="aca-tablewrap">
       <table class="aca-table">
         <colgroup><col style="width:22%"><col style="width:38%"><col style="width:25%"><col style="width:15%"></colgroup>
         <thead><tr>
@@ -14681,10 +14863,34 @@ function renderAcademias(){
         </tr></thead>
         ${filas}
       </table>
-    </div>
+    </div>`;
+
+  return `<div class="aca-wrap" data-modo="${movil?'movil':'compu'}">${head}
+    ${cuerpo}
     <div class="aca-pie">Tocá una academia para ver el detalle y quiénes estuvieron. Las academias también aparecen en el calendario del Inicio.</div>
   </div>`;
 }
+// Ayuda: nombre del mes (blindado por si la clave viniera rara)
+function _acaMelLabelSafe(k){ try{ return _acaMesLabel(k); }catch(_){ return String(k||''); } }
+
+// v1.5.88 — Si el celular se gira (o se cambia el tamaño de la ventana en la
+// compu) y se cruza el límite de pantalla chica, la pestaña se vuelve a dibujar
+// sola con la vista que corresponde. No toca ningún dato: solo redibuja.
+(function(){
+  let _acaT = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(_acaT);
+    _acaT = setTimeout(()=>{
+      try{
+        const w = document.querySelector('.aca-wrap'); if(!w) return;
+        const modo = acaEsMovil() ? 'movil' : 'compu';
+        if(w.getAttribute('data-modo') === modo) return;
+        const cont = w.parentElement; if(!cont) return;
+        cont.innerHTML = renderAcademias();
+      }catch(_){ }
+    }, 220);
+  });
+})();
 
 // ─────────── VISTA DEL RESTO DEL PERSONAL (v1.5.79) ───────────
 // No carga ni edita: ve el listado de academias y, en cada una, si estuvo
@@ -14960,10 +15166,40 @@ function acaEnsureEstilos(){
   .light-mode .aca-eb{background:#f2f6fa;border-color:#dbe6f0}
   .light-mode .aca-ef{border-bottom-color:#eef2f7}
   .light-mode .aca-ef-nom b{color:#0f2231}
+  /* ── v1.5.88 · VISTA DE TARJETAS (celular) ── */
+  .aca-cards{display:block}
+  .aca-cfolder{display:flex;align-items:center;gap:6px;background:#0c1728;border:1px solid #14253f;border-radius:11px;
+    padding:9px 11px;margin:10px 0 7px;font-weight:800;color:#9cc4e4;font-size:12.5px;cursor:pointer}
+  .aca-cgrp{display:block}
+  .aca-card{background:rgba(20,30,46,.92);border:1px solid #16294a;border-left:3px solid #8b5cf6;border-radius:12px;
+    padding:10px 12px;margin-bottom:8px;cursor:pointer}
+  .aca-c-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+  .aca-c-fecha{font-weight:800;color:#c7b7f0;font-size:12.5px;white-space:nowrap}
+  .aca-c-tema{font-size:14px;font-weight:700;color:#e8eef6;line-height:1.3;margin-bottom:4px;overflow-wrap:anywhere}
+  .aca-c-inst{font-size:12px;color:#9fb6cd;margin-bottom:5px;overflow-wrap:anywhere}
+  .aca-cchips{display:flex;flex-wrap:wrap;gap:5px}
+  .aca-cchip{font-size:11px;font-weight:700;color:#9cc4e4;background:rgba(122,175,212,.12);
+    border:1px solid rgba(122,175,212,.22);border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .aca-c-ver{font-size:10.5px;color:#7d93ab;margin-top:7px}
+  .aca-cdet{background:rgba(13,22,35,.6);border:1px solid #16294a;border-radius:12px;padding:11px 12px;margin:-3px 0 9px}
+  .light-mode .aca-cfolder{background:#f7fafc;border-color:#e2e8f0;color:#33536f}
+  .light-mode .aca-card{background:#fff;border-color:#dbe6f0;border-left-color:#7c3aed}
+  .light-mode .aca-c-fecha{color:#6d28d9}
+  .light-mode .aca-c-tema{color:#0f2231}
+  .light-mode .aca-c-inst{color:#4a6a88}
+  .light-mode .aca-cchip{color:#33536f;background:#f2f6fa;border-color:#dbe6f0}
+  .light-mode .aca-c-ver{color:#7c93a8}
+  .light-mode .aca-cdet{background:#f7fafc;border-color:#e6edf4}
   @media(max-width:640px){
     .aca-2,.aca-3{grid-template-columns:1fr}
     .aca-table{font-size:12px}
     .aca-row td{padding:8px 6px}
+    .aca-head{gap:8px}
+    .aca-head>div:last-child{width:100%}
+    .aca-search{flex:1;min-width:0}
+    .aca-btn-new{white-space:nowrap}
+    .aca-grid{grid-template-columns:1fr 1fr}
+    .aca-plista{max-height:none}
   }`;
   document.head.appendChild(st);
 }
