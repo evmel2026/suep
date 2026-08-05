@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.90">
+<meta name="app-version" content="1.5.91">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1679,6 +1679,31 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 .light-mode .ini-item .ii-n{background:#e3edf7;color:#15314f}
 .light-mode .ini-ref{background:#eef4fa;border-color:#d6e2ee;color:#33526f}
 .light-mode .ini-b-col{background:#eef4fa}
+/* ── v1.5.91 · AVISO DE ACTUALIZACIÓN DENTRO DEL PANEL DE INICIO ────────────
+   Reemplaza al cartel flotante que tapaba el contenido al entrar. */
+.iniupd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(199,154,58,.17),rgba(199,154,58,.06));
+  border:1px solid rgba(199,154,58,.5);border-left:4px solid #c79a3a;
+  border-radius:14px;padding:13px 15px;margin:0 0 14px}
+.iniupd-ico{font-size:24px;flex-shrink:0;line-height:1}
+.iniupd-txt{flex:1;min-width:170px}
+.iniupd-txt>b{display:block;color:#f3e3c2;font-size:14.5px;font-weight:800;margin-bottom:3px}
+.iniupd-txt span{display:block;font-size:12.5px;color:#cbd9e6;line-height:1.55}
+.iniupd-cuenta{font-size:12px;color:#e8c67a;margin-top:5px;font-weight:700}
+.iniupd-btn{background:linear-gradient(135deg,#c79a3a,#a97d24);border:none;border-radius:10px;
+  padding:12px 17px;color:#1c1305;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;
+  white-space:nowrap;box-shadow:0 3px 12px rgba(199,154,58,.35)}
+.iniupd-btn:hover{filter:brightness(1.08)}
+.iniupd.ok{background:linear-gradient(135deg,rgba(52,211,153,.14),rgba(52,211,153,.05));
+  border-color:rgba(52,211,153,.45);border-left-color:#34d399}
+.iniupd.ok .iniupd-txt>b{color:#d7fbee}
+.iniupd-x{background:transparent;border:none;color:#9fb6cd;font-size:23px;cursor:pointer;line-height:1;padding:0 5px;font-family:inherit}
+.light-mode .iniupd-txt>b{color:#5a4110}
+.light-mode .iniupd-txt span{color:#33536f}
+.light-mode .iniupd.ok .iniupd-txt>b{color:#0b5f47}
+.light-mode .iniupd-x{color:#5a7a9a}
+@media(max-width:640px){.iniupd-btn{width:100%}.iniupd-ico{font-size:21px}}
+
 /* ── v1.5.87 · PIZARRA DEL PANEL DE INICIO ──────────────────────────────────
    Antes esto era una lista de renglones que cortaba el texto con puntos
    suspensivos. Ahora es un tablero: fondo cuadriculado como una pizarra, riel
@@ -2247,44 +2272,33 @@ async function _versionPublicadaEnGitHub(){
   }catch(e){ return null; }   // sin conexión: se reintenta en el próximo ciclo
 }
 
-// v1.5.89 — Un solo lugar arma el texto del cartel, y siempre dice QUÉ versión
-// tenés y CUÁL está publicada. Si el dispositivo ya intentó actualizar y quedó
-// igual, se agrega el aviso de que está sirviendo una copia vieja.
+// v1.5.91 — El cartel FLOTANTE se retiró: tapaba el contenido al entrar. El
+// aviso ahora se muestra en dos lugares que no molestan: la tarjeta de arriba
+// del Panel de inicio (con su botón para actualizar en el momento) y el botón
+// fijo del encabezado, que se ve desde cualquier pestaña.
+let _UPD_RESTO = 0;            // segundos que faltan para la actualización sola
+let _VER_NUEVA_AVISO = null;   // {anterior} cuando la app ya se actualizó
 function _updPintarBanner(remota){
-  const banner = document.getElementById('updateBanner');
-  if(!banner) return;
-  const msg = banner.querySelector('.upd-msg');
-  let trabado = false;
-  try{
-    const f = JSON.parse(localStorage.getItem(UPD_FORZADO_KEY) || 'null');
-    trabado = !!(f && f.ver === remota && f.desde === APP_VERSION);
-  }catch(_){}
-  if(msg){
-    msg.innerHTML = '<strong>Hay una versión nueva de SUEP</strong>' +
-      'Tenés la <b>' + APP_VERSION + '</b> y ya está publicada la <b>' + remota + '</b>. ' +
-      'Tocá <b>⚡ Actualizar ahora</b>: tarda unos segundos y no se pierde nada de lo cargado.' +
-      (trabado
-        ? '<br><b style="color:#fbbf24">El teléfono sigue abriendo la copia guardada.</b> ' +
-          'Cerrá la app del todo (sacala de las aplicaciones abiertas), volvé a entrar y tocá Actualizar ahora.'
-        : '');
-  }
-  banner.classList.add('show');
-  // v1.5.90 — Además del cartel, se prende el botón fijo del encabezado.
+  _versionRemotaPendiente = remota;
   try{
     const b = document.getElementById('updHdrBtn');
     if(b){ b.classList.add('show'); b.textContent = '⚡ Actualizar a ' + remota; }
   }catch(_){}
+  try{ if(typeof iniPintarUpdate === 'function') iniPintarUpdate(); }catch(_){}
 }
-// Si ya estamos en la versión publicada, el cartel no tiene por qué seguir ahí.
+// Si ya estamos en la versión publicada, no hay nada que avisar.
 function _updOcultarSiAlDia(remota){
   if(_verMayor(remota, APP_VERSION) === 1) return false;
   try{ localStorage.removeItem('suep_upd_try'); }catch(_){}
   try{ localStorage.removeItem(UPD_FORZADO_KEY); }catch(_){}
   _updCancelarCuenta();
+  _versionRemotaPendiente = null;
+  _UPD_RESTO = 0;
   const b = document.getElementById('updateBanner');
   if(b) b.classList.remove('show');
   const h = document.getElementById('updHdrBtn');
-  if(h) h.classList.remove('show');   // v1.5.90 — ya no hay nada que actualizar
+  if(h) h.classList.remove('show');
+  try{ if(typeof iniPintarUpdate === 'function') iniPintarUpdate(); }catch(_){}
   return true;
 }
 
@@ -2381,16 +2395,10 @@ function dismissUpdate(){
 // nuevo. Así nadie se queda sin enterarse de que la app cambió.
 const VER_VISTA_KEY = 'suep_version_vista';
 function _verNuevaCartel(anterior){
-  if(document.getElementById('verNuevaCartel')) return;
-  const div = document.createElement('div');
-  div.id = 'verNuevaCartel';
-  div.innerHTML =
-    '<div class="vn-ico">🎉</div>' +
-    '<div class="vn-txt"><b>SUEP se actualizó a la versión ' + APP_VERSION + '</b>' +
-    '<small>' + (anterior ? ('Venías de la ' + anterior + '. ') : '') +
-    'Tenés las mejoras nuevas cargadas; lo que había cargado sigue intacto.</small></div>' +
-    '<button class="vn-x" onclick="document.getElementById(\'verNuevaCartel\').remove()" title="Cerrar">×</button>';
-  document.body.appendChild(div);
+  // v1.5.91 — Antes esto creaba un cartel flotante que tapaba el saludo y los
+  // avisos. Ahora solo deja anotado el dato: lo muestra el Panel de inicio.
+  _VER_NUEVA_AVISO = { anterior: anterior || '' };
+  try{ if(typeof iniPintarUpdate === 'function') iniPintarUpdate(); }catch(_){}
 }
 function _avisarVersionNueva(){
   try{
@@ -2444,20 +2452,19 @@ function _updCancelarCuenta(){
 }
 function _updCuentaRegresiva(remota, seg){
   if(_UPD_TIMER) return;                       // ya hay una en marcha
-  const banner = document.getElementById('updateBanner');
-  const msg = banner ? banner.querySelector('.upd-msg') : null;
-  let resto = Math.max(1, parseInt(seg,10) || UPD_ESPERA);
+  _versionRemotaPendiente = remota;
+  _UPD_RESTO = Math.max(1, parseInt(seg,10) || UPD_ESPERA);
   const pintar = ()=>{
-    if(msg) msg.innerHTML = '<strong>¡Hay una versión nueva de SUEP!</strong> ' +
-      'Ya está publicada la <b>' + remota + '</b>. Se actualiza sola en <b>' + resto +
-      '</b> segundo' + (resto===1?'':'s') + ' — o tocá «Actualizar ahora». ' +
-      'No se pierde nada de lo cargado.';
-    if(banner) banner.classList.add('show');
+    try{ if(typeof iniPintarUpdate === 'function') iniPintarUpdate(); }catch(_){}
+    try{
+      const b = document.getElementById('updHdrBtn');
+      if(b){ b.classList.add('show'); b.textContent = '⚡ Actualizar (' + _UPD_RESTO + ')'; }
+    }catch(_){}
   };
   pintar();
   _UPD_TIMER = setInterval(()=>{
-    resto--;
-    if(resto > 0){ pintar(); return; }
+    _UPD_RESTO--;
+    if(_UPD_RESTO > 0){ pintar(); return; }
     _updCancelarCuenta();
     _updRecargar();
   }, 1000);
@@ -5609,6 +5616,7 @@ function iniEsqueleto(){
       <div><h3>🏠 Panel de inicio</h3><p>${f}</p></div>
       <button class="ini-ref" onclick="showInicio()">🔄 Actualizar</button>
     </div>
+    <div id="iniUpdBox"></div>
     <div id="iniCuerpo"><div class="ini-vacio">Armando el resumen…</div></div>
   </div>`;
 }
@@ -5811,6 +5819,53 @@ function iniPintar(){
   cont.innerHTML = kpis + pendientes + calSec + barras + top + ult +
     `<div class="ini-vacio">Se están mirando ${d.nPest} pestaña${d.nPest!==1?'s':''} con datos cargados.</div>`;
 }
+// ═══════════════════════════════════════════════════════════════════
+// v1.5.91 — EL AVISO DE ACTUALIZACIÓN VIVE EN EL PANEL DE INICIO
+// ───────────────────────────────────────────────────────────────────
+// Antes el aviso era un cartel flotante que se pegaba arriba de la pantalla y
+// TAPABA el saludo, los avisos y el panel. Ahora es una tarjeta más del Panel de
+// inicio: aparece arriba de todo, empuja el contenido hacia abajo (no lo tapa) y
+// trae su propio botón «⚡ Actualizar ahora» para bajar la versión nueva en el
+// momento. Si no hay nada para actualizar, no ocupa lugar.
+// ═══════════════════════════════════════════════════════════════════
+function iniPintarUpdate(){
+  const box = document.getElementById('iniUpdBox');
+  if(!box) return;
+  let html = '';
+  try{
+    const remota = _versionRemotaPendiente;
+    if(remota && _verMayor(remota, APP_VERSION) === 1){
+      const seg = (_UPD_RESTO > 0)
+        ? `<div class="iniupd-cuenta">Si no tocás nada, se actualiza sola en <b>${_UPD_RESTO}</b> segundo${_UPD_RESTO===1?'':'s'}.</div>`
+        : '';
+      html = `<div class="iniupd">
+        <div class="iniupd-ico">🔄</div>
+        <div class="iniupd-txt">
+          <b>Hay una versión nueva de SUEP</b>
+          <span>Tenés la <b>${APP_VERSION}</b> y ya está publicada la <b>${remota}</b>.
+            Tocá el botón: tarda unos segundos y no se pierde nada de lo cargado.</span>
+          ${seg}
+        </div>
+        <button class="iniupd-btn" onclick="applyUpdate()">⚡ Actualizar ahora</button>
+      </div>`;
+    }else if(_VER_NUEVA_AVISO){
+      html = `<div class="iniupd ok">
+        <div class="iniupd-ico">✅</div>
+        <div class="iniupd-txt">
+          <b>Listo: ya estás en la versión ${APP_VERSION}</b>
+          <span>${_VER_NUEVA_AVISO.anterior ? 'Venías de la '+_VER_NUEVA_AVISO.anterior+'. ' : ''}No tenés que hacer nada; lo que había cargado sigue intacto.</span>
+        </div>
+        <button class="iniupd-x" onclick="iniCerrarVerNueva()" title="Cerrar">×</button>
+      </div>`;
+    }
+  }catch(_){ html = ''; }
+  box.innerHTML = html;
+}
+function iniCerrarVerNueva(){
+  try{ _VER_NUEVA_AVISO = null; }catch(_){}
+  try{ iniPintarUpdate(); }catch(_){}
+}
+
 function showInicio(){
   try{
     document.querySelectorAll('.sector-btn').forEach(b=>{ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
@@ -5822,6 +5877,7 @@ function showInicio(){
     // El cálculo se hace un instante después, así la pantalla aparece enseguida
     // aunque haya muchas pestañas con datos.
     setTimeout(()=>{
+      try{ iniPintarUpdate(); }catch(_){}   // v1.5.91 — aviso de actualización arriba de todo
       try{ iniPintar(); }
       catch(e){
         console.warn('Panel de inicio:', e);
