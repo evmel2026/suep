@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.91">
+<meta name="app-version" content="1.5.98">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -509,7 +509,7 @@ body.visor-lock.vl-tapado #vlCortina{ display:flex }
 .login-appname{font-size:34px;font-weight:900;letter-spacing:5px;color:#fff}
 .login-appname span{color:#7aafd4}
 .login-tagline{font-size:10px;color:rgba(200,220,240,.6);letter-spacing:1.5px;text-transform:uppercase;text-align:center;line-height:1.6}
-.login-inst{font-size:10px;color:rgba(200,220,240,.35);text-align:center}
+.login-inst{font-size:10px;color:rgba(200,220,240,.62);text-align:center}
 .login-hr{width:36px;height:1px;background:rgba(122,175,212,.3)}
 .login-fields{width:100%;display:flex;flex-direction:column;gap:10px}
 .login-input{width:100%;padding:13px 15px;border-radius:11px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:14px;outline:none;transition:all .2s;font-family:inherit}
@@ -520,9 +520,10 @@ body.visor-lock.vl-tapado #vlCortina{ display:flex }
 .login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .login-error{font-size:12px;color:#f87171;background:rgba(248,113,113,.12);border-radius:8px;padding:8px 12px;width:100%;text-align:center;display:none}
 .login-error.show{display:block}
-.login-credit{font-size:10px;color:rgba(255,255,255,.30);text-align:center;margin-top:6px}
+.login-credit{font-size:10px;color:rgba(255,255,255,.55);text-align:center;margin-top:6px}
 /* v1.5.58: leyenda de derechos de autor en la pantalla de ingreso */
-.login-legal{font-size:9px;line-height:1.5;color:rgba(255,255,255,.22);text-align:center;margin:5px auto 0;max-width:430px;padding:0 10px}
+/* v1.5.97 — El pie del login estaba en 1,94 de contraste. */
+.login-legal{font-size:9px;line-height:1.5;color:rgba(255,255,255,.48);text-align:center;margin:5px auto 0;max-width:430px;padding:0 10px}
 .pwd-wrap{position:relative;width:100%}
 .pwd-wrap > input{width:100%;padding-right:44px!important}
 .pwd-eye{position:absolute;top:50%;right:10px;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,230,.65);font-size:18px;line-height:1}
@@ -602,7 +603,8 @@ body.visor-lock.vl-tapado #vlCortina{ display:flex }
 .h-titles h1{font-size:17px;font-weight:900;letter-spacing:3px;color:#fff;line-height:1;white-space:nowrap}
 @media(max-width:480px){.h-titles h1{font-size:15px;letter-spacing:1.5px}}
 .h-titles h1 span{color:#7aafd4}
-.h-titles p{font-size:9px;color:rgba(255,255,255,.38);letter-spacing:1px;text-transform:uppercase}
+/* v1.5.97 — Estaba en 3,56: el blanco al 38% no llegaba. */
+.h-titles p{font-size:9px;color:rgba(255,255,255,.62);letter-spacing:1px;text-transform:uppercase}
 .h-org{font-size:9px;color:#7aafd4;letter-spacing:1.5px;font-weight:700;text-transform:uppercase}
 .h-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 
@@ -691,7 +693,8 @@ body.visor-lock.vl-tapado #vlCortina{ display:flex }
 @media(max-width:768px){.sidebar{position:fixed;top:54px;left:0;bottom:0;z-index:90;transform:translateX(-100%);box-shadow:4px 0 20px rgba(0,0,0,.4)}}
 .sidebar.open{transform:translateX(0)}
 .sb-section{padding:12px 10px 4px}
-.sb-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(122,175,212,.6);padding:0 8px 6px}
+/* v1.5.97 — Mismo caso que el de arriba: se le saca la opacidad. */
+.sb-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9fc2dc;padding:0 8px 6px}
 .sector-btn{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:10px;background:none;border:none;cursor:pointer;color:#8ab4d0;font-size:13px;font-weight:500;transition:all .15s;text-align:left;font-family:inherit}
 .sector-btn:hover{background:rgba(122,175,212,.1)}
 .sector-btn.active{color:#fff!important;font-weight:700}
@@ -753,7 +756,9 @@ body.visor-lock.vl-tapado #vlCortina{ display:flex }
 tr.sel-on>td{background:rgba(37,99,235,.14)!important}
 .light-mode .sel-info,.light-mode .sel-mini{color:#2a4a6b}
 .light-mode tr.sel-on>td{background:rgba(37,99,235,.1)!important}
-.add-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;font-family:inherit}
+/* v1.5.97 — Fondo por defecto: si el JS no llega a pintarlo, el botón NO
+   queda con el gris del navegador y letra blanca (era ilegible). */
+.add-btn{background-color:#1d4ed8;display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;font-family:inherit}
 .add-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 
 .mod-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;max-width:100%;scroll-behavior:smooth}
@@ -773,7 +778,8 @@ tr.sel-on>td{background:rgba(37,99,235,.14)!important}
 /* ARCHIVOS ADJUNTOS — disponible en todas las pestañas */
 .att-section{border-top:1px dashed rgba(122,175,212,.25);padding-top:14px;margin-top:8px}
 .att-section label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#7aafd4;margin-bottom:4px}
-.att-section small{display:block;color:#5a7a9a;margin:-2px 0 8px;font-size:11px}
+/* v1.5.97 — Estaba en 3,95. */
+.att-section small{display:block;color:#8fb0cb;margin:-2px 0 8px;font-size:11px}
 .att-input{padding:8px;cursor:pointer}
 .att-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .att-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(122,175,212,.08);border:1px solid rgba(122,175,212,.18);border-radius:8px}
@@ -808,7 +814,8 @@ tr.sel-on>td{background:rgba(37,99,235,.14)!important}
 .empty-state{padding:48px;text-align:center;color:#7aafd4}
 .empty-icon{font-size:38px;margin-bottom:10px}
 .empty-state p{font-size:14px;font-weight:600;margin-bottom:3px}
-.empty-state small{font-size:12px;color:rgba(122,175,212,.6)}
+/* v1.5.97 — Estaba en 3,50 de contraste (celeste al 60% de opacidad). */
+.empty-state small{font-size:12px;color:#9fc2dc}
 
 /* Badges */
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.4px}
@@ -873,7 +880,8 @@ textarea.fi{resize:vertical;min-height:72px}
 .light-mode .mic-btn{border-color:rgba(21,49,79,.25);background:rgba(21,49,79,.06);color:#2a4a6b}
 .light-mode .mic-btn:hover{background:rgba(21,49,79,.12)}
 .modal-foot{padding:14px 22px 20px;display:flex;gap:8px;position:sticky;bottom:0;background:#0d1928;border-top:1px solid rgba(122,175,212,.15)}
-.btn-save{flex:1;padding:12px;border-radius:10px;border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;font-family:inherit}
+/* v1.5.97 — Mismo arreglo que .add-btn: fondo propio siempre. */
+.btn-save{background-color:#1d4ed8;flex:1;padding:12px;border-radius:10px;border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;font-family:inherit}
 .btn-save:hover{transform:translateY(-1px)}
 .btn-cancel{padding:12px 18px;border-radius:10px;border:1.5px solid rgba(122,175,212,.25);background:transparent;font-size:12px;font-weight:600;color:#8ab4d0;cursor:pointer;font-family:inherit}
 
@@ -894,9 +902,9 @@ textarea.fi{resize:vertical;min-height:72px}
 @media(min-width:640px){.padm-modal{border-radius:20px;border-bottom:1px solid rgba(122,175,212,.18)}}
 .padm-head{padding:18px 22px 14px;border-bottom:1px solid rgba(122,175,212,.12);display:flex;align-items:center;justify-content:space-between;background:#0a1525;flex-shrink:0}
 .padm-head h3{font-size:16px;font-weight:800;color:#c8dff0;margin:0}
-.padm-head p{font-size:11px;color:#5a7a9a;margin:2px 0 0}
+.padm-head p{font-size:11px;color:#8fb0cb;margin:2px 0 0}
 .padm-tabs{display:flex;gap:6px;padding:14px 22px 0;flex-shrink:0;border-bottom:1px solid rgba(122,175,212,.1)}
-.padm-tab{padding:9px 16px;border-radius:10px 10px 0 0;border:none;background:transparent;color:#5a7a9a;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s}
+.padm-tab{padding:9px 16px;border-radius:10px 10px 0 0;border:none;background:transparent;color:#8fb0cb;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s}
 .padm-tab.active{color:#7aafd4;border-bottom-color:#7aafd4;background:rgba(122,175,212,.06)}
 .padm-body{padding:18px 22px;overflow-y:auto;flex:1}
 .padm-x{background:rgba(255,255,255,.07);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;color:#8ab4d0;display:flex;align-items:center;justify-content:center}
@@ -907,7 +915,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .ua-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
 .ua-info{flex:1;min-width:0}
 .ua-name{font-size:13px;font-weight:700;color:#c8dff0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ua-meta{font-size:11px;color:#5a7a9a;margin-top:2px}
+.ua-meta{font-size:11px;color:#8fb0cb;margin-top:2px}
 .ua-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.5px;white-space:nowrap}
 .ua-badge-admin{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25)}
 .ua-badge-cg{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.22)}
@@ -924,7 +932,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .padm-form h4{font-size:13px;font-weight:700;color:#7aafd4;margin:0 0 14px;letter-spacing:.5px;text-transform:uppercase}
 .padm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:500px){.padm-grid{grid-template-columns:1fr}}
-.padm-field label{display:block;font-size:10px;font-weight:700;color:#5a7a9a;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.padm-field label{display:block;font-size:10px;font-weight:700;color:#8fb0cb;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
 .padm-msg{padding:10px 14px;border-radius:9px;font-size:12px;font-weight:600;margin-top:10px;display:none}
 .padm-msg.show{display:block}
 .padm-msg.ok{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.22)}
@@ -1020,7 +1028,7 @@ textarea.fi{resize:vertical;min-height:72px}
 
 .org-tree-wrap{background:linear-gradient(180deg,#0d1623,#111927);border:1px solid rgba(122,175,212,.1);border-radius:14px;padding:24px 14px;overflow-x:auto}
 .org-tree-title{text-align:center;font-size:11px;color:#7aafd4;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:22px}
-.org-tree-title small{display:block;font-size:9px;color:#5a7a9a;letter-spacing:1px;margin-top:4px;font-weight:500;text-transform:none}
+.org-tree-title small{display:block;font-size:9px;color:#8fb0cb;letter-spacing:1px;margin-top:4px;font-weight:500;text-transform:none}
 
 /* Box: caja de cada persona */
 .org-box{background:#1a2540;border-top:3px solid #475569;border-radius:9px;padding:10px 12px;margin:0 auto 8px;width:100%;max-width:240px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .15s}
@@ -1043,7 +1051,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .org-sub-group{width:100%;max-width:280px;margin-top:14px;padding-top:12px;border-top:1px dashed rgba(122,175,212,.15)}
 .org-sub-label{font-size:10px;color:#7aafd4;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;margin-bottom:8px;text-align:center;background:rgba(122,175,212,.06);padding:4px 8px;border-radius:6px}
 .org-mini{background:rgba(255,255,255,.025);border-left:3px solid #475569;border-radius:6px;padding:7px 10px;margin-bottom:5px;text-align:left}
-.org-mini-cargo{font-size:8px;color:#5a7a9a;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
+.org-mini-cargo{font-size:8px;color:#8fb0cb;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
 .org-mini-name{font-size:12px;color:#dde9f3;font-weight:600;line-height:1.2;margin:1px 0}
 .org-mini-jerarquia{font-size:9px;color:#7a99b6;font-style:italic}
 
@@ -1089,7 +1097,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .alm-yes.active{background:linear-gradient(135deg,#16a34a,#0e8a3e);border-color:#16a34a;color:#fff;box-shadow:0 4px 14px rgba(34,197,94,.35)}
 .alm-no{border-color:rgba(239,68,68,.3)}
 .alm-no.active{background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#dc2626;color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.35)}
-.alm-confirmed{margin-top:12px;font-size:11px;color:#5a7a9a}
+.alm-confirmed{margin-top:12px;font-size:11px;color:#8fb0cb}
 .alm-confirmed strong{color:#7aafd4}
 
 .alm-summary{background:rgba(255,255,255,.025);border-radius:12px;padding:16px;border:1px solid rgba(122,175,212,.1)}
@@ -1100,8 +1108,8 @@ textarea.fi{resize:vertical;min-height:72px}
 .alm-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(34,197,94,.07);border-radius:8px;border-left:3px solid #16a34a}
 .alm-check{color:#4ade80;font-weight:700;font-size:13px}
 .alm-row-name{font-size:13px;color:#dde9f3;flex:1}
-.alm-row-time{font-size:10px;color:#5a7a9a}
-.alm-empty{text-align:center;color:#5a7a9a;font-size:13px;padding:24px 12px;font-style:italic}
+.alm-row-time{font-size:10px;color:#8fb0cb}
+.alm-empty{text-align:center;color:#8fb0cb;font-size:13px;padding:24px 12px;font-style:italic}
 /* ════ NUEVO: Highlight para registros nuevos ════ */
 .row-new{background:rgba(74,222,128,.15);border-left:4px solid #4ade80}
 .row-new td{color:#86efac}
@@ -1139,6 +1147,15 @@ textarea.fi{resize:vertical;min-height:72px}
   -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 120px,#000 70%,rgba(0,0,0,0));
   mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 120px,#000 70%,rgba(0,0,0,0));}
 
+/* v1.5.97 — Repaso de letras: el título de los ítems evaluados ya no se pinta
+   con el color del sector (con los ámbar quedaba en 3,28 sobre la ventana
+   oscura); ahora usa el celeste institucional, que se lee en los dos modos. */
+.att-tit-ev{color:#8fc6ee}
+.light-mode .att-tit-ev{color:#14568f}
+.light-mode .empty-state small{color:#4a6a88}
+.light-mode .sb-label{color:#284866}
+.light-mode .att-section small{color:#4a6a88}
+
 /* — Barra superior (siempre oscura: sus textos son blancos) — */
 .app-header{background:rgba(8,17,31,.74);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);box-shadow:0 2px 18px rgba(0,0,0,.35)}
 .app-header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background-image:linear-gradient(90deg,#c79a3a,var(--sec) 40%,rgba(122,175,212,0) 90%);pointer-events:none}
@@ -1164,7 +1181,7 @@ textarea.fi{resize:vertical;min-height:72px}
 .sh-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:14px;font-size:24px;flex-shrink:0}
 .sh-info{display:flex;align-items:center;gap:12px;min-width:0}
 .sh-text h2{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.4);letter-spacing:.3px}
-.sh-text p{color:rgba(255,255,255,.9);text-shadow:0 1px 4px rgba(0,0,0,.35);letter-spacing:2px;text-transform:uppercase;font-size:10px}
+.sh-text p{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.45);letter-spacing:2px;text-transform:uppercase;font-size:10px}
 .sh-top .export-btn{border-color:rgba(255,255,255,.45);background:rgba(0,0,0,.18);color:#fff}
 .sh-top .add-btn{box-shadow:0 6px 16px rgba(0,0,0,.35)}
 
@@ -1784,6 +1801,227 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
   .ini-bars{height:96px}
   .rz-i+.rz-i{padding-left:8px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v1.5.92 — PIZARRA DE LA PLANIFICACIÓN DEL PRECURSO
+   ──────────────────────────────────────────────────────────────────────────
+   Es la planificación del Precurso de la 2ª Convocatoria (del 10 al 23 de
+   agosto) puesta en el Panel de inicio como una pizarra digital: arriba los
+   días en fila (el de hoy marcado), y abajo el renglón de cada horario con
+   TODO lo que dice la planilla, sin cortar el texto. Nada se resume: lo que
+   en la planilla es una sola celda para todos los días se muestra con el
+   rótulo «Todos los días», y lo que cambia día por día aparece en el día que
+   le toca. El botón «Ver la grilla completa» abre la planilla entera, con
+   todos los días uno al lado del otro, igual que en el Excel.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pp-board{background:#0a1526;border:1px solid rgba(122,175,212,.16);border-radius:16px;margin-bottom:10px;overflow:hidden;padding-bottom:13px;
+  background-image:linear-gradient(rgba(122,175,212,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(122,175,212,.05) 1px,transparent 1px);
+  background-size:100% 27px,27px 100%}
+.pp-rail{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;
+  border-bottom:1px solid rgba(90,166,221,.35);background-image:linear-gradient(90deg,rgba(90,166,221,.18),rgba(90,166,221,.02))}
+.pp-rail-tit{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;font-weight:800;color:#8fc6ee}
+.pp-rail-sub{font-size:11px;color:#b6cde0}
+.pp-verde{background:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.3);border-radius:9px;color:#d7e9f7;
+  font-size:11px;font-weight:700;padding:6px 11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pp-verde:hover{background:rgba(122,175,212,.22);color:#fff}
+
+/* Fila de días. El de hoy queda pintado y con la chapita HOY. */
+.pp-dias{display:flex;gap:6px;overflow-x:auto;padding:11px 14px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pp-dias::-webkit-scrollbar{display:none}
+.pp-dia{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:74px;
+  background:rgba(20,30,46,.9);border:1px solid rgba(122,175,212,.16);border-radius:11px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;text-align:left;transition:background .15s,border-color .15s,transform .15s}
+.pp-dia:hover{background:rgba(28,42,64,.98);border-color:rgba(122,175,212,.34);transform:translateY(-1px)}
+.pp-dia-sem{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#8fb0cb}
+.pp-dia-num{font-size:13px;font-weight:800;color:#e8f2fa;line-height:1.15}
+.pp-dia-hoy{font-size:8.5px;font-weight:800;letter-spacing:.8px;color:#0c1a2c;background:#8fc6ee;border-radius:5px;padding:1px 5px;margin-top:2px}
+.pp-dia.sel{background:linear-gradient(135deg,rgba(90,166,221,.30),rgba(90,166,221,.12));border-color:#5aa6dd;box-shadow:0 4px 14px rgba(90,166,221,.22)}
+.pp-dia.sel .pp-dia-num{color:#fff}
+.pp-dia.sel .pp-dia-sem{color:#c9e5fa}
+.pp-dia.pasado{opacity:.55}
+.pp-dia.pasado.sel{opacity:1}
+
+.pp-cabecera{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding:12px 14px 0}
+.pp-cab-dia{font-size:15px;font-weight:800;color:#eef5fb}
+.pp-cab-et{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#8fc6ee;
+  background:rgba(90,166,221,.14);border:1px solid rgba(90,166,221,.3);border-radius:20px;padding:2px 9px}
+.pp-cartel{margin:9px 14px 0;padding:9px 12px;border-radius:11px;font-size:12.5px;font-weight:700;color:#ffe6b8;
+  background:linear-gradient(135deg,rgba(199,154,58,.20),rgba(199,154,58,.06));border:1px solid rgba(199,154,58,.42)}
+
+/* Los renglones del día: la hora a la izquierda, la actividad completa al lado. */
+.pp-lista{display:flex;flex-direction:column;gap:6px;padding:11px 14px 0}
+.pp-fila{display:flex;gap:11px;align-items:flex-start;background:rgba(20,30,46,.96);
+  border:1px solid rgba(122,175,212,.14);border-left:3px solid #5aa6dd;border-radius:12px;padding:10px 12px}
+.pp-hora{flex:none;min-width:84px;font-size:11.5px;font-weight:800;color:#8fc6ee;line-height:1.35;padding-top:1px}
+.pp-act{flex:1;min-width:0}
+.pp-txt{font-size:12.5px;color:#e4eff8;line-height:1.5;white-space:pre-line}
+.pp-et{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;
+  color:#9fc0da;background:rgba(122,175,212,.12);border-radius:5px;padding:1px 6px;margin-bottom:4px}
+.pp-et.propia{color:#e8be62;background:rgba(232,190,98,.13)}
+.pp-nota{display:flex;gap:6px;margin-top:6px;font-size:11.5px;color:#b6d2e8;line-height:1.45;
+  border-left:2px solid rgba(199,154,58,.5);padding-left:8px}
+.pp-fila.pp-sigue{border-left-color:rgba(122,175,212,.35);opacity:.85}
+.pp-fila.pp-sigue .pp-txt{color:#a9c3d8;font-style:italic}
+.pp-fila.pp-nada{border-left-color:rgba(122,175,212,.22)}
+.pp-fila.pp-nada .pp-txt{color:#8ba6bd;font-style:italic}
+.pp-franja{display:flex;align-items:center;gap:9px;margin:2px 0;padding:8px 12px;border-radius:10px;
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;color:#ffdf9e;
+  background:linear-gradient(90deg,rgba(199,154,58,.22),rgba(199,154,58,.04));border:1px dashed rgba(199,154,58,.45)}
+.pp-pie{padding:11px 14px 0;font-size:10.5px;color:#8ba6bd;line-height:1.5}
+
+/* Grilla completa (la planilla entera, tal cual el Excel) */
+.pp-ov{position:fixed;inset:0;z-index:11000;background:rgba(4,10,20,.88);display:flex;flex-direction:column;padding:14px;backdrop-filter:blur(3px)}
+.pp-ov-caja{flex:1;min-height:0;display:flex;flex-direction:column;background:#0a1526;border:1px solid rgba(122,175,212,.22);border-radius:16px;overflow:hidden}
+.pp-ov-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 15px;
+  border-bottom:1px solid rgba(90,166,221,.32);background-image:linear-gradient(90deg,rgba(90,166,221,.16),rgba(90,166,221,.02))}
+.pp-ov-tit{font-size:13.5px;font-weight:800;color:#eaf3fb}
+.pp-ov-x{background:rgba(122,175,212,.14);border:1px solid rgba(122,175,212,.3);color:#dbeafe;border-radius:9px;
+  font-size:13px;font-weight:800;cursor:pointer;padding:7px 13px;font-family:inherit}
+.pp-ov-x:hover{background:rgba(122,175,212,.26);color:#fff}
+.pp-ov-body{flex:1;min-height:0;overflow:auto;padding:13px 15px 20px}
+.pp-gtit{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#8fc6ee;margin:16px 0 8px}
+.pp-gtit:first-child{margin-top:0}
+.pp-tabla{width:100%;border-collapse:separate;border-spacing:0;font-size:11.5px}
+.pp-tabla th,.pp-tabla td{border:1px solid rgba(122,175,212,.16);padding:7px 9px;vertical-align:top;line-height:1.45;text-align:left}
+.pp-tabla thead th{position:sticky;top:0;z-index:2;background:#12253c;color:#cfe6f7;font-weight:800;font-size:11px;white-space:nowrap}
+.pp-tabla thead th.hoy{background:#1d4a72;color:#fff}
+.pp-tabla td{color:#dae8f4;background:rgba(20,30,46,.7);min-width:190px;white-space:pre-line}
+.pp-tabla td.hcol{color:#8fc6ee;font-weight:800;min-width:96px;white-space:nowrap;background:rgba(18,37,60,.85);position:sticky;left:0;z-index:1}
+.pp-tabla td.comun{color:#e4eff8;background:rgba(90,166,221,.10)}
+.pp-tabla tr.fr td{color:#ffdf9e;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+  background:linear-gradient(90deg,rgba(199,154,58,.20),rgba(199,154,58,.03))}
+.pp-tabla td.vacio{color:#7796ae;font-style:italic}
+.pp-tabla td.hoycol{box-shadow:inset 0 0 0 1px rgba(143,198,238,.35)}
+
+/* ── Modo claro ── */
+.light-mode .pp-board{background:#f7fafd;border-color:#dbe6f1;
+  background-image:linear-gradient(rgba(21,49,79,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(21,49,79,.05) 1px,transparent 1px)}
+.light-mode .pp-rail{border-bottom-color:rgba(31,111,184,.35);background-image:linear-gradient(90deg,rgba(31,111,184,.14),rgba(31,111,184,.02))}
+.light-mode .pp-rail-tit{color:#155a94}
+.light-mode .pp-rail-sub{color:#5b7997}
+.light-mode .pp-verde{background:#eaf3fc;border-color:#cbe0f4;color:#14568f}
+.light-mode .pp-verde:hover{background:#dcecfa;color:#0d3f6b}
+.light-mode .pp-dia{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}
+.light-mode .pp-dia:hover{border-color:#b6d2ea}
+.light-mode .pp-dia-sem{color:#5c7c99}
+.light-mode .pp-dia-num{color:#15314f}
+.light-mode .pp-dia-hoy{background:#1f6fb8;color:#fff}
+.light-mode .pp-dia.sel{background:linear-gradient(135deg,#dceafa,#eef5fc);border-color:#1f6fb8;box-shadow:0 4px 14px rgba(31,111,184,.16)}
+.light-mode .pp-dia.sel .pp-dia-num{color:#0d3f6b}
+.light-mode .pp-dia.sel .pp-dia-sem{color:#14568f}
+.light-mode .pp-cab-dia{color:#15314f}
+.light-mode .pp-cab-et{color:#14568f;background:#eaf3fc;border-color:#cbe0f4}
+.light-mode .pp-cartel{color:#6b4a08;background:linear-gradient(135deg,#fdf3dd,#fdf9ef);border-color:#e6d2a4}
+.light-mode .pp-fila{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}
+.light-mode .pp-hora{color:#14568f}
+.light-mode .pp-txt{color:#22405c}
+.light-mode .pp-et{color:#4c6c88;background:#eef4fa}
+.light-mode .pp-et.propia{color:#8a6410;background:#fdf5e4}
+.light-mode .pp-nota{color:#4a6a88;border-left-color:#ddc48a}
+.light-mode .pp-fila.pp-sigue .pp-txt,.light-mode .pp-fila.pp-nada .pp-txt{color:#67839e}
+.light-mode .pp-franja{color:#6b4a08;background:linear-gradient(90deg,#fdf1d6,#fdfaf2);border-color:#e0c791}
+.light-mode .pp-pie{color:#67839e}
+.light-mode .pp-ov{background:rgba(228,236,245,.9)}
+.light-mode .pp-ov-caja{background:#fff;border-color:#dbe6f1}
+.light-mode .pp-ov-head{border-bottom-color:#cbe0f4;background-image:linear-gradient(90deg,#eaf3fc,#f8fbfe)}
+.light-mode .pp-ov-tit{color:#15314f}
+.light-mode .pp-ov-x{background:#eaf3fc;border-color:#cbe0f4;color:#14568f}
+.light-mode .pp-gtit{color:#155a94}
+.light-mode .pp-tabla th,.light-mode .pp-tabla td{border-color:#e2eaf3}
+.light-mode .pp-tabla thead th{background:#eaf1f8;color:#15314f}
+.light-mode .pp-tabla thead th.hoy{background:#1f6fb8;color:#fff}
+.light-mode .pp-tabla td{color:#22405c;background:#fff}
+.light-mode .pp-tabla td.hcol{color:#14568f;background:#f3f8fc}
+.light-mode .pp-tabla td.comun{color:#1c3b58;background:#f0f7fd}
+.light-mode .pp-tabla tr.fr td{color:#6b4a08;background:linear-gradient(90deg,#fdf1d6,#fdfaf2)}
+.light-mode .pp-tabla td.vacio{color:#7d97ad}
+
+@media(max-width:640px){
+  .pp-fila{flex-direction:column;gap:4px}
+  .pp-hora{min-width:0}
+  .pp-lista{padding:11px 11px 0}
+  .pp-dias{padding:11px 11px 2px}
+  .pp-rail{padding:10px 11px}
+  .pp-cabecera{padding:12px 11px 0}
+  .pp-verde{width:100%;text-align:center}
+  .pp-ov{padding:8px}
+  .pp-tabla td{min-width:150px}
+}
+@media(prefers-reduced-motion:reduce){.pp-dia{transition:none}.pp-dia:hover{transform:none}}
+@media print{.pp-ov{position:static;background:none;padding:0}.pp-ov-x{display:none}}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v1.5.92 — LAS LETRAS DE LAS PESTAÑAS SE LEEN EN LOS DOS MODOS
+   ──────────────────────────────────────────────────────────────────────────
+   El problema: la pestaña activa (arriba, y también la del menú) se pintaba
+   con el color del sector y la letra SIEMPRE en blanco. En los sectores de
+   color claro —Calendario #3b82f6, Almuerzo #ea580c, Eventos #0d9488,
+   Internet y Contraseñas #0891b2— el blanco sobre ese fondo queda en 3,5 de
+   contraste: no llega al mínimo legible (4,5) y por eso «en algunos casos no
+   se ve». El corrector automático tampoco lo tomaba, porque su umbral es 3,2
+   y estos casos pasaban raspando por arriba.
+   La solución: la letra ya no es blanca fija. Se calcula con inkSobre() a
+   partir del color del sector y se pasa por la variable --ink; si el fondo es
+   claro, la letra va en azul noche en lugar de blanco. Los sectores oscuros
+   quedan exactamente como estaban. Además se les sube el contraste a las
+   pestañas NO activas, que estaban en un celeste apagado.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* Pestañas de arriba (mod-tab / sub-tab), sin activar */
+.mod-tab{color:#c2ddf0}
+.mod-tab:hover{color:#eaf5fd}
+.sub-tab{color:#c2ddf0;border-color:rgba(122,175,212,.34)}
+.sub-tab:hover{color:#eaf5fd}
+.light-mode .mod-tab{color:#284866}
+.light-mode .mod-tab:hover{color:#0f2740}
+.light-mode .sub-tab{color:#284866;border-color:#a9c1d6}
+.light-mode .sub-tab:hover{color:#0f2740}
+/* Pestaña activa: la tinta la decide el color del sector, no el blanco fijo */
+.mod-tab.active{color:var(--ink,#fff)!important}
+.sub-tab.active{color:var(--ink,#fff)!important}
+.sector-btn.active{color:var(--ink,#fff)!important}
+.sector-btn.active .s-name{color:var(--ink,#fff)}
+.sector-btn.active .s-sec{color:var(--ink-2,rgba(255,255,255,.82))}
+.sector-btn.active .s-count{color:var(--ink,#fff);background:rgba(255,255,255,.20);border-color:rgba(255,255,255,.30)}
+/* Cuando el fondo del sector es claro, los adornos también se dan vuelta */
+.sector-btn.active[data-ink="oscura"] .s-icon{background:rgba(0,0,0,.10);border-color:rgba(0,0,0,.17)}
+.sector-btn.active[data-ink="oscura"] .s-count{background:rgba(0,0,0,.09);border-color:rgba(0,0,0,.14)}
+.sector-btn.active[data-ink="oscura"] .sb-pin{color:#7a5a10}
+.sector-btn.active[data-ink="oscura"]{box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 0 0 1px rgba(0,0,0,.10)}
+.mod-tab.active[data-ink="oscura"],.sub-tab.active[data-ink="oscura"]{box-shadow:0 3px 12px rgba(0,0,0,.18)}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v1.5.95 — BOTÓN PARA QUITAR LA PIZARRA DEL PRECURSO
+   Escrito con los colores de siempre de SUEP (azul institucional sobre fondo
+   oscuro, y su par para el modo claro). No usa variables del vidrio: ese
+   camino se descartó y volvimos al azul original.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pp-quitar{background:rgba(239,127,94,.14);border:1px solid rgba(239,127,94,.42);
+  color:#f2a08a;border-radius:9px;font-size:11px;font-weight:700;padding:6px 11px;
+  cursor:pointer;font-family:inherit;white-space:nowrap}
+.pp-quitar:hover{background:rgba(239,127,94,.26);color:#ffd9cd}
+.light-mode .pp-quitar{background:#fdeee9;border-color:#e9b7a5;color:#a8360f}
+.light-mode .pp-quitar:hover{background:#fbdfd5;color:#7d2409}
+
+.pp-oculta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 10px;
+  padding:10px 13px;border-radius:14px;background:#0a1526;
+  border:1px solid rgba(122,175,212,.16);font-size:12px;color:#b6cde0}
+.pp-oculta b{color:#e8f2fa;font-weight:700}
+.pp-oculta button{margin-left:auto;background:rgba(122,175,212,.12);
+  border:1px solid rgba(122,175,212,.3);color:#d7e9f7;border-radius:9px;
+  font-size:11.5px;font-weight:700;padding:6px 12px;cursor:pointer;
+  font-family:inherit;white-space:nowrap}
+.pp-oculta button:hover{background:rgba(122,175,212,.22);color:#fff}
+.light-mode .pp-oculta{background:#f7fafd;border-color:#dbe6f1;color:#4a6a88}
+.light-mode .pp-oculta b{color:#15314f}
+.light-mode .pp-oculta button{background:#eaf3fc;border-color:#cbe0f4;color:#14568f}
+.light-mode .pp-oculta button:hover{background:#dcecfa;color:#0d3f6b}
+
+@media(max-width:640px){
+  .pp-quitar,.pp-oculta button{width:100%;text-align:center}
+  .pp-oculta button{margin-left:0}
+}
+
 </style>
 </head>
 <body>
@@ -3051,7 +3289,7 @@ const SECTORS = [
 
   ]},
   // ─── Sectores compartidos (visibles para todos los usuarios) ───
-  { id:'ORGANIGRAMA', name:'Organigrama', icon:'🏛️', color:'#0f766e', bg:'#ccfbf1', universal:true, modules:[
+  { id:'ORGANIGRAMA', name:'Organigrama', icon:'🏛️', color:'#4338ca', bg:'#ccfbf1', universal:true, modules:[
     { id:'ORGANIGRAMA', name:'Organigrama', fields:[
       {key:'apellidoNombre',label:'Apellido y Nombre',  type:'text', req:true},
       {key:'jerarquia',     label:'Jerarquía',          type:'text', req:true},
@@ -3080,8 +3318,12 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'HORARIO_DIARIO', name:'Horario Diario', icon:'🕐', color:'#a16207', bg:'#fef9c3', universal:true, modules:[
-    { id:'HORARIO_DIARIO', name:'Horario Diario', fields:[
+  // v1.5.96 — Era "Horario Diario" (una imagen del horario por fecha). Pasa a
+  // ser la pizarra digital: el horario de clases de verdad, por fechas y
+  // secciones, sacado del Excel de la 2ª Convocatoria y editable a mano.
+  { id:'HORARIO_DIARIO', name:'Pizarra Digital de Horario de Clases', icon:'🕐',
+    color:'#a16207', bg:'#fef9c3', universal:true, custom:'horario', modules:[
+    { id:'HORARIO_DIARIO', name:'Pizarra Digital de Horario de Clases', fields:[
       {key:'fecha',  label:'Fecha',              type:'date',  req:true},
       {key:'imagen', label:'Imagen del Horario', type:'image'},
       {key:'obs',    label:'Observaciones',      type:'textarea'},
@@ -3171,7 +3413,7 @@ const SECTORS = [
     ]},
   ]},
 
-  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#0e7490', bg:'#cffafe', universal:true, custom:'minuta', modules:[
+  { id:'MINUTAS', name:'Minutas', icon:'💬', color:'#075985', bg:'#cffafe', universal:true, custom:'minuta', modules:[
     { id:'MINUTAS_MOD', name:'Minutas', fields:[
       {key:'fecha',         label:'Fecha',          type:'date',     req:true},
       {key:'hora',          label:'Hora',           type:'time'},
@@ -3203,7 +3445,7 @@ const SECTORS = [
   // La pestaña la tienen TODOS: cualquiera puede publicar un aviso cuando
   // necesita avisar algo. Lo que NO puede es tocar el aviso de otro: editar y
   // borrar quedan para quien lo cargó y para las administradoras.
-  { id:'AVISOS', name:'Avisos', icon:'📢', color:'#2563eb', bg:'#dbeafe',
+  { id:'AVISOS', name:'Avisos', icon:'📢', color:'#db2777', bg:'#dbeafe',
     custom:'avisos', universal:true, modules:[
     { id:'AVISOS', name:'Avisos', fields:[
       {key:'titulo', label:'Título',  type:'text'},
@@ -3251,7 +3493,7 @@ const SECTORS = [
   // ─── DISPOSICIONES INTERNAS (mismo acceso y lógica que Libro de Expedientes) ───
   // custom:'disposiciones' → usa la vista propia renderDisposiciones(). restringido:true →
   // la ven los mismos usuarios que ven el Libro de Expedientes (_expTieneAcceso()).
-  { id:'DISPOSICIONES', name:'Disposiciones Internas', icon:'📑', color:'#0e7490', bg:'#cffafe', custom:'disposiciones', restringido:true, modules:[
+  { id:'DISPOSICIONES', name:'Disposiciones Internas', icon:'📑', color:'#1e3a8a', bg:'#cffafe', custom:'disposiciones', restringido:true, modules:[
     { id:'DISPOSICIONES', name:'Disposiciones Internas', fields:[
       {key:'numero',     label:'N° de Disposición', type:'text'},
       {key:'fecha',      label:'Fecha',             type:'date'},
@@ -3266,7 +3508,7 @@ const SECTORS = [
   // custom:'licencias' → usa la vista propia renderLicencias() con el organigrama
   // jerárquico embebido (LIC_PERSONAL). Por ahora la ven todos los usuarios;
   // los roles específicos se van a definir más adelante.
-  { id:'LICENCIAS', name:'Licencias', icon:'🏖️', color:'#b45309', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
+  { id:'LICENCIAS', name:'Licencias', icon:'🏖️', color:'#15803d', bg:'#fef3c7', universal:true, custom:'licencias', modules:[
     { id:'LICENCIAS', name:'Licencias', fields:[
       {key:'lp',   label:'LP',               type:'text'},
       {key:'tipo', label:'Tipo de licencia', type:'text'},
@@ -3299,7 +3541,7 @@ const SECTORS = [
   // acá, con su propia clave de datos. Las reglas son las mismas de siempre:
   // 24 o 48 hs, tope de 2 por mes por efectivo (control solo de administradoras)
   // y cada jefe carga únicamente sobre su personal.
-  { id:'AUTORIZACIONES', name:'Autorizaciones', icon:'🪪', color:'#0e7490', bg:'#cffafe',
+  { id:'AUTORIZACIONES', name:'Autorizaciones', icon:'🪪', color:'#7e22ce', bg:'#cffafe',
     universal:true, custom:'autorizaciones', modules:[
     { id:'AUTORIZACIONES', name:'Autorizaciones', fields:[
       {key:'lp',   label:'LP',               type:'text'},
@@ -3324,9 +3566,9 @@ const SECTORS = [
   // ─── ACADEMIAS (v1.5.78) ───
   // Las capacitaciones que se le dan al personal de la Escuela. Vista propia
   // (custom:'academias') con la asistencia de los efectivos del organigrama.
-  { id:'ACADEMIAS', name:'Academias', icon:'🎓', color:'#7c3aed', bg:'#ede9fe',
+  { id:'ACADEMIAS', name:'Academias y Reuniones DCFyCCCO', icon:'🎓', color:'#831843', bg:'#ede9fe',
     universal:true, custom:'academias', modules:[
-    { id:'ACADEMIAS', name:'Academias', fields:[
+    { id:'ACADEMIAS', name:'Academias y Reuniones DCFyCCCO', fields:[
       {key:'fecha',      label:'Fecha',                   type:'date'},
       {key:'hora',       label:'Hora',                    type:'text'},
       {key:'tema',       label:'Tema',                    type:'text'},
@@ -3379,7 +3621,7 @@ const SECTORS = [
   ]},
 
   // ─── Pestaña: Pertenencias Internas del DCFyCCCO ───
-  { id:'PERTENENCIAS_INTERNAS', name:'Pertenencias Internas DCFyCCCO', icon:'🗂️', color:'#7c2d12', bg:'#fed7aa', universal:true, modules:[
+  { id:'PERTENENCIAS_INTERNAS', name:'Pertenencias Internas DCFyCCCO', icon:'🗂️', color:'#78350f', bg:'#fed7aa', universal:true, modules:[
     { id:'PERTENENCIAS_INTERNAS', name:'Pertenencias Internas', fields:[
       {key:'matricula', label:'Número de matrícula',       type:'text',     req:true},
       {key:'articulo',  label:'Artículo',                  type:'text',     req:true},
@@ -3410,7 +3652,7 @@ const SECTORS = [
   ]},
 
   // ─── Pestaña: Aspirantes ───
-  { id:'ASPIRANTES', name:'Aspirantes', icon:'🎽', color:'#b45309', bg:'#fef3c7', universal:true, modules:[
+  { id:'ASPIRANTES', name:'Aspirantes', icon:'🎽', color:'#b91c1c', bg:'#fef3c7', universal:true, modules:[
     { id:'ASPIRANTES_STATS', name:'Estadísticas', fields:[
       {key:'fecha',        label:'Fecha',                    type:'date',     req:true},
       {key:'descripcion',  label:'Descripción / Observación', type:'textarea', req:true},
@@ -4479,7 +4721,7 @@ const SB_GRUPOS = [
     // pestaña son EXACTAMENTE los mismos: cambia solo cómo se llega desde el menú.
     { id:'AREA_ACAD', name:'Secretaría Académica', ac:'A/C Crio. E. Velázquez', icon:'🎓', color:'#8ed08a',
       ids:['ACADEMICA>*','RECLUTAMIENTO','DOCENTES_GEN','MATERIAS','SECCIONES_GEN'] },
-    { id:'AREA_OPER', name:'Secretaría Operacional', ac:'A/C Crio. E. Muñoz', icon:'⚙️', color:'#5aa6dd',
+    { id:'AREA_OPER', name:'Secretaría Operacional', ac:'A/C Crio. E. Muñoz', icon:'⚙️', color:'#f2b264',
       ids:['OPERACIONAL>*','ASPIRANTES','MOVILES'] },
     { id:'AREA_LOG',  name:'Secretaría Op. Logística', ac:'A/C Crio. A. Sánchez', icon:'📦', color:'#4fbf83',
       ids:['LOGISTICA>*'] },
@@ -4557,6 +4799,11 @@ function buildSidebar(){
   const isCargarGlobal=CU.permiso==='cargar-global';
   const veTodo = isAdmin||isVisor||isCargarGlobal;
   const visible=SECTORS.filter(s=>{
+    // v1.5.96 — Lo que está en el Archivo no se muestra en el menú de nadie
+    // (tampoco a las administradoras: para verlo se entra por el Archivo).
+    // Los datos no se tocan; esto es solo el menú.
+    try{ if(typeof archSectorArchivado === 'function' && archSectorArchivado(s.id)
+      && ARCH_MIRANDO !== s.id) return false; }catch(_){}
     // ── v1.5.18: las administradoras pueden OCULTAR pestañas puntuales a un
     // usuario (lista pestanasOcultas). Eso manda por sobre todo lo demás:
     // si está oculta, no se muestra aunque sea universal o tenga acceso.
@@ -4630,6 +4877,8 @@ function buildSidebar(){
   const sueltas = visible.filter(x=>!_asignadas.has(x.id));
 
   const grupoHTML = (g, nivel)=>{
+    // v1.5.96 — Carpeta archivada: no se dibuja ni ella ni lo que tenga adentro.
+    try{ if(typeof archGrupoArchivado === 'function' && archGrupoArchivado(g.id)) return ''; }catch(_){}
     const propias = _sbEntradas(g.ids);
     const subs = (g.subgrupos||[]).map(sg=>({sg, tabs:_sbEntradas(sg.ids)})).filter(x=>x.tabs.length);
     const total = propias.length + subs.reduce((t,x)=>t+x.tabs.length, 0);
@@ -4693,6 +4942,10 @@ function buildSidebar(){
           <span class="s-icon">🩺</span>
           <span class="s-name">Revisión de datos</span>
         </button>
+        <button class="sector-btn" id="sb_ARCHIVO" onclick="showArchivo()">
+          <span class="s-icon">📦</span>
+          <span class="s-name">Archivo</span>
+        </button>
       </div>`);
   }
   // v1.5.75 — Recién armado el menú, se calcula el color legible de cada carpeta
@@ -4725,9 +4978,10 @@ function selectSector(id, modId){
   // Si el primer módulo tiene sub-pestañas, CM apunta a la primera sub-pestaña
   const _mod = (modId && sec.modules.find(m=>m.id===modId)) || sec.modules[0];
   CM = _mod.subTabs ? _mod.subTabs[0] : _mod;
-  document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
+  document.querySelectorAll('.sector-btn').forEach(b=>{b.classList.remove('active');inkLimpiar(b);});
   const ab=document.getElementById(btnId);
-  if(ab){ab.classList.add('active');ab.style.background=sec.color;ab.style.color='#fff';}
+  // v1.5.92 — La letra ya no es blanca fija: la decide el color del sector.
+  if(ab){ab.classList.add('active');inkAplicar(ab, sec.color);}
   // SUEP NEO v1.5.22: el color del sector tiñe toda la interfaz (header hero,
   // hilo superior del panel de datos, tabs) vía la variable CSS --sec.
   try{ document.documentElement.style.setProperty('--sec', sec.color); }catch(_){}
@@ -4745,16 +4999,82 @@ function selectSector(id, modId){
   );
   document.getElementById('addBtn').style.display=canAdd?'flex':'none';
   document.getElementById('exportBtn').style.display=(isCustom || (CM && CM.custom))?'none':'flex';
-  if(canAdd) document.getElementById('addBtn').style.background=`linear-gradient(135deg,${sec.color},${dk(sec.color)})`;
+  if(canAdd) pintarBoton(document.getElementById('addBtn'), sec.color);
   buildModTabs(); buildSubTabs(); renderTable(); closeSidebar();
   try{ logNav(); }catch(_){}
+}
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.92 — TINTA LEGIBLE SOBRE CUALQUIER COLOR DE SECTOR
+// ──────────────────────────────────────────────────────────────────────────
+// La pestaña activa se pinta con el color de su sector y hasta ahora la letra
+// iba SIEMPRE en blanco. En los sectores de color claro (Calendario #3b82f6,
+// Almuerzo #ea580c, Eventos #0d9488, Internet y Contraseñas #0891b2) el blanco
+// sobre ese fondo da 3,5 de contraste: no llega al mínimo legible de 4,5 y por
+// eso el nombre de la pestaña casi no se leía. Acá se mide el color y se
+// devuelve la tinta que corresponde: blanco sobre fondo oscuro, azul noche
+// sobre fondo claro. Los sectores oscuros quedan igual que siempre.
+// ══════════════════════════════════════════════════════════════════════════
+function inkSobre(hex){
+  const h = String(hex||'').trim().replace('#','');
+  const f = (h.length === 3) ? h[0]+h[0]+h[1]+h[1]+h[2]+h[2] : h;
+  const BLANCO = { ink:'#ffffff', soft:'rgba(255,255,255,.82)', oscura:false };
+  if(!/^[0-9a-f]{6}$/i.test(f)) return BLANCO;
+  const lin = v => { v = v/255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+  const L = 0.2126*lin(parseInt(f.slice(0,2),16))
+          + 0.7152*lin(parseInt(f.slice(2,4),16))
+          + 0.0722*lin(parseInt(f.slice(4,6),16));
+  // v1.5.98 — Se miden las DOS tintas y se usa la que más contraste da. Antes
+  // se decidía por umbral (si el blanco llegaba a 4,5), y en los colores de
+  // tono medio —donde ninguna de las dos llega— eso podía elegir la peor.
+  const OSCURA = '#08131f';                 // el mismo azul noche del calendario
+  const lOscura = 0.2126*lin(0x08) + 0.7152*lin(0x13) + 0.0722*lin(0x1f);
+  const conBlanco = 1.05 / (L + 0.05);
+  const conOscura = (L + 0.05) / (lOscura + 0.05);
+  if(conBlanco >= conOscura) return BLANCO;
+  return { ink:OSCURA, soft:'rgba(8,19,31,.78)', oscura:true };
+}
+// v1.5.97 — Pinta un botón con el color de su pestaña: el color va como
+// background-color (no en la forma corta, que lo deja transparente) más un
+// degradado encima, y la letra la decide inkSobre(). Así en las pestañas de
+// color claro la letra sale oscura y se lee.
+function pintarBoton(el, color){
+  if(!el || !color) return;
+  const k = inkSobre(color);
+  el.style.backgroundColor = color;
+  try{ el.style.backgroundImage = `linear-gradient(135deg,${color},${dk(color)})`; }catch(_){}
+  el.style.color = k.ink;
+  el.style.setProperty('--ink', k.ink);
+  el.setAttribute('data-ink', k.oscura ? 'oscura' : 'clara');
+}
+// Lo mismo, listo para pegar en un atributo style="..." de un botón activo.
+function inkEstilo(hex){
+  const k = inkSobre(hex);
+  return `background:${hex};color:${k.ink};--ink:${k.ink};--ink-2:${k.soft}`;
+}
+// Y lo mismo aplicado a un elemento que ya existe en pantalla.
+function inkAplicar(el, hex){
+  if(!el) return;
+  const k = inkSobre(hex);
+  el.style.background = hex;
+  el.style.color = k.ink;
+  el.style.setProperty('--ink', k.ink);
+  el.style.setProperty('--ink-2', k.soft);
+  el.setAttribute('data-ink', k.oscura ? 'oscura' : 'clara');
+}
+function inkLimpiar(el){
+  if(!el) return;
+  el.style.background = '';
+  el.style.color = '';
+  el.style.removeProperty('--ink');
+  el.style.removeProperty('--ink-2');
+  el.removeAttribute('data-ink');
 }
 function buildModTabs(){
   document.getElementById('modTabs').innerHTML=CS.modules.map(m=>{
     // Si el módulo es contenedor (tiene subTabs), está "activo" cuando CM coincide con alguna sub-pestaña
     const isActive = m.subTabs ? m.subTabs.some(st=>st.id===CM.id) : (m.id===CM.id);
     return `<button class="mod-tab ${isActive?'active':''}" id="mt_${m.id}"
-      style="${isActive?`background:${CS.color};color:#fff`:''}"
+      style="${isActive?inkEstilo(CS.color):''}" ${isActive?`data-ink="${inkSobre(CS.color).oscura?'oscura':'clara'}"`:''}
       onclick="selectMod('${m.id}')">${m.name}</button>`;
   }).join('');
   // v1.5.62 — En Secciones y Aspirantes se muestra cuál es la convocatoria en
@@ -4801,7 +5121,7 @@ function buildSubTabs(){
   cont.classList.add('visible');
   cont.innerHTML = parent.subTabs.map(st=>`
     <button class="sub-tab ${st.id===CM.id?'active':''}" id="st_${st.id}"
-      style="${st.id===CM.id?`background:${CS.color};color:#fff`:''}"
+      style="${st.id===CM.id?inkEstilo(CS.color):''}" ${st.id===CM.id?`data-ink="${inkSobre(CS.color).oscura?'oscura':'clara'}"`:''}
       onclick="selectSubMod('${parent.id}','${st.id}')">${st.name}</button>`).join('');
   setupDragScroll(cont);
 }
@@ -4809,9 +5129,10 @@ function selectMod(id){
   const mod=CS.modules.find(m=>m.id===id); if(!mod)return;
   // Si el módulo tiene sub-pestañas, seleccionar la primera automáticamente
   CM = mod.subTabs ? mod.subTabs[0] : mod;
-  document.querySelectorAll('.mod-tab').forEach(t=>{t.classList.remove('active');t.style.background='';t.style.color='';});
+  document.querySelectorAll('.mod-tab').forEach(t=>{t.classList.remove('active');inkLimpiar(t);});
   const at=document.getElementById(`mt_${id}`);
-  if(at){at.classList.add('active');at.style.background=CS.color;at.style.color='#fff';}
+  // v1.5.92 — misma tinta calculada que en el menú.
+  if(at){at.classList.add('active');inkAplicar(at, CS.color);}
   // Las pestañas custom (recargo/imaginarias) no usan el botón genérico Agregar ni Exportar
   refreshAddExportButtons();
   buildSubTabs();
@@ -4830,7 +5151,7 @@ function refreshAddExportButtons(){
   );
   document.getElementById('addBtn').style.display=canAdd?'flex':'none';
   document.getElementById('exportBtn').style.display=isCustom?'none':'flex';
-  if(canAdd) document.getElementById('addBtn').style.background=`linear-gradient(135deg,${CS.color},${dk(CS.color)})`;
+  if(canAdd) pintarBoton(document.getElementById('addBtn'), CS.color);
 }
 function selectSubMod(parentId, subId){
   const parent=CS.modules.find(m=>m.id===parentId); if(!parent||!parent.subTabs)return;
@@ -5004,6 +5325,12 @@ function renderTable(searchOverride){
     return;
   }
 
+  // ─── Pestaña custom: PIZARRA DIGITAL DE HORARIO DE CLASES (v1.5.96) ───
+  if(CS.custom==='horario'){
+    area.innerHTML = renderHorario();
+    return;
+  }
+
   // ─── Pestaña custom: CALENDARIO (v1.5.78) ───
   if(CS.custom==='calendario'){
     area.innerHTML = renderCalendario();
@@ -5126,7 +5453,7 @@ function renderTable(searchOverride){
           if(isReclu){
             const dots = EXAM_KEYS.map(k=>{
               const v = r[k] || 'Pendiente';
-              return `<span class="exam-dot" style="background:${EXAM_COLORS[v]||'#5a7a9a'}" title="${v}"></span>`;
+              return `<span class="exam-dot" style="background:${EXAM_COLORS[v]||'#8fb0cb'}" title="${v}"></span>`;
             }).join('');
             examCell = `<td onclick="event.stopPropagation()"><button class="exam-toggle" onclick="toggleExams('${r._id}')" title="Ver los 3 exámenes">${dots} <span id="exchev_${r._id}">▾</span></button></td>`;
             examRow = `<tr class="exam-subrow ${rowClass}" id="exrow_${r._id}" style="display:none"><td colspan="${colSpan}">
@@ -5147,7 +5474,7 @@ function renderTable(searchOverride){
           ${selCell}
           ${cols.map(f=>`<td>${cell(f,r[f.key])}</td>`).join('')}
           ${examCell}
-          <td style="font-size:11px;color:#5a7a9a;white-space:nowrap">${r._por||'—'}</td>
+          <td style="font-size:11px;color:#8fb0cb;white-space:nowrap">${r._por||'—'}</td>
           <td style="font-size:11px;color:#4a6a88;white-space:nowrap">${r._ts||'—'}</td>
           ${showActions?`<td onclick="event.stopPropagation()"><div class="row-acts">
             ${nAtt?`<button class="att-badge" onclick="viewAttachments('${r._id}')" title="Ver ${nAtt} archivo${nAtt>1?'s':''} adjunto${nAtt>1?'s':''}">📎 ${nAtt}</button>`:''}
@@ -5805,6 +6132,12 @@ function iniPintar(){
     </div>`;
   }catch(e){ console.warn('Panel de inicio · avisos/eventos:', e); }
 
+  // v1.5.96 — Fechas patrias, feriados y efemérides que se acercan. Va pegado
+  // arriba del calendario, porque son las fechas del mismo calendario.
+  let efSec = '';
+  try{ efemEnsureEstilos(); efSec = efemBloqueHTML(); }
+  catch(e){ console.warn('Panel de inicio · efemérides:', e); }
+
   // v1.5.78 — Calendario: los meses en miniatura de acá hasta diciembre. Se toca
   // uno y se abre grande, con lo cargado día por día.
   let calSec = '';
@@ -5816,7 +6149,31 @@ function iniPintar(){
     </div>`;
   }catch(e){ console.warn('Panel de inicio · calendario:', e); }
 
-  cont.innerHTML = kpis + pendientes + calSec + barras + top + ult +
+  // v1.5.96 — Pizarra digital del horario de clases. Aparece recién a partir
+  // del lunes 24/08/2026, que es cuando arranca el horario; antes de esa fecha
+  // no se arma. Los fines de semana muestra el próximo día de clases.
+  let horSec = '';
+  try{
+    horEnsureEstilos();
+    const cuerpo = horBloqueHTML();
+    if(cuerpo) horSec = `<div class="pp-board" id="horBox">${cuerpo}</div>`;
+  }catch(e){ console.warn('Panel de inicio · horario de clases:', e); }
+
+  // v1.5.92 — Pizarra de la planificación del Precurso, arriba del calendario.
+  // v1.5.95 — Si una administradora la quitó (o ya pasó el último día de la
+  // planilla), no se arma. Cuando la quitaron a mano, a las administradoras
+  // les queda el renglón para volver a mostrarla.
+  let ppSec = '';
+  try{
+    if(!ppOculta()){
+      ppSec = `<div class="pp-board" id="ppBox">${ppBloqueHTML()}</div>`;
+    }else if(ppEstado().oculta && ppEsAdmin()){
+      ppSec = `<div class="pp-oculta">📋 <span>La pizarra del <b>Precurso</b> está quitada del Panel.</span>
+        <button onclick="ppMostrar()">Volver a mostrarla</button></div>`;
+    }
+  }catch(e){ console.warn('Panel de inicio · precurso:', e); }
+
+  cont.innerHTML = kpis + pendientes + horSec + ppSec + efSec + calSec + barras + top + ult +
     `<div class="ini-vacio">Se están mirando ${d.nPest} pestaña${d.nPest!==1?'s':''} con datos cargados.</div>`;
 }
 // ═══════════════════════════════════════════════════════════════════
@@ -5866,7 +6223,1379 @@ function iniCerrarVerNueva(){
   try{ iniPintarUpdate(); }catch(_){}
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.92 — PIZARRA DE LA PLANIFICACIÓN DEL PRECURSO
+// ──────────────────────────────────────────────────────────────────────────
+// La planificación del Precurso de la 2ª Convocatoria 2026 (del 10 al 23 de
+// agosto), pasada tal cual está en la planilla a una pizarra digital dentro
+// del Panel de inicio. No se omite nada: cada horario, cada actividad y cada
+// nota al pie están acá.
+//
+// Cómo está guardada (PLAN_PRECURSO, más abajo). La planilla tiene tres
+// hojas y en SUEP son tres BLOQUES. Cada bloque tiene sus DÍAS y sus FILAS,
+// y cada fila puede ser:
+//   • t  → una sola actividad para TODOS los días del bloque (en el Excel es
+//          una celda combinada de punta a punta). Se rotula «Todos los días».
+//   • c  → una actividad POR DÍA (un texto por columna del Excel).
+//          '' = la celda del Excel está vacía · '@SIGUE' = la celda venía
+//          combinada con la fila de arriba, o sea que sigue esa actividad.
+//   • f  → franja de ancho completo (RELEVO GUARDIA / Orden Interno).
+//   • n  → nota al pie de la fila (las celdas sueltas fuera de la grilla).
+// Sábado 22 y Domingo 23 están en 'propios' porque en el Excel son una única
+// columna de franco combinada a lo largo de todo el día.
+//
+// Es solo LECTURA: no toca localStorage, no toca Supabase y no depende de
+// ninguna pestaña. La ve todo el mundo, igual que el resto del Panel.
+// ══════════════════════════════════════════════════════════════════════════
+const PLAN_PRECURSO = {"titulo":"Planificación Precurso","sub":"2ª Convocatoria 2026 · del 10 al 23 de agosto","bloques":[
+ {"id":"pp1","nom":"Ingreso","hoja":"Lunes 10-08","dias":[{"iso":"2026-08-10","lab":"Lunes 10/08","dia":"Lunes"}],
+  "filas":[
+  {"h":"07:00","t":"Ingreso del personal policial p/la recepcion de los asp."},
+  {"h":"08:00 / 08:30","t":"Ingreso Cursantes 2da Convocatoria 2026","n":"Tomar asistencias de la totalidad de cursantes - Numerarse."},
+  {"h":"10:00 a 10:50","t":"Discriminar ASP por Seccion - modulos y gamela, posterior trasladarlo c/instructor a/c. - Cambiarse overol -"},
+  {"h":"11:00 a 11:30","t":"Traslado al Rancho - (REFUERZO)"},
+  {"h":"11:40 a 12:40","t":"ACTIVIDAD FISICA P/ ASPIRANTES","n":"Presentacion Organigrama personal policial - Lugares Por donde se puede Transitar dentro de las Instalaciones - Armado de Cama - Ubicacion Calzado - Toalla/Toallon - Ordenado de Cofre."},
+  {"h":"12:50","t":"Higiene Aspirantes a Agentes"},
+  {"h":"13:00 a 13:40","t":"Traslado al Rancho - (Almuerzo)"},
+  {"f":"Orden Interno 13:40 a 14:00"},
+  {"h":"14:00 a 15:00","t":"Orden Cerrado (Proyeccion power - Voz Preventiva - Voz Ejecutiva -Postura Inicial Descanso Firmes - Movimientos Izq y Derecha- Rompe Filas Numerarse a viva voz) - Rancho"},
+  {"h":"15:00 a 16:50","t":"Orden Cerraado (Practica) Voz Preventiva - Voz Ejecutiva -Postura Inicial Descanso Firmes - Movimientos Izq y Derecha- Numerarse a viva voz) -"},
+  {"h":"16:50 a 17:00","t":"Higiene Aspirantes a Agentes"},
+  {"h":"17:00 a 17:30","t":"Merienda (Rancho)"},
+  {"h":"17:30 a 18:50","t":"Confeccion Listado Madre (Datos Completos del Aspirante a/c Oficial de Servicio)"},
+  {"h":"19:00","t":"Arrio -"},
+  {"h":"19:10 a 19:45","t":"Baño p/ el asp y limpieza de modulos- gamela supervisado por instrcutor."},
+  {"f":"RELEVO GUARDIA"},
+  {"h":"20:00","t":"Recepcion Novedades de los aspirantes."},
+  {"h":"20:30 a 22:00","t":"Cena (Rancho) - Repaso del Orden cerrado visto en el dia - Evacuar dudas)"},
+  {"h":"22:00 a 22:10","t":"Consulta Novedades al Asp."},
+  {"h":"22:10 a 22:30","t":"Horario de Sueño supervisada por instructores"}]},
+  {"id":"pp2","nom":"1ª semana","hoja":"Martes 11-08 al Domingo 16-08","dias":[{"iso":"2026-08-11","lab":"Martes 11/08","dia":"Martes"},
+  {"iso":"2026-08-12","lab":"Miercoles 12/08","dia":"Miércoles"},
+  {"iso":"2026-08-13","lab":"Jueves 13/08","dia":"Jueves"},
+  {"iso":"2026-08-14","lab":"Viernes 14/08","dia":"Viernes"},
+  {"iso":"2026-08-15","lab":"Sabado 15/08","dia":"Sábado"},
+  {"iso":"2026-08-16","lab":"Domingo 16/08","dia":"Domingo"}],
+  "filas":[
+  {"h":"06:30","t":"DIANA"},
+  {"h":"07:00","c":["DESAYUNO","DESAYUNO","SE REALIZARA EL GRAVINDEX AL PERSONAL FEMENINO - TIENEN QUE TENER EN MANO 12MIL PESOS.","DESAYUNO","DESAYUNO","DESAYUNO"]},
+  {"h":"08:00","t":"IZAMIENTO PABELLON"},
+  {"h":"08:15 a 08:40","c":["CONTROL FICHA MEDICA PARA EL CUERPO DE ASPIRANTE SECCION 1","CONTROL FICHA MEDICA PARA EL CUERPO DE ASPIRANTE SECCION 2","CONTROL FICHA MEDICA PARA EL CUERPO DE ASPIRANTE SECCION 3","CONTROL FICHA MEDICA PARA EL CUERPO DE ASPIRANTE SECCION 4","",""]},
+  {"h":"08:40 a 10:30","c":["Orden Cerrado ( Voz Preventiva - Voz Ejecutiva -Postura Inicial Descanso Firmes - Movimientos Izq y Derecha) - Incorporando Movimientos en Descanso Izq -derecha frente- Alineacion - Vista al Frente - Numerarse - Saludo uno - Saludo dos - revista rompe fila en fila y en columna - Presentacion Ante el Superior y Pasaje al Pabellon - VOZ DE ATENDER y ATENCION -Funcion de jefe de rancho y rancheros","Presentacion Organigrama personal policial - Lugares Por donde se puede Transitar dentro de las Instalaciones - Armado de Cama - Ubicacion Calzado - Toalla/Toallon - Ordenado de Cofre.","Explicacion Movimiento Tecnicos Operacionales - consistente en entrada en Calor 8 a 10 minutos -c/ colaboracion del PROFESOR DE EDUCACION - Jerarquias Solicitud de Permiso - Parte con los movimientos a pie firme y ruptura de rompe filas","Explicacion Confeccion de Minutas y novedades","08:40 a 09:30 Lavado de Prendas - Explicacion Circulo de Asp y notificacion - 09:40 a 10:30 - Traslado Rancho Heraldica - Fechas Patrias - Oratoria","Orden Cerrado ( Repaso de los movimiento - Formacion p/ pasaje a bandera - Correcion postura - evacuar dudas consultas)"]},
+  {"h":"10:30 a 10:40","t":"Higiene Personal"},
+  {"h":"10:40 a 10:50","t":"Control Aspirantes Novedades."},
+  {"h":"11:00 a 11:30","t":"Refuerzo rancho"},
+  {"h":"11:30 a 11:40","t":"Higiene Personal"},
+  {"h":"11:40 a 12:50","c":["( Repaso Alineacion - Vista al Frente - Numerarse - Saludo uno/ Saludo dos- Explicacion Pasaje de revista rompe fila en fila y en columna -Presentacion Ante el Superior )","Los Aspirantes tendran Actividad Fisica.","Orden cerrado (Trote c/compas - Voces de mando - Voz de Preventiva: SECCIÓN-GRUPO IAL FRENTE TROTE! - Voz Ejecutiva: MAR\nA esta voz, se romperá la marcha con el pié izquierdo, comenzando a trotar en forma lenta y coordinada; asentando en cada paso la planta del pié izquierdo en el suelo, de manera tal de ir marcando el tiempo (paso)\nEn la voz preventiva, estando el grupo en la posición de DESCANSO, adoptarán la posición de firmes y llevarán ambas manos empuñadas, a la altura del pecho. Dicho desplazamiento culminará con la voz de mando de (AL-TO!. La voz preventiva y ejecutiva, se darán sobre el pie izquierdo, efectuándose un paso más para terminar el movimiento, quedando en la posición de DESCANSO.","Los Aspirantes tendran Actividad Fisica.","Los Aspirantes tendran Actividad Fisica.","Orden Cerrado ( Repaso de los movimiento - Formacion p/ pasaje a bandera - Correcion postura - evacuar dudas consultas) - fajina en el esteblecimiento"]},
+  {"h":"12:50 a 13:00","t":"Higiene Personal"},
+  {"h":"13:00 a 13:40","t":"Almuerzo Rancho"},
+  {"f":"13:40 a 14:00 Orden Interno"},
+  {"h":"14:10 a 15:50","c":["Traslado Rancho - Notificacion de Reglamento Normas de Convivencias - Sanciones - Notificacion bajo Planilla. - C/ Intervalo Higiene - baño - hidratacion.","Orden Cerrado (Formacion Linea - una columna doble Columna - Columna grupo Tercia y doble columna grupo sexta- tener en cuenta alineacion por el frente y el costado - voz preventiva - voz ejecutiva) C/ INTERVALOS DE HIGIENE - BAÑO E HIDRATACION al ASP.","Orden Cerrado (Repaso de los movimientos aportados pie firme - descanso - alineacion - saludo uno y dos - roptura de fila y en columna - Formacion y Trote c/compas C/ INTERVALOS DE HIGIENE - BAÑO E HIDRATACION al ASP. (Despues de la actividad fisica continuand con ORDEN CERRADO)","Comunicación Telefonica c/ familiares de 30 minutos - posterior recepcion de novedades c/ el llamado.","Orden cerrado (Academica de Nociones Basicas simbolos patrios - Himnos marchas argentinas fechas patrias) Practica de movimientos dados- Fajina","Orden cerrado (Movimiento dados/ Voz preventiva - Voz ejecutiva - Academia Simbologia del Escudo Provincial - Autoridades Provinciales -Historia de la Provincia)- Fajina"]},
+  {"h":"16:00 a 17:30","c":["Orden Cerrado ( refuerzo de lo dado -Postura Inicial Descanso Firmes - Movimientos Izq y Derecha) - Incorporando Movimientos en Descanso Izq -derecha frente- Alineacion - Vista al Frente - Numerarse - Saludo uno - Saludo dos - revista rompe fila en fila y en columna -Pasaje al Pabellon - Explicacion fajina)","@SIGUE","@SIGUE","Examen Integrado Practico por seccion con nota.","@SIGUE","@SIGUE"]},
+  {"h":"17:30 a 17:40","t":"Higiene Personal"},
+  {"h":"18:00 a 18:30","t":"Merienda (Rancho) - Evacuar dudas consultas al Aspirante"},
+  {"h":"18:30 a 18:40","t":"Higiene Personal"},
+  {"h":"19:00","t":"Arrio"},
+  {"h":"19:10","t":"Recepcion Novedades - Baño Supervisado Instructores"},
+  {"f":"RELEVO SERVICIO"},
+  {"h":"20:00","t":"Control Aspirantes Novedades en Modulo y Gamela - Recepcion de Novedades Servicio y Asp."},
+  {"h":"20:30 a 21:10","t":"CENA RANCHO"},
+  {"h":"21:10 a 22:00","t":"Repaso del Orden cerrado visto en el dia - Evacuar dudas)"},
+  {"h":"22:00 a 22:10","t":"Recepcion de Novedades del Aspirante"},
+  {"h":"22:10 a 22:30","t":"Horario de Sueño - Supervisado por el instructor"}]},
+  {"id":"pp3","nom":"2ª semana","hoja":"Lunes 17-08 al Viernes 21-08","dias":[{"iso":"2026-08-17","lab":"Lunes 17/08","dia":"Lunes"},
+  {"iso":"2026-08-18","lab":"Martes 18/08","dia":"Martes"},
+  {"iso":"2026-08-19","lab":"Miercoles 19/08","dia":"Miércoles"},
+  {"iso":"2026-08-20","lab":"Jueves 20/08","dia":"Jueves"},
+  {"iso":"2026-08-21","lab":"Viernes 21/08","dia":"Viernes"}],
+  "filas":[
+  {"h":"06:30","t":"DIANA"},
+  {"h":"07:00","t":"DESAYUNO"},
+  {"h":"08:00","t":"IZAMIENTO PABELLON"},
+  {"h":"08:15 a 08:40","c":["CONSTROL FICHA MEDICA PARA EL CUERPO DE ASPIRANTE SECCION 5","CONTROL MEDICO ASP C/ALGUNA DOLENCIA -","CONTROL MEDICO ASP C/ALGUNA DOLENCIA -","CONTROL MEDICO ASP C/ALGUNA DOLENCIA -","CONTROL MEDICO ASP C/ALGUNA DOLENCIA -"]},
+  {"h":"08:40 a 10:30","c":["Orden Cerrado ( Repaso de los movimiento- Formacion en fila/columna - pasaje de redoblado) Voz preventiva - Voz ejecutiva.","Ilustracion de las actividad academica - materias - Funcion del Bedel.","Orden Cerrado ( Formacion en fila/columna - pasaje de redoblado) Voz preventiva - Voz ejecutiva.","Orden Cerrado (Repaso y correccion de lo movimientos dados) - Mencion de Examen integrado de orden cerrado (Escrito y practico)","Confeccion de Secciones a/c del Instructor - Repaso confeccion de minutas e informar novedad."]},
+  {"h":"10:30 a 10:40","t":"Higiene Personal"},
+  {"h":"10:40 a 10:50","t":"Control Aspirantes Novedades."},
+  {"h":"11:00 a 11:40","t":"Refuerzo rancho/ reforzar los contenidos/ evacuar dudas"},
+  {"h":"11:40 a 12:50","c":["Los Aspirantes tendran Actividad Fisica","orden Cerrado ( Repaso y correcion- Funcion del Bedel)- (pasaje de redoblado) Voz preventiva - Voz ejecutiva.","Los Aspirantes tendran Actividad Fisica","Orden cerrado (Repaso y correccion de lo movimientos - Marcha de policia)","Los Aspirantes tendran Actividad Fisica"]},
+  {"h":"12:50 a 13:00","t":"Higiene Personal"},
+  {"h":"13:00 a 13:40","t":"Almuerzo Rancho"},
+  {"f":"13:40 a 14:00 Orden Interno"},
+  {"h":"14:10 a 16:00","c":["Orden Cerrado ( Correccion de los movimiento dados - Voz preventiva - Voz ejecutiva- Entonacion de los Himnos y marchas) C/INTERVELOS de Higiene e hidratacion al ASP.","Orden Cerrado ( Formacion en fila/columna - pasaje de redoblado) Voz preventiva - Voz ejecutiva.","Traslado Rancho - Organigrama personal DCFyCCCO y autoridades policiales.","Orden Cerrado (Repaso y correcion movimientos - entonacion de himnos - evacuar dudas consultas)","FIN PRECURSO - CONTROL MODULOS/ GAMELA ASP A/C DE INSTRUCTOR - FRANCO"]},
+  {"h":"16:00 a 17:30","c":["@SIGUE","@SIGUE","@SIGUE","@SIGUE","@SIGUE"]},
+  {"h":"17:30 a 17:40","c":["Higiene Personal","Higiene Personal","Higiene Personal","Higiene Personal","@SIGUE"]},
+  {"h":"17:40 a 18:00","c":["Control Aspirantes Novedades.","Control Aspirantes Novedades.","Control Aspirantes Novedades.","Control Aspirantes Novedades.","@SIGUE"]},
+  {"h":"18:00 a 18:30","c":["Merienda (Rancho)","Merienda (Rancho)","Merienda (Rancho)","Merienda (Rancho)","@SIGUE"]},
+  {"h":"18:30 a 18:40","c":["Higiene Personal","Higiene Personal","Higiene Personal","Higiene Personal","@SIGUE"]},
+  {"h":"19:00","t":"Arrio"},
+  {"h":"19:10 a 20:00","c":["Orden Cerrado ( Correccion de los movimiento dados)","Orden Cerrado (Entonacion de Himnos y Marchas - incluyendo movimientos policiales)","Orden Cerrado ( Formacion en fila/columna - pasaje de redoblado) Voz preventiva - Voz ejecutiva.","Orden Cerrado (Repaso y correcion movimientos - entonacion de himnos - evacuar dudas consultas)","Control Novedades Asp de franco"]},
+  {"f":"RELEVO SERVICIO"},
+  {"h":"20:00","c":["Control Aspirantes Novedades en Modulo y Gamela - Recepcion de Novedades Servicio y Asp.","Control Aspirantes Novedades en Modulo y Gamela - Recepcion de Novedades Servicio y Asp.","Control Aspirantes Novedades en Modulo y Gamela - Recepcion de Novedades Servicio y Asp.","Control Aspirantes Novedades en Modulo y Gamela - Recepcion de Novedades Servicio y Asp.","Control Servicio y Novedades asp."]},
+  {"h":"20:30 a 21:10","c":["CENA RANCHO","CENA RANCHO","CENA RANCHO","CENA RANCHO","@SIGUE"]},
+  {"h":"21:10 a 22:00","c":["Repaso del Orden cerrado visto en el dia - Evacuar dudas)","Repaso del Orden cerrado visto en el dia - Evacuar dudas)","Repaso del Orden cerrado visto en el dia - Evacuar dudas)","Repaso del Orden cerrado visto en el dia - Evacuar dudas)","@SIGUE"]},
+  {"h":"22:00 a 22:10","c":["Recepcion de Novedades del Aspirante","Recepcion de Novedades del Aspirante","Recepcion de Novedades del Aspirante","Recepcion de Novedades del Aspirante","@SIGUE"]},
+  {"h":"22:10 a 22:30","c":["Horario de Sueño - Supervisado por el instructor","Horario de Sueño - Supervisado por el instructor","Horario de Sueño - Supervisado por el instructor","Horario de Sueño - Supervisado por el instructor","@SIGUE"]}],"propios":[{"iso":"2026-08-22","lab":"Sabado 22/08","dia":"Sábado","cartel":"Franco Aspirantes",
+  "filas":[
+  {"h":"06:30 a 18:40","t":"Franco Aspirantes"},
+  {"h":"19:00","t":"Control Novedades Asp de franco"},
+  {"f":"RELEVO SERVICIO"},
+  {"h":"20:00","t":"Recepcion del Franco Asp."},
+  {"h":"20:30 a 21:10","t":"Recepcion Novedades del Asp."},
+  {"h":"22:00 a 22:10","t":"Horario de Sueño - Supervisado por el instructor"}]},
+  {"iso":"2026-08-23","lab":"Domingo 23/08","dia":"Domingo","cartel":"Franco Aspirantes",
+  "filas":[
+  {"h":"06:30 a 18:40","t":"Franco Aspirantes"},
+  {"h":"19:00","t":"Control Novedades Asp de franco"},
+  {"f":"RELEVO SERVICIO"},
+  {"h":"20:00","t":"Recepcion del Franco Asp."},
+  {"h":"20:30 a 21:10","t":"Recepcion Novedades del Asp."},
+  {"h":"22:00 a 22:10","t":"Horario de Sueño - Supervisado por el instructor"}]}]}]};
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.93 — QUITAR LA PIZARRA DEL PRECURSO
+// ──────────────────────────────────────────────────────────────────────────
+// La planificación del Precurso vale del 10 al 23 de agosto y después no
+// sirve más. Por eso:
+//   · Las ADMINISTRADORAS tienen un botón «Quitar» en el rótulo. Al tocarlo
+//     (con confirmación) la pizarra desaparece del Panel de TODOS, no solo
+//     de su celular: el aviso viaja por la nube igual que el resto.
+//   · Se quita SOLA el día después del último día de la planilla, así nadie
+//     tiene que acordarse.
+//   · Si la quitaron a mano, a las administradoras les queda un renglón
+//     chico para volver a mostrarla, por si le dieron sin querer. Cuando se
+//     va sola por fecha, no queda nada colgado en pantalla.
+// Importante: la planificación está escrita en el archivo, no es un registro
+// cargado. Acá no se borra nada: se guarda «no la muestres más». Por eso se
+// puede volver atrás sin haber perdido un solo dato.
+// ══════════════════════════════════════════════════════════════════════════
+const PP_KEY = 'suep_precurso_estado';
+
+function ppEsAdmin(){
+  try{ return !!(typeof CU !== 'undefined' && CU && CU.permiso === 'admin'); }catch(_){ return false; }
+}
+function ppEstado(){
+  try{ return JSON.parse(localStorage.getItem(PP_KEY) || '{}') || {}; }catch(_){ return {}; }
+}
+// ¿Ya pasó el último día de la planilla?
+function ppVencida(){
+  try{
+    const dias = ppDias();
+    if(!dias.length) return true;
+    const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+    return hoy > dias[dias.length - 1].iso;
+  }catch(_){ return false; }
+}
+function ppOculta(){ return !!ppEstado().oculta || ppVencida(); }
+
+function ppGuardarEstado(est){
+  try{ localStorage.setItem(PP_KEY, JSON.stringify(est)); }catch(_){}
+  // Se sube por la misma vía que todo lo demás; si no hay internet queda
+  // anotado y sube solo al reconectar.
+  try{ if(typeof syncToSupabase === 'function') syncToSupabase(PP_KEY, est); }catch(_){}
+}
+function ppQuitar(){
+  if(!ppEsAdmin()){
+    alert('Solo las administradoras pueden quitar la pizarra.');
+    return;
+  }
+  const ok = confirm('¿Quitar la pizarra de la Planificación del Precurso del Panel de inicio?\n\n'
+    + 'Deja de verse para TODOS los usuarios.\n'
+    + 'No se pierde nada: se puede volver a mostrar desde el mismo Panel.');
+  if(!ok) return;
+  ppGuardarEstado({ oculta:true,
+    por:(typeof CU !== 'undefined' && CU && CU.nombre) ? CU.nombre : '—',
+    ts:new Date().toLocaleString('es-AR') });
+  try{ showInicio(); }catch(_){}
+}
+function ppMostrar(){
+  ppGuardarEstado({ oculta:false });
+  try{ showInicio(); }catch(_){}
+}
+window.ppQuitar = ppQuitar;
+window.ppMostrar = ppMostrar;
+
+let PP_SEL = null;   // ISO del día que se está mirando
+
+function ppEsc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+// Todos los días de los tres bloques, en orden, con el bloque al que pertenecen.
+function ppDias(){
+  const out = [];
+  (PLAN_PRECURSO.bloques||[]).forEach(b=>{
+    (b.dias||[]).forEach((d,i)=> out.push({ iso:d.iso, lab:d.lab, dia:d.dia, bloque:b, col:i }));
+    (b.propios||[]).forEach(p=> out.push({ iso:p.iso, lab:p.lab, dia:p.dia, bloque:b, propio:p }));
+  });
+  return out.sort((a,b)=> a.iso.localeCompare(b.iso));
+}
+// Qué día mostrar al entrar: el de hoy si el precurso está en curso; si ya
+// pasó, el último; si todavía no empezó, el primero.
+function ppDiaInicial(){
+  const dias = ppDias();
+  if(!dias.length) return null;
+  const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+  const exacto = dias.find(d=> d.iso === hoy);
+  if(exacto) return exacto.iso;
+  if(hoy < dias[0].iso) return dias[0].iso;
+  const antes = dias.filter(d=> d.iso <= hoy);
+  return antes.length ? antes[antes.length-1].iso : dias[0].iso;
+}
+function ppSeleccionar(iso){
+  PP_SEL = iso;
+  const box = document.getElementById('ppBox');
+  if(box) box.innerHTML = ppBloqueHTML();
+}
+// Renglones del día elegido, ya resueltos (común / propio del día / franja).
+function ppFilasDelDia(d){
+  if(d.propio) return (d.propio.filas||[]).map(f=> Object.assign({}, f, {et:'Franco'}));
+  const out = [];
+  (d.bloque.filas||[]).forEach(f=>{
+    if(f.f){ out.push({ f:f.f }); return; }
+    if(typeof f.t === 'string'){
+      out.push({ h:f.h, txt:f.t, n:f.n, et: (d.bloque.dias||[]).length > 1 ? 'Todos los días' : null });
+      return;
+    }
+    const v = (f.c && f.c.length > d.col) ? f.c[d.col] : '';
+    out.push({ h:f.h, txt:v, n:f.n, et:'Solo este día',
+               sigue: v === '@SIGUE', nada: !v });
+  });
+  return out;
+}
+function ppBloqueHTML(){
+  const dias = ppDias();
+  if(!dias.length) return '';
+  const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+  if(!PP_SEL || !dias.some(d=> d.iso === PP_SEL)) PP_SEL = ppDiaInicial();
+  const sel = dias.find(d=> d.iso === PP_SEL) || dias[0];
+
+  // Fila de días
+  const chips = dias.map(d=>{
+    const esHoy = d.iso === hoy;
+    const nn = (d.lab.match(/(\d{2}\/\d{2})/) || ['',''])[1];
+    return `<button class="pp-dia${d.iso===sel.iso?' sel':''}${d.iso<hoy?' pasado':''}"
+      onclick="ppSeleccionar('${d.iso}')" title="${ppEsc(d.lab)}">
+      <span class="pp-dia-sem">${ppEsc((d.dia||'').slice(0,3))}</span>
+      <span class="pp-dia-num">${ppEsc(nn)}</span>
+      ${esHoy?'<span class="pp-dia-hoy">HOY</span>':''}
+    </button>`;
+  }).join('');
+
+  // Renglones del día
+  const filas = ppFilasDelDia(sel).map(f=>{
+    if(f.f) return `<div class="pp-franja">🔁 ${ppEsc(f.f)}</div>`;
+    const cuerpo = f.sigue
+      ? 'Sigue la actividad del horario anterior (en la planilla la celda viene unida con la de arriba).'
+      : (f.nada ? 'Sin actividad anotada en la planilla para este día.' : f.txt);
+    const clase = f.sigue ? ' pp-sigue' : (f.nada ? ' pp-nada' : '');
+    const et = (!f.sigue && !f.nada && f.et)
+      ? `<span class="pp-et${f.et==='Todos los días'?'':' propia'}">${ppEsc(f.et)}</span>` : '';
+    return `<div class="pp-fila${clase}">
+      <div class="pp-hora">${ppEsc(f.h||'')}</div>
+      <div class="pp-act">${et}<div class="pp-txt">${ppEsc(cuerpo)}</div>
+        ${f.n?`<div class="pp-nota">📌 <span>${ppEsc(f.n)}</span></div>`:''}</div>
+    </div>`;
+  }).join('');
+
+  const esHoySel = sel.iso === hoy;
+  return `
+    <div class="pp-rail">
+      <span class="pp-rail-tit">📋 ${ppEsc(PLAN_PRECURSO.titulo)}</span>
+      <span class="pp-rail-sub">${ppEsc(PLAN_PRECURSO.sub)}</span>
+      <button class="pp-verde" onclick="ppAbrirGrilla()">🗒️ Ver la grilla completa</button>
+      ${ppEsAdmin()?'<button class="pp-quitar" onclick="ppQuitar()" title="Deja de verse para todos">🗑️ Quitar</button>':''}
+    </div>
+    <div class="pp-dias">${chips}</div>
+    <div class="pp-cabecera">
+      <span class="pp-cab-dia">${ppEsc(sel.dia)} ${ppEsc(sel.lab.replace(/^\S+\s/,''))}</span>
+      <span class="pp-cab-et">${esHoySel?'Es hoy':ppEsc(sel.bloque.nom)}</span>
+    </div>
+    ${sel.propio&&sel.propio.cartel?`<div class="pp-cartel">🏖️ ${ppEsc(sel.propio.cartel)}</div>`:''}
+    <div class="pp-lista">${filas}</div>
+    <div class="pp-pie">Tocá cualquier día de la fila de arriba para ver su planificación completa.
+      «Todos los días» es lo que en la planilla vale para todo el tramo; «Solo este día» es lo que cambia jornada por jornada.</div>`;
+}
+// Grilla completa: la planilla entera, todos los días uno al lado del otro.
+function ppAbrirGrilla(){
+  const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+  const bloques = (PLAN_PRECURSO.bloques||[]).map(b=>{
+    const dias = b.dias||[];
+    const props = b.propios||[];
+    const th = `<th>HORA</th>` +
+      dias.map(d=>`<th class="${d.iso===hoy?'hoy':''}">${ppEsc(d.lab)}</th>`).join('') +
+      props.map(p=>`<th class="${p.iso===hoy?'hoy':''}">${ppEsc(p.lab)}</th>`).join('');
+    const tr = (b.filas||[]).map(f=>{
+      if(f.f) return `<tr class="fr"><td colspan="${1+dias.length+props.length}">🔁 ${ppEsc(f.f)}</td></tr>`;
+      let tds;
+      if(typeof f.t === 'string'){
+        tds = `<td class="comun" colspan="${dias.length}">${ppEsc(f.t)}</td>`;
+      }else{
+        tds = dias.map((d,i)=>{
+          const v = (f.c && f.c.length > i) ? f.c[i] : '';
+          if(v === '@SIGUE') return `<td class="vacio${d.iso===hoy?' hoycol':''}">↑ sigue lo de arriba</td>`;
+          if(!v) return `<td class="vacio${d.iso===hoy?' hoycol':''}">—</td>`;
+          return `<td class="${d.iso===hoy?'hoycol':''}">${ppEsc(v)}</td>`;
+        }).join('');
+      }
+      // Los días de franco tienen su propia columna combinada: se deja vacía acá.
+      const extra = props.map(()=>`<td class="vacio">—</td>`).join('');
+      return `<tr><td class="hcol">${ppEsc(f.h||'')}</td>${tds}${extra}
+        ${f.n?`</tr><tr><td class="hcol">📌 Nota</td><td colspan="${dias.length+props.length}">${ppEsc(f.n)}</td>`:''}</tr>`;
+    }).join('');
+    // Los días de franco, aparte y en su propio recuadro.
+    const franco = props.map(p=>`
+      <div class="pp-gtit">${ppEsc(p.lab)} · ${ppEsc(p.cartel||'')}</div>
+      <table class="pp-tabla"><tbody>${
+        (p.filas||[]).map(f=> f.f
+          ? `<tr class="fr"><td colspan="2">🔁 ${ppEsc(f.f)}</td></tr>`
+          : `<tr><td class="hcol">${ppEsc(f.h||'')}</td><td>${ppEsc(f.t||'')}</td></tr>`).join('')
+      }</tbody></table>`).join('');
+    return `<div class="pp-gtit">${ppEsc(b.nom)} · ${ppEsc(b.hoja)}</div>
+      <table class="pp-tabla"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>${franco}`;
+  }).join('');
+
+  const ov = document.createElement('div');
+  ov.className = 'pp-ov';
+  ov.setAttribute('data-pp-ov','1');
+  ov.innerHTML = `<div class="pp-ov-caja">
+    <div class="pp-ov-head">
+      <span class="pp-ov-tit">📋 ${ppEsc(PLAN_PRECURSO.titulo)} · ${ppEsc(PLAN_PRECURSO.sub)}</span>
+      <button class="pp-ov-x" onclick="ppCerrarGrilla()">✕ Cerrar</button>
+    </div>
+    <div class="pp-ov-body">${bloques}</div>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target === ov) ppCerrarGrilla(); });
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', ppEscGrilla);
+}
+function ppCerrarGrilla(){
+  document.querySelectorAll('[data-pp-ov]').forEach(x=> x.remove());
+  document.removeEventListener('keydown', ppEscGrilla);
+}
+function ppEscGrilla(e){ if(e.key === 'Escape') ppCerrarGrilla(); }
+window.ppSeleccionar = ppSeleccionar;
+window.ppAbrirGrilla = ppAbrirGrilla;
+window.ppCerrarGrilla = ppCerrarGrilla;
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.96 — EFEMÉRIDES, FERIADOS Y FECHAS PATRIAS ARGENTINAS
+// ──────────────────────────────────────────────────────────────────────────
+// Dos listas:
+//   EFEM_FIJAS  → las fechas que caen siempre el mismo día del año. Van por
+//                 mes-día ('08-17'), así sirven para 2026, 2027 y los que
+//                 vengan, sin tocar nada.
+//   FERIADOS_X  → los feriados que se mueven o los que fija el Gobierno por
+//                 decreto (trasladados, puentes turísticos, Carnaval,
+//                 Viernes Santo). Estos SÍ hay que cargarlos por año. Están
+//                 los de 2026 según el calendario oficial. Cuando salga el
+//                 de 2027 se agrega un bloque igual y listo.
+// Cuando un feriado se traslada, la app muestra las DOS cosas: la efeméride
+// en su fecha real (por ejemplo Güemes el 17/06) y el feriado en el día que
+// se pasó a descansar, aclarándolo.
+// ══════════════════════════════════════════════════════════════════════════
+const EFEM_FIJAS = [
+ {md:'01-01', tipo:'feriado',   tit:'Año Nuevo',
+  res:'Primer día del año en el calendario gregoriano. Feriado inamovible en todo el país.'},
+ {md:'03-08', tipo:'efemeride', tit:'Día Internacional de la Mujer',
+  res:'Se recuerda la lucha de las mujeres por la igualdad de derechos y su participación en la sociedad. Lo estableció la ONU en 1975.'},
+ {md:'03-24', tipo:'patria',    tit:'Día Nacional de la Memoria por la Verdad y la Justicia',
+  res:'Recuerda el golpe de Estado del 24 de marzo de 1976, que inició la última dictadura militar. Es feriado inamovible desde 2006 y se conmemora en defensa de la democracia y los derechos humanos.'},
+ {md:'04-02', tipo:'patria',    tit:'Día del Veterano y de los Caídos en la Guerra de Malvinas',
+  res:'El 2 de abril de 1982 comenzó el conflicto por las Islas Malvinas. Se honra a los 649 argentinos caídos y a los veteranos que participaron del conflicto.'},
+ {md:'05-01', tipo:'feriado',   tit:'Día del Trabajador',
+  res:'Jornada internacional en reconocimiento a los trabajadores. Recuerda a los obreros de Chicago de 1886 que reclamaban la jornada de ocho horas.'},
+ {md:'05-25', tipo:'patria',    tit:'Día de la Revolución de Mayo',
+  res:'El 25 de mayo de 1810 se formó la Primera Junta de Gobierno en Buenos Aires, que desplazó al virrey y dio inicio al proceso que llevó a la independencia.'},
+ {md:'05-29', tipo:'efemeride', tit:'Día del Ejército Argentino',
+  res:'Recuerda la creación del Ejército por decreto de la Junta de Gobierno el 29 de mayo de 1810.'},
+ {md:'06-10', tipo:'patria',    tit:'Día de la Afirmación de los Derechos Argentinos sobre las Malvinas',
+  res:'El 10 de junio de 1829 se creó la Comandancia Política y Militar de las Islas Malvinas, acto de soberanía argentina sobre el archipiélago.'},
+ {md:'06-17', tipo:'patria',    tit:'Paso a la Inmortalidad del Gral. Martín Miguel de Güemes',
+  res:'Murió el 17 de junio de 1821 a causa de las heridas recibidas en combate. Defendió la frontera norte del país con la guerra de guerrillas, conteniendo las invasiones realistas.'},
+ {md:'06-20', tipo:'patria',    tit:'Paso a la Inmortalidad del Gral. Manuel Belgrano · Día de la Bandera',
+  res:'Belgrano murió el 20 de junio de 1820 en la pobreza. Creador de la bandera nacional, que enarboló por primera vez el 27 de febrero de 1812 a orillas del río Paraná.'},
+ {md:'07-09', tipo:'patria',    tit:'Día de la Independencia',
+  res:'El 9 de julio de 1816, en el Congreso de Tucumán, las Provincias Unidas del Río de la Plata declararon su independencia de la corona española.'},
+ {md:'07-20', tipo:'efemeride', tit:'Día del Amigo',
+  res:'Se celebra en recuerdo de la llegada del hombre a la Luna, el 20 de julio de 1969. En Argentina lo impulsó Enrique Febbraro como día de la amistad.'},
+ {md:'08-17', tipo:'patria',    tit:'Paso a la Inmortalidad del Gral. José de San Martín',
+  res:'El Libertador murió el 17 de agosto de 1850 en Boulogne-sur-Mer, Francia, tras casi treinta años de exilio. Cruzó los Andes y liberó Chile y Perú, y renunció al poder para no derramar sangre entre hermanos.'},
+ {md:'09-04', tipo:'efemeride', tit:'Día del Inmigrante',
+  res:'Recuerda el decreto de 1812 que invitaba a los extranjeros a poblar el país. Se celebra el aporte de las comunidades que formaron la Argentina.'},
+ {md:'09-11', tipo:'efemeride', tit:'Día del Maestro',
+  res:'Recuerda la muerte de Domingo Faustino Sarmiento, el 11 de septiembre de 1888. Impulsor de la educación pública, gratuita y obligatoria.'},
+ {md:'09-21', tipo:'efemeride', tit:'Día del Estudiante y de la Primavera',
+  res:'Coincide con el inicio de la primavera y con la repatriación de los restos de Sarmiento en 1888.'},
+ {md:'10-12', tipo:'patria',    tit:'Día del Respeto a la Diversidad Cultural',
+  res:'El 12 de octubre de 1492 Colón llegó a América. Desde 2010 la fecha invita a reflexionar sobre la diversidad de los pueblos y el respeto por las comunidades originarias.'},
+ {md:'11-10', tipo:'efemeride', tit:'Día de la Tradición',
+  res:'Se eligió el nacimiento de José Hernández, autor del Martín Fierro, el 10 de noviembre de 1834. Celebra las costumbres criollas y la cultura gauchesca.'},
+ {md:'11-20', tipo:'patria',    tit:'Día de la Soberanía Nacional',
+  res:'El 20 de noviembre de 1845, en la Vuelta de Obligado, las fuerzas de la Confederación resistieron a la flota anglofrancesa que forzaba la navegación del Paraná.'},
+ {md:'12-08', tipo:'feriado',   tit:'Día de la Inmaculada Concepción de María',
+  res:'Festividad religiosa católica. Feriado inamovible en todo el país.'},
+ {md:'12-10', tipo:'patria',    tit:'Día de la Restauración de la Democracia',
+  res:'El 10 de diciembre de 1983 asumió Raúl Alfonsín y se recuperó el orden constitucional tras la dictadura. Coincide con el Día Internacional de los Derechos Humanos.'},
+ {md:'12-25', tipo:'feriado',   tit:'Navidad',
+  res:'Festividad religiosa que celebra el nacimiento de Jesús. Feriado inamovible.'},
+];
+
+// Los que se mueven o los que fija el Gobierno, año por año.
+// Fuente: calendario oficial de feriados nacionales 2026.
+const FERIADOS_ANIO = {
+ 2026: [
+  {iso:'2026-02-16', tipo:'feriado', tit:'Carnaval',
+   res:'Lunes de Carnaval. Feriado inamovible; la fecha se mueve cada año según la Pascua.'},
+  {iso:'2026-02-17', tipo:'feriado', tit:'Carnaval',
+   res:'Martes de Carnaval. Feriado inamovible; la fecha se mueve cada año según la Pascua.'},
+  {iso:'2026-03-23', tipo:'feriado', tit:'Día no laborable con fines turísticos',
+   res:'Puente dispuesto por el Gobierno para armar un fin de semana largo. Es día no laborable, así que para el empleador es optativo.'},
+  {iso:'2026-04-03', tipo:'feriado', tit:'Viernes Santo',
+   res:'Festividad religiosa de la Semana Santa. La fecha cambia todos los años.'},
+  {iso:'2026-06-15', tipo:'feriado', tit:'Feriado por el Paso a la Inmortalidad del Gral. Güemes',
+   res:'La conmemoración es el 17 de junio; en 2026 el feriado se trasladó al lunes 15 para armar fin de semana largo.'},
+  {iso:'2026-07-10', tipo:'feriado', tit:'Día no laborable con fines turísticos',
+   res:'Puente dispuesto por el Gobierno, pegado al 9 de julio.'},
+  {iso:'2026-07-20', tipo:'feriado', tit:'Feriado por el festejo del Mundial',
+   res:'Feriado nacional dispuesto para 2026 con motivo del festejo mundialista.'},
+  {iso:'2026-10-12', tipo:'feriado', tit:'Feriado por el Día del Respeto a la Diversidad Cultural',
+   res:'En 2026 la fecha cae lunes, así que el feriado se toma el mismo día de la conmemoración.'},
+  {iso:'2026-11-23', tipo:'feriado', tit:'Feriado por el Día de la Soberanía Nacional',
+   res:'La conmemoración es el 20 de noviembre; en 2026 el feriado se trasladó al lunes 23.'},
+  {iso:'2026-12-07', tipo:'feriado', tit:'Día no laborable con fines turísticos',
+   res:'Puente dispuesto por el Gobierno, pegado al 8 de diciembre.'},
+ ],
+};
+
+// Todas las fechas de un año, ya resueltas: { 'YYYY-MM-DD': [ {tit,tipo,res}, ... ] }
+const _EFEM_CACHE = {};
+function efemDelAnio(anio){
+  if(_EFEM_CACHE[anio]) return _EFEM_CACHE[anio];
+  const out = {};
+  const poner = (iso, it)=>{ (out[iso] = out[iso] || []).push(it); };
+  EFEM_FIJAS.forEach(e=> poner(anio + '-' + e.md, {tit:e.tit, tipo:e.tipo, res:e.res}));
+  (FERIADOS_ANIO[anio] || []).forEach(e=> poner(e.iso, {tit:e.tit, tipo:e.tipo, res:e.res}));
+  _EFEM_CACHE[anio] = out;
+  return out;
+}
+function efemDelDia(iso){
+  if(!iso) return [];
+  return (efemDelAnio(Number(String(iso).slice(0,4))) || {})[String(iso).slice(0,10)] || [];
+}
+// Las que vienen en los próximos días (por defecto 15), y la de hoy si hay.
+function efemProximas(dias){
+  dias = dias || 15;
+  const hoy = (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+  const d0 = new Date(hoy + 'T12:00:00');
+  const out = [];
+  for(let i = 0; i <= dias; i++){
+    const d = new Date(d0); d.setDate(d.getDate() + i);
+    const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    efemDelDia(iso).forEach(e=> out.push(Object.assign({iso, faltan:i}, e)));
+  }
+  return out;
+}
+const EFEM_ICO = { patria:'🇦🇷', feriado:'📅', efemeride:'⭐' };
+const EFEM_ROT = { patria:'Fecha patria', feriado:'Feriado', efemeride:'Efeméride' };
+
+// ─── El cartelito del Panel de inicio ───
+function efemBloqueHTML(){
+  let prox;
+  try{ prox = efemProximas(15); }catch(_){ return ''; }
+  if(!prox.length) return '';
+  const esc = (typeof calEsc === 'function') ? calEsc : (s=>String(s==null?'':s));
+  const cuando = f => f === 0 ? 'Es hoy'
+    : (f === 1 ? 'Es mañana' : 'Faltan ' + f + ' días');
+  const tarjetas = prox.slice(0, 4).map(e=>{
+    const d = new Date(e.iso + 'T12:00:00');
+    let lab = d.toLocaleDateString('es-AR', {weekday:'long', day:'2-digit', month:'long'});
+    lab = lab.charAt(0).toUpperCase() + lab.slice(1);
+    return `<div class="ef-item ef-${e.tipo}${e.faltan===0?' ef-hoy':''}">
+      <div class="ef-cab">
+        <span class="ef-rot">${EFEM_ICO[e.tipo]||'⭐'} ${EFEM_ROT[e.tipo]||''}</span>
+        <span class="ef-falta">${cuando(e.faltan)}</span>
+      </div>
+      <div class="ef-tit">${esc(e.tit)}</div>
+      <div class="ef-fecha">${esc(lab)}</div>
+      <div class="ef-res">${esc(e.res)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="ini-sec ef-sec">
+    <div class="ini-tit">🇦🇷 Se acercan estas fechas</div>
+    <div class="ef-grid">${tarjetas}</div>
+    <div class="ef-pie">Se muestran las fechas patrias, los feriados y las efemérides de los próximos 15 días.
+      Todas están además marcadas en el calendario de más abajo.</div>
+  </div>`;
+}
+
+// v1.5.96 — Estilos de las tres funciones nuevas. Se inyectan una sola vez,
+// igual que hace el calendario, así cada bloque viaja junto a su código.
+function _n96Estilos(){
+  if(document.getElementById('estilos-v96')) return;
+  const st = document.createElement('style');
+  st.id = 'estilos-v96';
+  st.textContent = '\n\
+/* ══════════════════════════════════════════════════════════════════════════\n\
+   v1.5.96 — EFEMÉRIDES · PIZARRA DE HORARIO · ARCHIVO\n\
+   Todo con los colores de siempre de SUEP (azul institucional) y su par de\n\
+   modo claro, para que se lea en los dos.\n\
+   ══════════════════════════════════════════════════════════════════════════ */\n\
+\n\
+/* ── 1) Fechas que se acercan (Panel de inicio) ───────────────────────── */\n\
+.ef-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:9px}\n\
+.ef-item{position:relative;background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);\n\
+  border-left:4px solid var(--ec,#7aafd4);border-radius:13px;padding:11px 13px}\n\
+.ef-item.ef-patria{--ec:#5aa6dd}\n\
+.ef-item.ef-feriado{--ec:#c79a3a}\n\
+.ef-item.ef-efemeride{--ec:#a78bfa}\n\
+.ef-item.ef-hoy{box-shadow:0 0 0 2px rgba(90,166,221,.35)}\n\
+.ef-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}\n\
+.ef-rot{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:var(--ec,#7aafd4)}\n\
+.ef-falta{font-size:9.5px;font-weight:800;letter-spacing:.5px;color:#0c1a2c;\n\
+  background-color:#8fc6ee;border-radius:20px;padding:2px 8px;white-space:nowrap}\n\
+.ef-item.ef-hoy .ef-falta{background-color:#e8be62}\n\
+.ef-tit{font-size:13px;font-weight:700;color:#eef5fb;line-height:1.35;margin-bottom:2px}\n\
+.ef-fecha{font-size:11px;color:#8fb0cb;margin-bottom:6px}\n\
+.ef-res{font-size:11.5px;color:#b6cde0;line-height:1.5}\n\
+.ef-pie{margin-top:9px;font-size:10.5px;color:#8ba6bd;line-height:1.5}\n\
+.light-mode .ef-item{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}\n\
+.light-mode .ef-item.ef-patria{--ec:#1f6fb8}\n\
+.light-mode .ef-item.ef-feriado{--ec:#a5761c}\n\
+.light-mode .ef-item.ef-efemeride{--ec:#6d28d9}\n\
+.light-mode .ef-falta{background-color:#1f6fb8;color:#fff}\n\
+.light-mode .ef-item.ef-hoy .ef-falta{background-color:#a5761c;color:#fff}\n\
+.light-mode .ef-tit{color:#15314f}\n\
+.light-mode .ef-fecha{color:#4a6a88}\n\
+.light-mode .ef-res{color:#40607e}\n\
+.light-mode .ef-pie{color:#4f6d8a}\n\
+@media(max-width:640px){.ef-grid{grid-template-columns:1fr}}\n\
+\n\
+/* ── 2) Pizarra digital de horario de clases ──────────────────────────── */\n\
+.hr-wrap{padding:2px 0 20px}\n\
+.hr-head{margin-bottom:12px}\n\
+.hr-head h3{font-size:18px;font-weight:800;color:#eef5fb;letter-spacing:.2px}\n\
+.hr-head p{font-size:11.5px;color:#8fb0cb;margin-top:2px}\n\
+.hr-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;\n\
+  background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);border-radius:13px;\n\
+  padding:9px 12px;margin-bottom:10px}\n\
+.hr-sem{font-size:12.5px;font-weight:800;color:#cfe6f8;letter-spacing:.3px}\n\
+.hr-b{background:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.3);color:#d7e9f7;\n\
+  border-radius:9px;font-size:11.5px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:inherit}\n\
+.hr-b:hover:not(:disabled){background:rgba(122,175,212,.24);color:#fff}\n\
+.hr-b:disabled{opacity:.4;cursor:default}\n\
+.hr-aviso{font-size:11.5px;color:#b6cde0;background:rgba(90,166,221,.10);\n\
+  border:1px solid rgba(90,166,221,.28);border-radius:11px;padding:8px 12px;margin-bottom:12px;line-height:1.5}\n\
+.hr-aviso.hr-solo{background:rgba(122,175,212,.07);border-color:rgba(122,175,212,.2);color:#9fc0da}\n\
+.hr-dia{background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.15);border-radius:15px;\n\
+  padding:11px 12px;margin-bottom:11px}\n\
+.hr-dia.hr-es-hoy{border-color:#5aa6dd;box-shadow:0 0 0 1px rgba(90,166,221,.3)}\n\
+.hr-dia-cab{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-bottom:8px}\n\
+.hr-dia-nom{font-size:13px;font-weight:800;color:#eef5fb;text-transform:capitalize}\n\
+.hr-chip{font-size:9px;font-weight:800;letter-spacing:.8px;color:#0c1a2c;background-color:#8fc6ee;\n\
+  border-radius:5px;padding:1px 6px;margin-left:4px}\n\
+.hr-dia-der{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n\
+.hr-mod{font-size:10px;font-weight:700;color:#e8be62;background:rgba(199,154,58,.14);\n\
+  border:1px solid rgba(199,154,58,.4);border-radius:20px;padding:2px 9px}\n\
+.hr-reset{background:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.3);color:#d7e9f7;\n\
+  border-radius:8px;font-size:10.5px;font-weight:700;padding:4px 9px;cursor:pointer;font-family:inherit}\n\
+.hr-reset:hover{background:rgba(122,175,212,.24);color:#fff}\n\
+.hr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}\n\
+.hr-tabla{width:100%;border-collapse:separate;border-spacing:0;font-size:11.5px;min-width:760px}\n\
+.hr-tabla th,.hr-tabla td{border:1px solid rgba(122,175,212,.14);padding:7px 8px;\n\
+  vertical-align:middle;text-align:left;line-height:1.4}\n\
+.hr-tabla thead th{background:rgba(18,37,60,.9);color:#8fc6ee;font-weight:800;font-size:10.5px;\n\
+  text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;position:sticky;top:0;z-index:2}\n\
+.hr-tabla td.hr-hora{color:#8fc6ee;font-weight:800;white-space:nowrap;width:104px;\n\
+  background:rgba(18,37,60,.7)}\n\
+.hr-tabla td.hr-cel{color:#dae8f4;background:rgba(20,30,46,.6);position:relative}\n\
+.hr-tabla td.hr-comun{color:#e4eff8;background:rgba(90,166,221,.10);font-weight:600;\n\
+  text-align:center;position:relative}\n\
+.hr-tabla td.hr-vacio{color:#7796ae}\n\
+.hr-tabla tr.hr-hdr td{color:#e8be62;font-weight:800;font-size:10.5px;text-transform:uppercase;\n\
+  letter-spacing:.9px;text-align:center;background:rgba(199,154,58,.12)}\n\
+/* Casillero cambiado a mano */\n\
+.hr-tabla td.hr-toc{background:rgba(199,154,58,.16);color:#ffe6b8;box-shadow:inset 3px 0 0 #c79a3a}\n\
+.hr-x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.28);border:none;color:#ffd9a1;\n\
+  border-radius:5px;font-size:10px;line-height:1;padding:2px 4px;cursor:pointer;font-family:inherit}\n\
+.hr-x:hover{background:rgba(0,0,0,.5);color:#fff}\n\
+[onclick].hr-cel,[onclick].hr-comun{cursor:pointer}\n\
+[onclick].hr-cel:hover,[onclick].hr-comun:hover{background:rgba(90,166,221,.22)}\n\
+/* En el Panel de inicio */\n\
+.hr-rail{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;\n\
+  padding:10px 13px;margin:-2px -2px 10px;border-bottom:1px solid rgba(90,166,221,.35);\n\
+  background-image:linear-gradient(90deg,rgba(90,166,221,.18),rgba(90,166,221,.02))}\n\
+.hr-rail-tit{font-size:11.5px;text-transform:uppercase;letter-spacing:1.2px;font-weight:800;color:#8fc6ee}\n\
+.hr-rail-sub{font-size:11px;color:#b6cde0;text-transform:capitalize}\n\
+.hr-ver{background:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.3);color:#d7e9f7;\n\
+  border-radius:9px;font-size:11px;font-weight:700;padding:6px 11px;cursor:pointer;font-family:inherit;white-space:nowrap}\n\
+.hr-ver:hover{background:rgba(122,175,212,.22);color:#fff}\n\
+.hr-panel-mod{font-size:11px;color:#e8be62;margin:0 0 8px;padding:0 2px}\n\
+.hr-tabla.hr-chica{font-size:11px;min-width:700px}\n\
+.hr-tabla.hr-chica th,.hr-tabla.hr-chica td{padding:5px 7px}\n\
+.light-mode .hr-head h3{color:#15314f}\n\
+.light-mode .hr-head p{color:#4a6a88}\n\
+.light-mode .hr-nav,.light-mode .hr-dia{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}\n\
+.light-mode .hr-sem{color:#15314f}\n\
+.light-mode .hr-b,.light-mode .hr-reset,.light-mode .hr-ver{background:#eaf3fc;border-color:#cbe0f4;color:#14568f}\n\
+.light-mode .hr-b:hover:not(:disabled),.light-mode .hr-reset:hover,.light-mode .hr-ver:hover{background:#dcecfa;color:#0d3f6b}\n\
+.light-mode .hr-aviso{background:#eaf3fc;border-color:#cbe0f4;color:#22405c}\n\
+.light-mode .hr-aviso.hr-solo{background:#f4f8fc;border-color:#dbe6f1;color:#4a6a88}\n\
+.light-mode .hr-dia-nom{color:#15314f}\n\
+.light-mode .hr-chip{background-color:#1f6fb8;color:#fff}\n\
+.light-mode .hr-mod{color:#8a6410;background:#fdf5e4;border-color:#e6d2a4}\n\
+.light-mode .hr-tabla th,.light-mode .hr-tabla td{border-color:#e2eaf3}\n\
+.light-mode .hr-tabla thead th{background:#eaf1f8;color:#14568f}\n\
+.light-mode .hr-tabla td.hr-hora{color:#14568f;background:#f3f8fc}\n\
+.light-mode .hr-tabla td.hr-cel{color:#22405c;background:#fff}\n\
+.light-mode .hr-tabla td.hr-comun{color:#1c3b58;background:#f0f7fd}\n\
+.light-mode .hr-tabla td.hr-vacio{color:#7d97ad}\n\
+.light-mode .hr-tabla tr.hr-hdr td{color:#7a4a02;background:#fdf3dd}\n\
+.light-mode .hr-tabla td.hr-toc{background:#fdf3dd;color:#6b4a08;box-shadow:inset 3px 0 0 #c79a3a}\n\
+.light-mode .hr-x{background:rgba(0,0,0,.10);color:#7a4a02}\n\
+.light-mode [onclick].hr-cel:hover,.light-mode [onclick].hr-comun:hover{background:#e6f1fc}\n\
+.light-mode .hr-rail{border-bottom-color:#cbe0f4;background-image:linear-gradient(90deg,rgba(31,111,184,.14),rgba(31,111,184,.02))}\n\
+.light-mode .hr-rail-tit{color:#155a94}\n\
+.light-mode .hr-rail-sub{color:#456480}\n\
+.light-mode .hr-panel-mod{color:#8a6410}\n\
+@media(max-width:640px){\n\
+  .hr-nav{flex-direction:column;align-items:stretch}\n\
+  .hr-b,.hr-ver{width:100%;text-align:center}\n\
+  .hr-sem{text-align:center}\n\
+}\n\
+\n\
+/* ── v1.5.97 · Fila de días de la pizarra y letra más grande ────────────────\n\
+   Antes los cinco días iban uno abajo del otro: había que bajar mucho y la\n\
+   letra quedaba chica. Ahora se elige el día arriba y se ve uno a la vez, con\n\
+   la letra más grande. */\n\
+.hr-tabs{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}\n\
+.hr-tabs::-webkit-scrollbar{display:none}\n\
+.hr-tab{position:relative;flex:1;min-width:104px;display:flex;flex-direction:column;align-items:flex-start;\n\
+  gap:1px;background:rgba(20,30,46,.92);border:1px solid rgba(122,175,212,.16);border-radius:12px;\n\
+  padding:9px 12px 11px;cursor:pointer;font-family:inherit;text-align:left;\n\
+  transition:background .15s,border-color .15s,transform .15s}\n\
+.hr-tab:hover{background:rgba(28,42,64,.98);border-color:rgba(122,175,212,.34);transform:translateY(-1px)}\n\
+.hr-tab-dia{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:#8fb0cb}\n\
+.hr-tab-num{font-size:15px;font-weight:800;color:#e8f2fa;line-height:1.15}\n\
+.hr-tab-hoy{font-size:8.5px;font-weight:800;letter-spacing:.8px;color:#0c1a2c;\n\
+  background-color:#8fc6ee;border-radius:5px;padding:1px 5px;margin-top:2px}\n\
+.hr-tab-pto{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;\n\
+  background-color:#e8be62;box-shadow:0 0 8px rgba(232,190,98,.8)}\n\
+.hr-tab.sel{background-color:#2f77c0;background-image:linear-gradient(135deg,#3f8fd4,#2563b8);\n\
+  border-color:#8fd0ff;box-shadow:0 5px 16px rgba(63,143,212,.35)}\n\
+.hr-tab.sel .hr-tab-num{color:#fff}\n\
+.hr-tab.sel .hr-tab-dia{color:#dceafa}\n\
+.light-mode .hr-tab{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}\n\
+.light-mode .hr-tab-dia{color:#4a6a88}\n\
+.light-mode .hr-tab-num{color:#15314f}\n\
+.light-mode .hr-tab-hoy{background-color:#1f6fb8;color:#fff}\n\
+.light-mode .hr-tab.sel{background-color:#1a6199;background-image:linear-gradient(135deg,#1f6fb8,#155a94);border-color:#1f6fb8}\n\
+.light-mode .hr-tab.sel .hr-tab-num{color:#fff}\n\
+.light-mode .hr-tab.sel .hr-tab-dia{color:#dceafa}\n\
+/* La letra de la grilla, más grande en la pestaña */\n\
+.hr-tabla.hr-grande{font-size:13.5px;min-width:820px}\n\
+.hr-tabla.hr-grande th,.hr-tabla.hr-grande td{padding:10px 11px}\n\
+.hr-tabla.hr-grande thead th{font-size:11.5px}\n\
+.hr-tabla.hr-grande td.hr-hora{font-size:12.5px;width:118px}\n\
+.hr-dia.hr-uno{padding:12px 13px 14px}\n\
+.hr-dia.hr-uno .hr-dia-nom{font-size:14.5px}\n\
+.hr-dia.hr-uno .hr-aviso{margin:8px 0 11px}\n\
+@media(max-width:640px){\n\
+  .hr-tab{min-width:88px;padding:8px 10px 10px}\n\
+  .hr-tab-num{font-size:14px}\n\
+  .hr-tabla.hr-grande{font-size:12.5px;min-width:700px}\n\
+  .hr-tabla.hr-grande th,.hr-tabla.hr-grande td{padding:8px 9px}\n\
+}\n\
+\n\
+/* ── v1.5.98 · Un color para cada sección del horario ───────────────────────\n\
+   Las cinco secciones se distinguían solo por la posición de la columna, y en\n\
+   una grilla de seis columnas es fácil perderse de renglón. Ahora cada una\n\
+   tiene su color: el encabezado pintado y una barrita al costado de cada\n\
+   casillero. El fondo se tiñe apenas (8%) para no tapar la letra: el contraste\n\
+   del texto queda igual que antes. */\n\
+.hr-tabla th.s1,.hr-tabla td.s1{--sc:#5aa6dd}\n\
+.hr-tabla th.s2,.hr-tabla td.s2{--sc:#34d399}\n\
+.hr-tabla th.s3,.hr-tabla td.s3{--sc:#a78bfa}\n\
+.hr-tabla th.s4,.hr-tabla td.s4{--sc:#e8be62}\n\
+.hr-tabla th.s5,.hr-tabla td.s5{--sc:#f472b6}\n\
+.hr-tabla thead th.s1,.hr-tabla thead th.s2,.hr-tabla thead th.s3,\n\
+.hr-tabla thead th.s4,.hr-tabla thead th.s5{\n\
+  color:var(--sc);border-top:3px solid var(--sc)}\n\
+.hr-tabla td.s1,.hr-tabla td.s2,.hr-tabla td.s3,.hr-tabla td.s4,.hr-tabla td.s5{\n\
+  box-shadow:inset 3px 0 0 var(--sc)}\n\
+.hr-tabla td.s1{background-color:rgba(90,166,221,.08)}\n\
+.hr-tabla td.s2{background-color:rgba(52,211,153,.08)}\n\
+.hr-tabla td.s3{background-color:rgba(167,139,250,.08)}\n\
+.hr-tabla td.s4{background-color:rgba(232,190,98,.08)}\n\
+.hr-tabla td.s5{background-color:rgba(244,114,182,.08)}\n\
+/* El casillero cambiado a mano manda sobre el color de la sección, para que\n\
+   siga siendo fácil ver qué se tocó. */\n\
+.hr-tabla td.hr-toc{box-shadow:inset 3px 0 0 #c79a3a}\n\
+/* En modo claro los mismos colores, un tono más oscuro para que se lean. */\n\
+.light-mode .hr-tabla th.s1,.light-mode .hr-tabla td.s1{--sc:#1f6fb8}\n\
+.light-mode .hr-tabla th.s2,.light-mode .hr-tabla td.s2{--sc:#15803d}\n\
+.light-mode .hr-tabla th.s3,.light-mode .hr-tabla td.s3{--sc:#6d28d9}\n\
+.light-mode .hr-tabla th.s4,.light-mode .hr-tabla td.s4{--sc:#a5761c}\n\
+.light-mode .hr-tabla th.s5,.light-mode .hr-tabla td.s5{--sc:#be185d}\n\
+.light-mode .hr-tabla td.s1{background-color:rgba(31,111,184,.06)}\n\
+.light-mode .hr-tabla td.s2{background-color:rgba(21,128,61,.06)}\n\
+.light-mode .hr-tabla td.s3{background-color:rgba(109,40,217,.06)}\n\
+.light-mode .hr-tabla td.s4{background-color:rgba(165,118,28,.07)}\n\
+.light-mode .hr-tabla td.s5{background-color:rgba(190,24,93,.06)}\n\
+/* Y la fila de días del horario también toma color por día, para que la\n\
+   semana no sea toda igual. */\n\
+.hr-tab:nth-child(1){--dc:#5aa6dd}\n\
+.hr-tab:nth-child(2){--dc:#34d399}\n\
+.hr-tab:nth-child(3){--dc:#a78bfa}\n\
+.hr-tab:nth-child(4){--dc:#e8be62}\n\
+.hr-tab:nth-child(5){--dc:#f472b6}\n\
+.hr-tab{border-top:3px solid var(--dc,#5aa6dd)}\n\
+.hr-tab .hr-tab-dia{color:var(--dc,#8fb0cb)}\n\
+.hr-tab.sel .hr-tab-dia{color:#dceafa}\n\
+.light-mode .hr-tab:nth-child(1){--dc:#1f6fb8}\n\
+.light-mode .hr-tab:nth-child(2){--dc:#15803d}\n\
+.light-mode .hr-tab:nth-child(3){--dc:#6d28d9}\n\
+.light-mode .hr-tab:nth-child(4){--dc:#a5761c}\n\
+.light-mode .hr-tab:nth-child(5){--dc:#be185d}\n\
+\n\
+/* ── 3) Archivo ───────────────────────────────────────────────────────── */\n\
+.ar-wrap{padding:2px 0 20px}\n\
+.ar-head h3{font-size:18px;font-weight:800;color:#eef5fb}\n\
+.ar-head p{font-size:11.5px;color:#8fb0cb;margin-top:2px}\n\
+.ar-aviso{font-size:12px;color:#b6cde0;line-height:1.55;background:rgba(199,154,58,.10);\n\
+  border:1px solid rgba(199,154,58,.35);border-radius:12px;padding:10px 13px;margin:12px 0 14px}\n\
+.ar-aviso b{color:#ffe6b8}\n\
+.ar-tit{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;\n\
+  color:#8fc6ee;margin:16px 0 7px}\n\
+.ar-lista{display:flex;flex-direction:column;gap:7px}\n\
+.ar-lista.ar-scroll{max-height:420px;overflow-y:auto;padding-right:2px}\n\
+.ar-item,.ar-op{display:flex;align-items:center;gap:10px;background:rgba(20,30,46,.92);\n\
+  border:1px solid rgba(122,175,212,.15);border-radius:12px;padding:9px 12px}\n\
+.ar-item{border-left:3px solid #c79a3a}\n\
+.ar-ico{font-size:17px;flex:none}\n\
+.ar-txt{flex:1;min-width:0}\n\
+.ar-txt b{display:block;font-size:12.5px;font-weight:700;color:#eef5fb;\n\
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n\
+.ar-txt small{display:block;font-size:10.5px;color:#8fb0cb;margin-top:1px}\n\
+.ar-acts{display:flex;gap:6px;flex-wrap:wrap;flex:none}\n\
+.ar-b{border-radius:9px;font-size:11px;font-weight:700;padding:6px 11px;cursor:pointer;\n\
+  font-family:inherit;white-space:nowrap;border:1px solid transparent}\n\
+.ar-arch{background:rgba(199,154,58,.14);border-color:rgba(199,154,58,.42);color:#e8be62}\n\
+.ar-arch:hover{background:rgba(199,154,58,.26);color:#ffe6b8}\n\
+.ar-rest{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.38);color:#7ee2a4}\n\
+.ar-rest:hover{background:rgba(74,222,128,.22);color:#c8f7dc}\n\
+.ar-ver{background:rgba(122,175,212,.12);border-color:rgba(122,175,212,.3);color:#d7e9f7}\n\
+.ar-ver:hover{background:rgba(122,175,212,.24);color:#fff}\n\
+.ar-vacio{font-size:11.5px;color:#8ba6bd;font-style:italic;padding:9px 12px;\n\
+  border:1px dashed rgba(122,175,212,.2);border-radius:12px}\n\
+.light-mode .ar-head h3{color:#15314f}\n\
+.light-mode .ar-head p{color:#4a6a88}\n\
+.light-mode .ar-aviso{background:#fdf3dd;border-color:#e6d2a4;color:#5d4409}\n\
+.light-mode .ar-aviso b{color:#3d2c04}\n\
+.light-mode .ar-tit{color:#155a94}\n\
+.light-mode .ar-item,.light-mode .ar-op{background:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.05)}\n\
+.light-mode .ar-item{border-left-color:#c79a3a}\n\
+.light-mode .ar-txt b{color:#15314f}\n\
+.light-mode .ar-txt small{color:#4a6a88}\n\
+.light-mode .ar-arch{background:#fdf3dd;border-color:#e6d2a4;color:#7a4a02}\n\
+.light-mode .ar-arch:hover{background:#fbe9c8;color:#5d3702}\n\
+.light-mode .ar-rest{background:#e4f8ec;border-color:#a9dcbe;color:#12693a}\n\
+.light-mode .ar-rest:hover{background:#d2f2e0;color:#0b4d29}\n\
+.light-mode .ar-ver{background:#eaf3fc;border-color:#cbe0f4;color:#14568f}\n\
+.light-mode .ar-ver:hover{background:#dcecfa;color:#0d3f6b}\n\
+.light-mode .ar-vacio{color:#4f6d8a;border-color:#dbe6f1}\n\
+@media(max-width:640px){\n\
+  .ar-item,.ar-op{flex-wrap:wrap}\n\
+  .ar-acts{width:100%}\n\
+  .ar-b{flex:1;text-align:center}\n\
+}\n\
+';
+  document.head.appendChild(st);
+}
+function horEnsureEstilos(){ _n96Estilos(); }
+function archEnsureEstilos(){ _n96Estilos(); }
+function efemEnsureEstilos(){ _n96Estilos(); }
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.96 — PIZARRA DIGITAL DE HORARIO DE CLASES
+// ──────────────────────────────────────────────────────────────────────────
+// El horario de la 2ª Convocatoria, de lunes a viernes, por secciones (1 a 5),
+// tal cual el Excel. Arranca el LUNES 24/08/2026 y desde ahí se reparte por
+// fechas: cada semana muestra su lunes, martes, miércoles, jueves y viernes
+// con la fecha que le toca.
+//
+// EDITABLE: el horario base es la plantilla del Excel, pero la realidad cambia
+// (un docente no viene, se corre una materia). Entonces:
+//   · Mely, Eliana Velázquez y Sergio Bascur pueden tocar cualquier casillero.
+//   · Lo que cambian se guarda POR FECHA, no en la plantilla. Así el cambio
+//     del martes 25/08 no le pisa el horario a los demás martes.
+//   · Se guarda en la nube igual que todo lo demás, así lo ven todos.
+//   · Cada casillero cambiado queda marcado y se puede volver a la plantilla
+//     con un botón, sin tener que recordar qué decía antes.
+// LO VE TODO EL MUNDO, en la pestaña y en el Panel de inicio (desde el 24/08).
+// ══════════════════════════════════════════════════════════════════════════
+const HOR_BASE = {"LUN":[{"h":"07:00 a 07:45","t":"HORA DE ESTUDIO"},
+  {"h":"08:10 a 09:30","c":["LEGISLACION POLICIAL-CRIO INSP ® ALBORNOZ","GESTION DE LA EMOCIONES-SGTO QUINTERO","GESTION DE LA EMOCIONES-SGTO QUINTERO","INVESTIGACIÒN CRIMINAL-SUBCRIO ACEVEDO","ALFABETIZACIÒN ACADÈMICA-OF. INSP CASTILLO"]},
+  {"h":"09:40 a 11:10","c":["GESTION DE LA EMOCIONES-SGTO QUINTERO","LEGISLACION POLICIAL-CRIO INSP ® ALBORNOZ","LEGISLACIÒN POLICIAL-CRIO MUÑIZ","EDUCACIÓN FISICA","INVESTIGACIÒN CRIMINAL-SUBCRIO ACEVEDO"]},
+  {"h":"11:10 a 11:30","t":"REFRIGERIO"},
+  {"h":"11:30 a 13:00","c":["DERECHO CONTRAVENCIONAL-VEGA CLAUDIA","DERECHO CONTRAVENCIONAL-VEGA CLAUDIA","DERECHOS HUMANOS-OF. PPAL CATRICURA","ORDEN CERRADO","DERECHO CONTRAVENCIONAL-VEGA CLAUDIA"]},
+  {"h":"13:00 A 14:20","t":"ALMUERZO (FIN DEL HORARIO ACADÉMICO)"},
+  {"hdr":"SECCIONES (INICIO DEL HORARIO ACADÉMICO)"},
+  {"h":"14:30 a 16:00","c":["DDHH CABEZAS CLAUDIA","ORDEN CERRADO","ARMA Y TIRO-CABO PRIMERO MENDOZA","DERECHO GENERAL-SEGURA","DERECHO GENERAL-SEGURA"]},
+  {"h":"16:00 a 16:10","t":"RECREO"},
+  {"h":"16:10 a 17:50","c":["BASTÒN RIGIDO POLICIAL-SGTO ACUÑA","BASTÒN RIGIDO POLICIAL-SGTO ACUÑA","ARMA Y TIRO-CABO PRIMERO MENDOZA","PROCEDIMIENTOS POLICIALES-SUBOF. PPAL REMENTERIA","BASTÒN RIGIDO POLICIAL-SGTO ACUÑA"]},
+  {"h":"18:00 a 18:30","t":"MERIENDA"},
+  {"h":"18:30 a 19:50","c":["BASTÒN RIGIDO POLICIAL-SGTO ACUÑA","BASTÒN RIGIDO POLICIAL-SGTO ACUÑA","ARMA Y TIRO-CABO PRIMERO MENDOZA","PROCEDIMIENTOS POLICIALES-SUBOF. PPAL REMENTERIA","BASTÒN RIGIDO POLICIAL-SGTO ACUÑA"]},
+  {"h":"20:00 a 20:40","t":"ORDEN INTERNO"},
+  {"h":"20:45 A 21:45","t":"CENA"},
+  {"h":"22:00 A 22:45","t":"HORA DE ESTUDIO"}],
+"MAR":[{"h":"07:00 a 07:45","t":"HORA DE ESTUDIO"},
+  {"h":"08:10 a 09:30","c":["DOCTRINA Y FORMACIÒN POLICIAL-SUBCRIO MONSALVEZ","DOCTRINA Y FORMACIÒN POLICIAL-CRIO MAYOR ® CALFUQUEO","DOCTRINA Y FORMACIÒN POLICIAL-CRIO MAYOR ® CALFUQUEO","DOCTRINA Y FORMACIÒN POLICIAL-CRIO INSP. SIERRALTA","PRIMEROS AUXILIOS-SUBOFICIAL MAYOR ® KASRTAN"]},
+  {"h":"09:40 a 11:10","t":"LEY MICAELA"},
+  {"h":"11:10 a 11:30","t":"REFRIGERIO"},
+  {"h":"11:30 a 13:00","t":"LEY MICAELA"},
+  {"h":"13:00 A 14:20","t":"ALMUERZO (FIN DEL HORARIO ACADÉMICO)"},
+  {"hdr":"SECCIONES (INICIO DEL HORARIO ACADÉMICO)"},
+  {"h":"14:30 a 16:00","c":["ARMA Y TIRO -  CABO 1° MUÑOZ BRAIAN","EDUCACIÒN FISICA-ALFONSO DANIEL","EDUCACIÒN FISICA-ALFONSO DANIEL","EDUCACIÒN FISICA-ALFONSO DANIEL","ORDEN CERRADO"]},
+  {"h":"16:00 a 16:10","t":"RECREO"},
+  {"h":"16:10 a 17:50","c":["ARMA Y TIRO -  CABO 1° MUÑOZ BRAIAN","PROCEDIMIENTOS POLICIALES-OF PPAL EPULEF","BASTÒN RIGIDO POLICIAL-SGTO 1° OSES","BASTÒN RIGIDO POLICIAL-SGTO 1° OSES","ORDEN CERRADO"]},
+  {"h":"18:00 a 18:30","t":"MERIENDA"},
+  {"h":"18:30 a 19:50","t":"TALLER ANTINARCÓTICOS/TCP"},
+  {"h":"20:00 a 20:40","t":"ORDEN INTERNO"},
+  {"h":"20:45 A 21:45","t":"CENA"},
+  {"h":"22:00 A 22:45","t":"HORA DE ESTUDIO"}],
+"MIE":[{"h":"07:00 a 07:45","t":"HORA DE ESTUDIO"},
+  {"h":"08:10 a 09:30","c":["LEGISLACION POLICIAL-CRIO INSP ® ALBORNOZ","PRIMEROS AUXILIOS-SUBOFICIAL MAYOR ® KASRTAN","TRANSITO Y SEGURIDAD VIAL-SGTO MOLINA","TRANSITO Y SEGURIDAD VIAL-SGTO NAVARRETE","LEGISLACIÒN POLICIAL-SUBCRIO HERNANDEZ"]},
+  {"h":"09:40 a 11:10","c":["TRANSITO Y SEGURIDAD VIAL-SGTO. PRIMERO GUAYQUIMIL","LEGISLACION POLICIAL-CRIO INSP ® ALBORNOZ","PRIMEROS AUXILIOS-SUBOFICIAL MAYOR ® KASRTAN","LEGISLACIÒN POLICIAL-CRIO SURA","TRANSITO Y SEGURIDAD VIAL-SGTO NAVARRETE"]},
+  {"h":"11:10 a 11:30","t":"REFRIGERIO"},
+  {"h":"11:30 a 13:00","c":["EDUCACIÓN FISICA","TRANSITO Y SEGURIDAD VIAL-SGTO. PRIMERO GUAYQUIMIL","EDUCACIÓN FISICA","GESTION DE LAS EMOCIONES -SGTO QUINTERO","GESTION DE LAS EMOCIONES -SGTO QUINTERO"]},
+  {"h":"13:00 A 14:20","t":"ALMUERZO (FIN DEL HORARIO ACADÉMICO)"},
+  {"hdr":"SECCIONES (INICIO DEL HORARIO ACADÉMICO)"},
+  {"h":"14:30 a 16:00","c":["DERECHO GENERAL-SEGURA","ARMA Y TIRO- OF INSPECTOR CALDERON","PROCEDIMIENTOS POLICIALES-SUBOF PPAL MERINO","ARMA Y TIRO--SGTO 1° RAMIREZ","DDHH  CABEZAS CLAUDIA"]},
+  {"h":"16:00 a 16:10","t":"RECREO"},
+  {"h":"16:30 a 17:50","c":["PROCEDIMIENTOS POLICIALES-SUBCRIO CARDOSO","ARMA Y TIRO- OF INSPECTOR CALDERON","PROCEDIMIENTOS POLICIALES-SUBOF PPAL MERINO","ARMA Y TIRO--SGTO 1° RAMIREZ","PROCEDIMIENTOS POLICIALES-SUBOF. PPAL REMENTERIA"]},
+  {"h":"18:00 a 18:30","t":"MERIENDA"},
+  {"h":"18:30 a 19:50","c":["PROCEDIMIENTOS POLICIALES-SUBCRIO CARDOSO","ARMA Y TIRO- OF INSPECTOR CALDERON","ORDEN CERRADO","ARMA Y TIRO--SGTO 1° RAMIREZ","PROCEDIMIENTOS POLICIALES-SUBOF. PPAL REMENTERIA"]},
+  {"h":"20:00 a 20:30","t":"ORDEN INTERNO"},
+  {"h":"20:30 A 21:45","t":"CENA"},
+  {"h":"22:00 A 22:45","t":"HORA DE ESTUDIO"}],
+"JUE":[{"h":"07:00 a 07:45","t":"HORA DE ESTUDIO"},
+  {"h":"08:10 a 09:30","c":["INVESTIGACIÒN CRIMINAL-OF. SUBINSPECTOR ROMERO YOSELI","DOCTRINA Y FORMACIÒN POLICIAL-CRIO MAYOR ® CALFUQUEO","ALFABETIZACIÒN ACADÈMICA-SUBOF PPAL MONJE","ORDEN CERRADO","ARMA Y TIRO-SGTO AYTE GUTIERREZ"]},
+  {"h":"09:40 a 11:10","c":["ORDEN CERRADO","DERECHOS HUMANOS-CRIO. PARRA","DOCTRINA Y FORMACIÒN POLICIAL-CRIO MAYOR ® CALFUQUEO","ALFABETIZACIÒN ACADÈMICA-SUBOF PPAL MONJE","ARMA Y TIRO-SGTO AYTE GUTIERREZ"]},
+  {"h":"11:10 a 11:30","t":"REFRIGERIO"},
+  {"h":"11:30 a 13:00","c":["DOCTRINA Y FORMACIÒN POLICIAL-SUBCRIO MONSALVEZ","ALFABETIZACIÒN ACADÈMICA-OF INSP YAÑEZ","LEGISLACIÒN POLICIAL-CRIO MUÑIZ","DERECHO HUMANOS-SUBCRIO. HUENTECOL","ARMA Y TIRO-SGTO AYTE GUTIERREZ"]},
+  {"h":"13:00 A 14:20","t":"ALMUERZO (FIN DEL HORARIO ACADÉMICO)"},
+  {"hdr":"SECCIONES (INICIO DEL HORARIO ACADÉMICO)"},
+  {"h":"14:30 a 15:30","c":["EDUCACIÒN FISICA-ALFONSO DANIEL","DERECHO GENERAL-LAVEILHE","DERECHO GENERAL-LAVEILHE","DOCTRINA Y FORMACIÒN POLICIAL-CRIO INSP. SIERRALTA","EDUCACIÒN FISICA-ALFONSO DANIEL"]},
+  {"h":"15:30 a 15:45","t":"RECREO"},
+  {"h":"15:50 a 17:10","c":["ARMA Y TIRO -  CABO 1° MUÑOZ BRAIAN","PROCEDIMIENTOS POLICIALES-OF PPAL EPULEF","BASTÒN RIGIDO POLICIAL-SGTO 1° OSES","BASTÒN RIGIDO POLICIAL-SGTO 1° OSES","ORDEN CERRADO"]},
+  {"h":"17:15 a 17:30","t":"MERIENDA"},
+  {"h":"17:40 a 19:00","c":["DEFENSA POLICIAL-SGTO PRIMERO CATRIEL","DEFENSA POLICIAL-SGTO PRIMERO CATRIEL","DEFENSA POLICIAL-SGTO PRIMERO CATRIEL","DEFENSA POLICIAL-SGTO GRIGOR","DEFENSA POLICIAL-SGTO GRIGOR"]},
+  {"h":"19:10 a 20:00","t":"HORA DE ESTUDIO"},
+  {"h":"20:00 a 20:40","t":"ORDEN INTERNO"},
+  {"h":"20:45 A 21:45","t":"CENA"},
+  {"h":"22:00 A 22:45","t":"HORA DE ESTUDIO"}],
+"VIE":[{"h":"07:00 a 07:45","t":"HORA DE ESTUDIO"},
+  {"h":"08:10 a 09:30","c":["PRIMEROS AUXILIOS Y RCP- CABO QUINTANA MARGARITA","INVESTIGACIÒN CRIMINAL-SGTO GONZALEZ","PRIMEROS AUXILIOS-SUBOFICIAL MAYOR ® KASRTAN","LEGISLACIÒN POLICIAL-CRIO SURA","LEGISLACIÒN POLICIAL-SUBCRIO HERNANDEZ"]},
+  {"h":"09:40 a 11:10","c":["ORDEN CERRADO","EDUCACIÓN FISICA","INVESTIGACIÒN CRIMINAL-SGTO GONZALEZ","PRIMEROS AUXILIOS- JELVEZ","DOCTRINA Y FORMACIÒN POLICIAL-CRIO ALVAREZ"]},
+  {"h":"11:10 a 11:30","t":"REFRIGERIO"},
+  {"h":"11:30 a 13:00","c":["ALFABETIZACION ACADEMICA - SARGENTO ESCOBAR GIULIANA","ORDEN CERRADO","DERECHO CONTRAVENCIONAL-VEGA CLAUDIA","DERECHO CONTRAVENCIONAL-VEGA CLAUDIA","DOCTRINA Y FORMACIÒN POLICIAL-CRIO ALVAREZ"]},
+  {"h":"13:00 A 14:20","t":"ALMUERZO (FIN DEL HORARIO ACADÉMICO)"},
+  {"hdr":"SECCIONES (INICIO DEL HORARIO ACADÉMICO)"},
+  {"h":"14:30 a 16:00","c":["ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO"]},
+  {"h":"16:00 a 16:10","t":"RECREO"},
+  {"h":"16:10 a 17:50","c":["ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO","ORDEN CERRADO"]},
+  {"h":"18:00 a 18:30","t":"ALISTAMIENTO PARA FRANCO DE SERVICIO"},
+  {"h":"20:00 a 20:40","t":"ORDEN INTERNO"},
+  {"h":"20:45 A 21:45","t":"CENA"},
+  {"h":"22:00 A 22:45","t":"HORA DE ESTUDIO"}]};
+
+const HOR_KEY    = 'suep_horario_clases';
+const HOR_DESDE  = '2026-08-24';        // primer lunes del horario
+const HOR_DIAS   = ['LUN','MAR','MIE','JUE','VIE'];
+const HOR_NOM    = { LUN:'Lunes', MAR:'Martes', MIE:'Miércoles', JUE:'Jueves', VIE:'Viernes' };
+// Quiénes pueden editar, además de las administradoras.
+const HOR_EDITAN = ['melina.lafuente','eliana.velazquez','sergio.bascur'];
+
+let HOR_SEM = null;   // ISO del lunes de la semana que se está mirando
+let HOR_DIA = null;   // v1.5.97 — ISO del día que se está mirando
+
+function horEsc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function horHoy(){
+  return (typeof todayISO === 'function') ? todayISO() : new Date().toISOString().slice(0,10);
+}
+function horISO(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function horParse(iso){ const d = new Date(String(iso)+'T12:00:00'); return isNaN(d) ? null : d; }
+function horSumar(iso, n){ const d = horParse(iso); if(!d) return iso; d.setDate(d.getDate()+n); return horISO(d); }
+// El lunes de la semana de una fecha (domingo cuenta para la semana siguiente).
+function horLunesDe(iso){
+  const d = horParse(iso); if(!d) return HOR_DESDE;
+  const dow = d.getDay();                       // 0 domingo … 6 sábado
+  const corr = (dow === 0) ? 1 : (1 - dow);     // el domingo mira la semana que entra
+  return horSumar(iso, corr);
+}
+function horPuedeEditar(){
+  try{
+    if(!CU) return false;
+    if(CU.permiso === 'admin') return true;
+    return HOR_EDITAN.includes(CU.usuario);
+  }catch(_){ return false; }
+}
+function horVigente(){ return horHoy() >= HOR_DESDE; }
+
+// ─── Lo guardado: { 'YYYY-MM-DD': { 'fila|seccion': 'texto' }, ... } ───
+function horGuardado(){
+  try{ return JSON.parse(localStorage.getItem(HOR_KEY) || '{}') || {}; }catch(_){ return {}; }
+}
+function horGrabar(todo){
+  try{ localStorage.setItem(HOR_KEY, JSON.stringify(todo)); }catch(_){}
+  try{ if(typeof syncToSupabase === 'function') syncToSupabase(HOR_KEY, todo); }catch(_){}
+}
+// El horario de un día concreto: plantilla + los cambios de esa fecha.
+function horDelDia(iso){
+  const d = horParse(iso); if(!d) return null;
+  const dia = HOR_DIAS[d.getDay() - 1];
+  if(!dia) return null;                          // sábado y domingo no tienen clases
+  const base = HOR_BASE[dia] || [];
+  const camb = horGuardado()[iso] || {};
+  return base.map((f, i)=>{
+    if(f.hdr) return { hdr:f.hdr };
+    if(typeof f.t === 'string'){
+      const k = i + '|T';
+      return { h:f.h, t: (k in camb) ? camb[k] : f.t, tocado: (k in camb), fila:i, comun:true };
+    }
+    const cel = (f.c || []).map((v, s)=>{
+      const k = i + '|' + s;
+      return { v: (k in camb) ? camb[k] : v, tocado: (k in camb), fila:i, sec:s };
+    });
+    return { h:f.h, cel, fila:i };
+  });
+}
+function horCuantosCambios(iso){
+  return Object.keys(horGuardado()[iso] || {}).length;
+}
+
+// ─── Editar un casillero ───
+function horEditar(iso, fila, sec){
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana y Sergio pueden cambiar el horario.'); return; }
+  const filas = horDelDia(iso); if(!filas) return;
+  const f = filas[fila]; if(!f) return;
+  const actual = (sec === 'T') ? f.t : (f.cel[Number(sec)] || {}).v;
+  const donde = (sec === 'T') ? 'todas las secciones' : ('la sección ' + (Number(sec)+1));
+  const txt = prompt('Horario de ' + f.h + ' · ' + donde + '\n\n'
+    + 'Escribí la materia y el docente. Si ese casillero queda libre, borralo todo y aceptá.', actual || '');
+  if(txt === null) return;
+  const todo = horGuardado();
+  const dia = todo[iso] = todo[iso] || {};
+  dia[fila + '|' + sec] = txt.trim();
+  horGrabar(todo);
+  horRefrescar();
+}
+// Volver un casillero a lo que dice la plantilla del Excel.
+function horVolverBase(iso, fila, sec){
+  if(!horPuedeEditar()) return;
+  const todo = horGuardado();
+  if(todo[iso]){
+    delete todo[iso][fila + '|' + sec];
+    if(!Object.keys(todo[iso]).length) delete todo[iso];
+  }
+  horGrabar(todo);
+  horRefrescar();
+}
+// Volver TODO un día a la plantilla.
+function horVolverDia(iso){
+  if(!horPuedeEditar()) return;
+  const n = horCuantosCambios(iso);
+  if(!n){ alert('Ese día no tiene cambios: ya está igual que la plantilla.'); return; }
+  if(!confirm('¿Volver el día completo a la plantilla del horario?\n\n'
+    + 'Se deshacen ' + n + (n===1 ? ' cambio' : ' cambios') + ' de esa fecha.')) return;
+  const todo = horGuardado();
+  delete todo[iso];
+  horGrabar(todo);
+  horRefrescar();
+}
+// v1.5.97 — Elegir un día de la fila de arriba.
+function horVerDia(iso){ HOR_DIA = iso; horRefrescar(); }
+function horSemana(delta){
+  HOR_SEM = horSumar(HOR_SEM || horLunesDe(horHoy()), delta * 7);
+  if(HOR_SEM < HOR_DESDE) HOR_SEM = HOR_DESDE;
+  horRefrescar();
+}
+function horRefrescar(){
+  const t = document.getElementById('horTabla');
+  if(t){ t.innerHTML = horTablaHTML(); }
+  const b = document.getElementById('horBox');
+  if(b){ b.innerHTML = horBloqueHTML(); }
+}
+
+// ─── La grilla de la semana (la pestaña) ───
+// v1.5.97 — Se muestra UN día a la vez, elegido en la fila de arriba. Antes
+// estaban los cinco días uno abajo del otro y había que bajar mucho para
+// encontrar el que se buscaba.
+function horFilasHTML(iso, puede, chica){
+  const filas = horDelDia(iso) || [];
+  return filas.map(f=>{
+    if(f.hdr) return `<tr class="hr-hdr"><td colspan="6">${horEsc(f.hdr)}</td></tr>`;
+    if(f.comun){
+      const cel = (puede && !chica)
+        ? `<td colspan="5" class="hr-comun${f.tocado?' hr-toc':''}"
+             onclick="horEditar('${iso}',${f.fila},'T')" title="Tocá para cambiarlo">${horEsc(f.t)||'—'}
+             ${f.tocado?`<button class="hr-x" title="Volver a la plantilla"
+               onclick="event.stopPropagation();horVolverBase('${iso}',${f.fila},'T')">↺</button>`:''}</td>`
+        : `<td colspan="5" class="hr-comun${f.tocado?' hr-toc':''}">${horEsc(f.t)||'—'}</td>`;
+      return `<tr><td class="hr-hora">${horEsc(f.h)}</td>${cel}</tr>`;
+    }
+    const tds = f.cel.map(c=>{
+      // v1.5.98 — s1…s5: la clase del color de cada sección.
+      const clase = 'hr-cel s'+(c.sec+1) + (c.tocado?' hr-toc':'') + (!c.v?' hr-vacio':'');
+      if(!puede || chica) return `<td class="${clase}">${horEsc(c.v)||'—'}</td>`;
+      return `<td class="${clase}" onclick="horEditar('${iso}',${c.fila},'${c.sec}')" title="Tocá para cambiarlo">
+        ${horEsc(c.v)||'—'}
+        ${c.tocado?`<button class="hr-x" title="Volver a la plantilla"
+          onclick="event.stopPropagation();horVolverBase('${iso}',${c.fila},'${c.sec}')">↺</button>`:''}</td>`;
+    }).join('');
+    return `<tr><td class="hr-hora">${horEsc(f.h)}</td>${tds}</tr>`;
+  }).join('');
+}
+function horTablaHTML(){
+  const hoy = horHoy();
+  let lunes = HOR_SEM || horLunesDe(hoy < HOR_DESDE ? HOR_DESDE : hoy);
+  if(lunes < HOR_DESDE) lunes = HOR_DESDE;
+  HOR_SEM = lunes;
+  const viernes = horSumar(lunes, 4);
+  // El día elegido tiene que ser de esta semana; si no, se toma hoy o el lunes.
+  if(!HOR_DIA || HOR_DIA < lunes || HOR_DIA > viernes){
+    HOR_DIA = (hoy >= lunes && hoy <= viernes) ? hoy : lunes;
+  }
+  const fmt = iso => { const d = horParse(iso);
+    return d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'long'}) : iso; };
+  const puede = horPuedeEditar();
+
+  // Fila de días, con la cantidad de cambios de cada uno
+  const chips = HOR_DIAS.map((dia, i)=>{
+    const iso = horSumar(lunes, i);
+    const n = horCuantosCambios(iso);
+    const d = horParse(iso);
+    return `<button class="hr-tab${iso===HOR_DIA?' sel':''}${iso===hoy?' es-hoy':''}"
+        onclick="horVerDia('${iso}')">
+        <span class="hr-tab-dia">${HOR_NOM[dia]}</span>
+        <span class="hr-tab-num">${d?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'):''}</span>
+        ${iso===hoy?'<span class="hr-tab-hoy">HOY</span>':''}
+        ${n?`<span class="hr-tab-pto" title="${n} ${n===1?'cambio':'cambios'} a mano"></span>`:''}
+      </button>`;
+  }).join('');
+
+  const cambios = horCuantosCambios(HOR_DIA);
+  const dd = horParse(HOR_DIA);
+  let lab = dd ? dd.toLocaleDateString('es-AR',{weekday:'long', day:'2-digit', month:'long'}) : HOR_DIA;
+  lab = lab.charAt(0).toUpperCase() + lab.slice(1);
+
+  return `<div class="hr-nav">
+      <button class="hr-b" onclick="horSemana(-1)" ${lunes<=HOR_DESDE?'disabled':''}>‹ Semana anterior</button>
+      <span class="hr-sem">Semana del ${fmt(lunes)} al ${fmt(viernes)}</span>
+      <button class="hr-b" onclick="horSemana(1)">Semana siguiente ›</button>
+    </div>
+    <div class="hr-tabs">${chips}</div>
+    <div class="hr-dia hr-uno${HOR_DIA===hoy?' hr-es-hoy':''}">
+      <div class="hr-dia-cab">
+        <span class="hr-dia-nom">${horEsc(lab)}${HOR_DIA===hoy?' <b class="hr-chip">HOY</b>':''}</span>
+        <span class="hr-dia-der">
+          ${cambios?`<span class="hr-mod">${cambios} ${cambios===1?'cambio':'cambios'} a mano</span>`:''}
+          ${(puede&&cambios)?`<button class="hr-reset" onclick="horVolverDia('${HOR_DIA}')">↺ Volver a la plantilla</button>`:''}
+        </span>
+      </div>
+      ${puede?'<div class="hr-aviso">✏️ Tocá cualquier casillero para cambiarlo. El cambio queda solo en esa fecha y lo ven todos.</div>'
+             :'<div class="hr-aviso hr-solo">👁️ Estás viendo el horario. Lo cambian la Secretaría Académica y las administradoras.</div>'}
+      <div class="hr-scroll"><table class="hr-tabla hr-grande">
+        <thead><tr><th>HORARIO</th><th class="s1">Sección 1</th><th class="s2">Sección 2</th>
+          <th class="s3">Sección 3</th><th class="s4">Sección 4</th><th class="s5">Sección 5</th></tr></thead>
+        <tbody>${horFilasHTML(HOR_DIA, puede, false)}</tbody></table></div>
+    </div>`;
+}
+
+// ─── La pestaña completa ───
+function renderHorario(){
+  horEnsureEstilos();
+  return `<div class="hr-wrap">
+    <div class="hr-head">
+      <div><h3>🕐 Pizarra Digital de Horario de Clases</h3>
+        <p>2ª Convocatoria 2026 · de lunes a viernes por secciones · desde el 24 de agosto</p></div>
+    </div>
+    <div id="horTabla">${horTablaHTML()}</div>
+  </div>`;
+}
+
+// ─── El bloque del Panel de inicio: el horario del día ───
+function horBloqueHTML(){
+  if(!horVigente()) return '';
+  const hoy = horHoy();
+  // Si hoy es sábado o domingo, se muestra el lunes que viene.
+  let iso = hoy, filas = horDelDia(iso), aclara = '';
+  if(!filas){
+    for(let i = 1; i <= 3; i++){
+      const p = horSumar(hoy, i);
+      const f = horDelDia(p);
+      if(f){ iso = p; filas = f; aclara = ' (el próximo día de clases)'; break; }
+    }
+  }
+  if(!filas) return '';
+  const d = horParse(iso);
+  let lab = d.toLocaleDateString('es-AR',{weekday:'long', day:'2-digit', month:'long'});
+  lab = lab.charAt(0).toUpperCase() + lab.slice(1);
+  const cambios = horCuantosCambios(iso);
+
+  // v1.5.97 — El Panel muestra SIEMPRE un solo día (el de hoy), no la semana.
+  const cuerpo = horFilasHTML(iso, false, true);
+
+  return `<div class="hr-rail">
+      <span class="hr-rail-tit">🕐 Pizarra digital de horario de clases</span>
+      <span class="hr-rail-sub">${horEsc(lab)}${aclara}</span>
+      <button class="hr-ver" onclick="selectSector('HORARIO_DIARIO')">Ver la semana completa ›</button>
+    </div>
+    ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto de la plantilla.</div>`:''}
+    <div class="hr-scroll"><table class="hr-tabla hr-chica">
+      <thead><tr><th>HORARIO</th><th class="s1">Sec. 1</th><th class="s2">Sec. 2</th>
+        <th class="s3">Sec. 3</th><th class="s4">Sec. 4</th><th class="s5">Sec. 5</th></tr></thead>
+      <tbody>${cuerpo}</tbody></table></div>`;
+}
+
+window.horVerDia = horVerDia;
+window.horEditar = horEditar; window.horVolverBase = horVolverBase;
+window.horVolverDia = horVolverDia; window.horSemana = horSemana;
+
+// ══════════════════════════════════════════════════════════════════════════
+// v1.5.96 — ARCHIVO (solo administradoras)
+// ──────────────────────────────────────────────────────────────────────────
+// Para guardar las pestañas y las carpetas que ya no se usan, sin perder
+// nada. Lo importante: ARCHIVAR NO BORRA. Lo único que se guarda es un
+// "no la muestres más en el menú"; los datos siguen enteros donde estaban y
+// se pueden mirar desde acá o devolver la pestaña a su lugar cuando quieran.
+//
+// Qué se puede archivar:
+//   · una PESTAÑA suelta (por ejemplo una que se usó para una convocatoria)
+//   · una CARPETA entera del menú, con todas las pestañas que tenga adentro
+//
+// Quién: solo las administradoras. Y como el aviso viaja por la nube, cuando
+// una archiva algo desaparece del menú de todos.
+// ══════════════════════════════════════════════════════════════════════════
+const ARCH_KEY = 'suep_archivo';
+
+function archEsAdmin(){
+  try{ return !!(CU && CU.permiso === 'admin'); }catch(_){ return false; }
+}
+function archEstado(){
+  try{
+    const e = JSON.parse(localStorage.getItem(ARCH_KEY) || '{}') || {};
+    e.sectores = Array.isArray(e.sectores) ? e.sectores : [];
+    e.grupos   = Array.isArray(e.grupos)   ? e.grupos   : [];
+    e.detalle  = e.detalle && typeof e.detalle === 'object' ? e.detalle : {};
+    return e;
+  }catch(_){ return {sectores:[], grupos:[], detalle:{}}; }
+}
+function archGrabar(e){
+  try{ localStorage.setItem(ARCH_KEY, JSON.stringify(e)); }catch(_){}
+  try{ if(typeof syncToSupabase === 'function') syncToSupabase(ARCH_KEY, e); }catch(_){}
+}
+// Las dos preguntas que hace el menú al armarse.
+function archSectorArchivado(id){ return archEstado().sectores.includes(String(id)); }
+function archGrupoArchivado(id){ return archEstado().grupos.includes(String(id)); }
+
+// Cuántos registros tiene una pestaña, para avisar antes de archivarla.
+function archCuantos(secId){
+  let n = 0;
+  try{
+    const sec = SECTORS.find(s=>s.id===secId);
+    (sec ? (sec.modules||[]) : []).forEach(m=>{
+      if(m.subTabs){ (m.subTabs||[]).forEach(st=>{ n += (S.get(secId, st.id)||[]).length; }); }
+      else { n += (S.get(secId, m.id)||[]).length; }
+    });
+  }catch(_){}
+  return n;
+}
+function archNombreGrupo(gid){
+  try{
+    let nom = null;
+    const buscar = gs => (gs||[]).forEach(g=>{
+      if(String(g.id)===String(gid)) nom = g.name;
+      buscar(g.subgrupos);
+    });
+    buscar(SB_GRUPOS);
+    return nom || gid;
+  }catch(_){ return gid; }
+}
+function archSectoresDeGrupo(gid){
+  const out = [];
+  try{
+    const juntar = g => {
+      (g.ids||[]).forEach(e=> out.push(String(e).split('>')[0]));
+      (g.subgrupos||[]).forEach(juntar);
+    };
+    const buscar = gs => (gs||[]).forEach(g=>{
+      if(String(g.id)===String(gid)) juntar(g); else buscar(g.subgrupos);
+    });
+    buscar(SB_GRUPOS);
+  }catch(_){}
+  return [...new Set(out)];
+}
+
+// ─── Archivar y restaurar ───
+function archArchivarSector(id){
+  if(!archEsAdmin()) return;
+  const sec = SECTORS.find(s=>s.id===id); if(!sec) return;
+  const n = archCuantos(id);
+  if(!confirm('¿Mandar la pestaña «' + sec.name + '» al Archivo?\n\n'
+    + 'Deja de verse en el menú de todos los usuarios.\n'
+    + (n ? ('Sus ' + n + ' registros NO se borran: quedan guardados y se pueden mirar desde el Archivo.\n')
+         : 'No tiene registros cargados.\n')
+    + '\nSe puede devolver a su lugar cuando quieran.')) return;
+  const e = archEstado();
+  if(!e.sectores.includes(id)) e.sectores.push(id);
+  e.detalle[id] = { nombre:sec.name, tipo:'pestaña', registros:n,
+    por:(CU&&CU.nombre)||'—', ts:new Date().toLocaleString('es-AR') };
+  archGrabar(e);
+  try{ buildSidebar(); }catch(_){}
+  archRefrescar();
+}
+function archArchivarGrupo(gid){
+  if(!archEsAdmin()) return;
+  const nom = archNombreGrupo(gid);
+  const secs = archSectoresDeGrupo(gid);
+  if(!confirm('¿Mandar la carpeta «' + nom + '» al Archivo?\n\n'
+    + 'Se dejan de ver la carpeta y sus ' + secs.length + ' pestañas en el menú de todos.\n'
+    + 'No se borra ningún dato: todo queda guardado y se puede restaurar.')) return;
+  const e = archEstado();
+  if(!e.grupos.includes(gid)) e.grupos.push(gid);
+  e.detalle['G:'+gid] = { nombre:nom, tipo:'carpeta', pestanas:secs.length,
+    por:(CU&&CU.nombre)||'—', ts:new Date().toLocaleString('es-AR') };
+  archGrabar(e);
+  try{ buildSidebar(); }catch(_){}
+  archRefrescar();
+}
+function archRestaurar(clave){
+  if(!archEsAdmin()) return;
+  const e = archEstado();
+  const esGrupo = String(clave).startsWith('G:');
+  const id = esGrupo ? String(clave).slice(2) : String(clave);
+  const nom = (e.detalle[clave] && e.detalle[clave].nombre) || id;
+  if(!confirm('¿Devolver «' + nom + '» al menú?')) return;
+  if(esGrupo) e.grupos = e.grupos.filter(x=>x!==id);
+  else e.sectores = e.sectores.filter(x=>x!==id);
+  delete e.detalle[clave];
+  archGrabar(e);
+  try{ buildSidebar(); }catch(_){}
+  archRefrescar();
+}
+// Abrir una pestaña archivada para mirarla, sin sacarla del Archivo.
+function archMirar(id){
+  ARCH_MIRANDO = id;
+  try{ selectSector(id); }catch(e){ alert('No se pudo abrir esa pestaña.'); }
+}
+let ARCH_MIRANDO = null;
+
+function archRefrescar(){
+  const c = document.getElementById('archCuerpo');
+  if(c) c.innerHTML = archCuerpoHTML();
+}
+
+// ─── La pantalla del Archivo ───
+function archCuerpoHTML(){
+  const e = archEstado();
+  const esc = (typeof calEsc === 'function') ? calEsc : (s=>String(s==null?'':s));
+  const claves = [...e.grupos.map(g=>'G:'+g), ...e.sectores];
+
+  const guardado = claves.length ? claves.map(k=>{
+    const d = e.detalle[k] || {};
+    const esGrupo = String(k).startsWith('G:');
+    const id = esGrupo ? String(k).slice(2) : k;
+    const nom = d.nombre || (esGrupo ? archNombreGrupo(id) : ((SECTORS.find(s=>s.id===id)||{}).name || id));
+    const sub = esGrupo
+      ? ((d.pestanas||0) + ' pestañas adentro')
+      : ((d.registros != null ? d.registros : archCuantos(id)) + ' registros guardados');
+    return `<div class="ar-item">
+      <span class="ar-ico">${esGrupo?'📁':'🗂️'}</span>
+      <span class="ar-txt"><b>${esc(nom)}</b>
+        <small>${esc(sub)}${d.por?(' · lo archivó '+esc(d.por)):''}${d.ts?(' · '+esc(d.ts)):''}</small></span>
+      <span class="ar-acts">
+        ${!esGrupo?`<button class="ar-b ar-ver" onclick="archMirar('${esc(id)}')">👁️ Mirar</button>`:''}
+        <button class="ar-b ar-rest" onclick="archRestaurar('${esc(k)}')">↩️ Devolver al menú</button>
+      </span>
+    </div>`;
+  }).join('') : `<div class="ar-vacio">Todavía no hay nada archivado.</div>`;
+
+  // Lo que se puede archivar: primero las carpetas, después las pestañas.
+  let grupos = [];
+  try{
+    grupos = (SB_GRUPOS||[]).filter(g=> !g.sola && !e.grupos.includes(String(g.id)))
+      .map(g=>({id:g.id, name:g.name, icon:g.icon, n:archSectoresDeGrupo(g.id).length}));
+  }catch(_){}
+  const opGrupos = grupos.map(g=>`<div class="ar-op">
+      <span class="ar-ico">${g.icon||'📁'}</span>
+      <span class="ar-txt"><b>${esc(g.name)}</b><small>carpeta · ${g.n} pestañas</small></span>
+      <button class="ar-b ar-arch" onclick="archArchivarGrupo('${esc(g.id)}')">📦 Archivar</button>
+    </div>`).join('');
+
+  let pest = [];
+  try{
+    pest = SECTORS.filter(s=> !e.sectores.includes(s.id))
+      .map(s=>({id:s.id, name:s.name, icon:s.icon, n:archCuantos(s.id)}))
+      .sort((a,b)=> a.name.localeCompare(b.name));
+  }catch(_){}
+  const opPest = pest.map(s=>`<div class="ar-op">
+      <span class="ar-ico">${s.icon||'🗂️'}</span>
+      <span class="ar-txt"><b>${esc(s.name)}</b><small>pestaña · ${s.n} registros</small></span>
+      <button class="ar-b ar-arch" onclick="archArchivarSector('${esc(s.id)}')">📦 Archivar</button>
+    </div>`).join('');
+
+  return `<div class="ar-aviso">📦 <b>Archivar no borra nada.</b> La pestaña o la carpeta deja de verse en el
+      menú de todos, pero los datos quedan enteros: se pueden mirar acá y devolver al menú cuando quieran.</div>
+    <div class="ar-tit">Guardado en el Archivo</div>
+    <div class="ar-lista">${guardado}</div>
+    <div class="ar-tit">Carpetas que se pueden archivar</div>
+    <div class="ar-lista">${opGrupos || '<div class="ar-vacio">No quedan carpetas sin archivar.</div>'}</div>
+    <div class="ar-tit">Pestañas que se pueden archivar</div>
+    <div class="ar-lista ar-scroll">${opPest || '<div class="ar-vacio">No quedan pestañas sin archivar.</div>'}</div>`;
+}
+
+function showArchivo(){
+  if(!archEsAdmin()){ alert('El Archivo es solo para las administradoras.'); return; }
+  archEnsureEstilos();
+  try{
+    document.querySelectorAll('.sector-btn').forEach(b=>{ b.classList.remove('active'); inkLimpiar(b); });
+    const ab = document.getElementById('sb_ARCHIVO');
+    if(ab){ ab.classList.add('active'); inkAplicar(ab, '#6b7280'); }
+  }catch(_){}
+  // Encabezado igual al de Revisión de datos: mismo ícono propio y sin los
+  // botones de cargar/exportar, que acá no tienen sentido.
+  try{
+    document.getElementById('sectorHeader').style.display = 'block';
+    document.getElementById('shIcon').textContent = '📦';
+    document.getElementById('shName').textContent = 'Archivo';
+    document.getElementById('shCount').textContent = 'Solo visible para Administradoras';
+    const _a = document.getElementById('addBtn');       if(_a) _a.style.display='none';
+    const _e = document.getElementById('exportBtn');    if(_e) _e.style.display='none';
+    const _p = document.getElementById('exportPdfBtn'); if(_p) _p.style.display='none';
+    document.getElementById('modTabs').innerHTML = '';
+    const _s = document.getElementById('subTabs'); if(_s){ _s.classList.remove('visible'); _s.innerHTML=''; }
+  }catch(_){}
+  const area = document.getElementById('dataArea');
+  if(area) area.innerHTML = `<div class="ar-wrap">
+    <div class="ar-head"><div><h3>📦 Archivo</h3>
+      <p>Solo las administradoras. Lo archivado no se borra: se guarda.</p></div></div>
+    <div id="archCuerpo">${archCuerpoHTML()}</div>
+  </div>`;
+  try{ if(typeof _navRegistrar === 'function') _navRegistrar('ARCHIVO','Archivo'); }catch(_){}
+  try{ if(typeof closeSidebar === 'function') closeSidebar(); }catch(_){}
+}
+window.showArchivo = showArchivo;
+window.archArchivarSector = archArchivarSector; window.archArchivarGrupo = archArchivarGrupo;
+window.archRestaurar = archRestaurar; window.archMirar = archMirar;
+
 function showInicio(){
+  // v1.5.95 — Volvimos al azul de siempre. Nada del vidrio esmerilado quedó
+  // en el archivo, así que el corrector de contraste trabaja como antes.
   try{
     document.querySelectorAll('.sector-btn').forEach(b=>{ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
     const ab = document.getElementById('sb_INICIO');
@@ -6657,7 +8386,7 @@ function renderSeleccionAspirantes(tipo){
     const click = `onclick="toggleAspirante('${tipo}','${a.nombre.replace(/'/g,"\\'")}','${a.seccion}')"`;
     return `<div class="alm-row" style="cursor:pointer;${on?`background:rgba(34,197,94,.12)`:''}" ${click}>
       <span class="alm-check" style="${on?'':'opacity:.25'}">${on?'✅':'⬜'}</span>
-      <span class="alm-row-name">${a.nombre} <span style="color:#5a7a9a;font-size:11px">· ${a.seccion}${a.dni?' · DNI '+a.dni:''}</span></span>
+      <span class="alm-row-name">${a.nombre} <span style="color:#8fb0cb;font-size:11px">· ${a.seccion}${a.dni?' · DNI '+a.dni:''}</span></span>
     </div>`;
   };
 
@@ -6694,7 +8423,7 @@ function renderSeleccionAspirantes(tipo){
       <input type="date" id="selDate_${tipo}" value="${fechaVista}" onchange="setSelFecha('${tipo}', this.value)"
         style="background:rgba(122,175,212,.1);border:1px solid rgba(122,175,212,.3);color:#e8f0f8;border-radius:9px;padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer">
       <button class="sub-tab" title="Día siguiente" style="font-weight:700;min-width:38px;font-size:15px" onclick="navSelFecha('${tipo}',1)">►</button>
-      <button class="sub-tab ${esHoy?'active':''}" style="${esHoy?`background:${color};color:#fff`:''}" onclick="setSelFecha('${tipo}','${today}')">Hoy</button>
+      <button class="sub-tab ${esHoy?'active':''}" style="${esHoy?inkEstilo(color):''}" ${esHoy?`data-ink="${inkSobre(color).oscura?'oscura':'clara'}"`:''} onclick="setSelFecha('${tipo}','${today}')">Hoy</button>
     </div>`;
 
   // v1.5.63 — Cartel fijo con la convocatoria de la que sale esta lista, así
@@ -6750,7 +8479,7 @@ function renderSeleccionAspirantes(tipo){
               ${marcados.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(m=>`
                 <div class="alm-row">
                   <span class="alm-check">✓</span>
-                  <span class="alm-row-name">${m.nombre} <span style="color:#5a7a9a;font-size:11px">· ${m.seccion}</span></span>
+                  <span class="alm-row-name">${m.nombre} <span style="color:#8fb0cb;font-size:11px">· ${m.seccion}</span></span>
                   <span class="alm-row-time">${m.hora||''}</span>
                 </div>`).join('')}
             </div>`
@@ -6853,7 +8582,7 @@ function openAddModal(){
   editId=null;
   document.getElementById('modalTitle').textContent=`Nuevo registro — ${CM.name}`;
   document.getElementById('modalSub').textContent=`${CS.icon} ${CS.name}`;
-  document.getElementById('btnSave').style.background=`linear-gradient(135deg,${CS.color},${dk(CS.color)})`;
+  pintarBoton(document.getElementById('btnSave'), CS.color);
   buildForm({});
   document.getElementById('modalOverlay').style.display='flex';
 }
@@ -6863,7 +8592,7 @@ function openEdit(id){
   editId=id;
   document.getElementById('modalTitle').textContent=`Editar registro — ${CM.name}`;
   document.getElementById('modalSub').textContent=`${CS.icon} ${CS.name}`;
-  document.getElementById('btnSave').style.background=`linear-gradient(135deg,${CS.color},${dk(CS.color)})`;
+  pintarBoton(document.getElementById('btnSave'), CS.color);
   buildForm(r);
   document.getElementById('modalOverlay').style.display='flex';
 }
@@ -6975,7 +8704,7 @@ function buildEvalForm(data){
       <label>Instructores a cargo</label>
       <input class="fi" type="text" id="f_instructores" value="${instr.replace(/"/g,'&quot;')}" readonly
         style="background:rgba(122,175,212,.08);color:#9ab4d0;cursor:not-allowed">
-      <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">Se completa solo al elegir la sección.</small>
+      <small style="display:block;margin-top:4px;color:#8fb0cb;font-size:11px">Se completa solo al elegir la sección.</small>
     </div>
 
     <div class="form-field">
@@ -6990,7 +8719,7 @@ function buildEvalForm(data){
     </div>
 
     <div style="margin:6px 0 2px;padding:8px 12px;border-radius:10px;background:${color}1a;border:1px solid ${color}40">
-      <div style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px">📋 Ítems evaluados</div>
+      <div class="att-tit-ev" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">📋 Ítems evaluados</div>
       <div style="font-size:11px;color:#7aafd4;margin-top:2px">Ó = Óptimo · MB = Muy Bueno · B = Bueno · R = Regular</div>
     </div>
     ${itemsHTML}
@@ -7010,7 +8739,7 @@ function buildEvalForm(data){
         <option ${data.aptitud==='Aprobado'?'selected':''}>Aprobado</option>
         <option ${data.aptitud==='Desaprobado'?'selected':''}>Desaprobado</option>
       </select>
-      <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">Escala: 10-9 Excelente · 8-7 Muy Bueno · 6-5 Bueno · 4 Regular · 3-1 Malo (Desaprobado)</small>
+      <small style="display:block;margin-top:4px;color:#8fb0cb;font-size:11px">Escala: 10-9 Excelente · 8-7 Muy Bueno · 6-5 Bueno · 4 Regular · 3-1 Malo (Desaprobado)</small>
     </div>
     <div class="form-field">
       <label>Observación</label>
@@ -7095,7 +8824,7 @@ function buildForm(data){
           style="padding:0 14px;border-radius:11px;border:1px solid rgba(122,175,212,.3);background:rgba(122,175,212,.12);color:#7aafd4;cursor:pointer;font-size:16px;flex-shrink:0;transition:all .15s"
           title="Editar manualmente el número">✏️</button>
       </div>
-      <small id="hint_${f.key}" style="color:#5a7a9a;font-size:10px;display:block;margin-top:4px">${isNew?'Asignado automáticamente · correlativo anual · tocá ✏️ para editarlo manualmente':'Tocá ✏️ para editar el número manualmente'}</small>
+      <small id="hint_${f.key}" style="color:#8fb0cb;font-size:10px;display:block;margin-top:4px">${isNew?'Asignado automáticamente · correlativo anual · tocá ✏️ para editarlo manualmente':'Tocá ✏️ para editar el número manualmente'}</small>
     </div>`;
     }
     return `
@@ -7136,12 +8865,12 @@ function buildForm(data){
               <button type="button" class="export-btn" style="flex:1;justify-content:center"
                 onclick="document.getElementById('f_${f.key}').click()">🖼️ Elegir imagen</button>
             </div>
-            <small style="display:block;margin-top:4px;color:#5a7a9a;font-size:11px">📸 En el celular "Tomar foto" abre la cámara. La imagen se optimiza automáticamente.</small>
+            <small style="display:block;margin-top:4px;color:#8fb0cb;font-size:11px">📸 En el celular "Tomar foto" abre la cámara. La imagen se optimiza automáticamente.</small>
             <div id="info_${f.key}" style="display:none;margin-top:6px;font-size:11px;color:#34d399;font-weight:500"></div>
             ${data[f.key]
               ?`<div style="margin-top:10px;position:relative;display:inline-block">
                   <img src="${data[f.key]||''}" style="max-width:100%;max-height:220px;border-radius:10px;border:1px solid rgba(122,175,212,.2);display:block" id="prev_${f.key}">
-                  <span style="font-size:10px;color:#5a7a9a;margin-top:4px;display:block">Imagen actual — subí una nueva para reemplazarla</span>
+                  <span style="font-size:10px;color:#8fb0cb;margin-top:4px;display:block">Imagen actual — subí una nueva para reemplazarla</span>
                 </div>`
               :`<img id="prev_${f.key}" src="" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin-top:10px;border:1px solid rgba(122,175,212,.2)">`
             }
@@ -7696,7 +9425,7 @@ function viewDetail(recordId){
     const v = r[f.key];
     let display;
     if(v === undefined || v === null || v === ''){
-      display = '<span style="color:#5a7a9a;font-style:italic">— sin dato —</span>';
+      display = '<span style="color:#8fb0cb;font-style:italic">— sin dato —</span>';
     } else if(f.type === 'image'){
       // ✅ AHORRO DE EGRESS: en el detalle se muestra una versión mediana (640px);
       // la imagen completa solo se baja al hacer clic para ampliar (viewImg).
@@ -8646,13 +10375,13 @@ function renderAccesosTable(q){
       <tbody>
         ${filtrados.length ? filtrados.map(a=>`<tr>
           <td style="font-weight:600;color:#a8c8e0">${a.nombre}</td>
-          <td style="font-size:11px;color:#5a7a9a">${a.usuario}</td>
+          <td style="font-size:11px;color:#8fb0cb">${a.usuario}</td>
           <td><span class="badge bb" style="font-size:10px">${a.sector}</span></td>
           <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.entrada}</td>
-          <td style="font-size:11px;color:${a.salida==='—'?'#5a7a9a':'#7aafd4'};white-space:nowrap">${a.salida}</td>
-          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#5a7a9a':'#a8c8e0'}">${a.duracion}</td>
+          <td style="font-size:11px;color:${a.salida==='—'?'#8fb0cb':'#7aafd4'};white-space:nowrap">${a.salida}</td>
+          <td style="font-size:12px;font-weight:600;color:${a.duracion==='—'?'#8fb0cb':'#a8c8e0'}">${a.duracion}</td>
           <td><span class="badge ${a.activo?'bg':'bx'}" style="font-size:10px">${a.activo?'🟢 Activo':'⚫ Cerrado'}</span></td>
-        </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#5a7a9a;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
+        </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#8fb0cb;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
       </tbody>
     </table></div></div>`;
 }
@@ -9172,7 +10901,7 @@ function renderPadmUsuarios(filtro){
       <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px">🔍</span>
       <input class="fi" type="text" placeholder="Buscar usuario por nombre, rol o permiso..." style="padding:9px 12px 9px 34px;font-size:13px;width:100%;box-sizing:border-box" oninput="renderPadmUsuarios(this.value)" value="${filtro||''}">
     </div>
-    <div style="font-size:11px;color:#5a7a9a;margin-bottom:12px">${lista.length} de ${todos.length} usuario${todos.length!==1?'s':''}</div>
+    <div style="font-size:11px;color:#8fb0cb;margin-bottom:12px">${lista.length} de ${todos.length} usuario${todos.length!==1?'s':''}</div>
     ${lista.map(u => {
       const color = avatarColor(u.nombre);
       const desact = !!u.desactivado;
@@ -9260,7 +10989,7 @@ function renderPadmNuevo(userData){
           <label>Sectores habilitados</label>
           <div id="pf_sectores_list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
           </div>
-          <small style="color:#5a7a9a;font-size:10px;margin-top:4px;display:block">El usuario puede cargar solo en los sectores marcados. También puede ver módulos universales.</small>
+          <small style="color:#8fb0cb;font-size:10px;margin-top:4px;display:block">El usuario puede cargar solo en los sectores marcados. También puede ver módulos universales.</small>
         </div>
       </div>
 
@@ -9272,7 +11001,7 @@ function renderPadmNuevo(userData){
             <button type="button" class="padm-mini-btn" onclick="marcarTodasPestanas(false)">✕ Ocultar todas</button>
           </div>
           <div id="pf_pestanas_list" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px"></div>
-          <small style="color:#5a7a9a;font-size:10px;margin-top:6px;display:block">Destildá una pestaña para ocultársela a este usuario. Tildala para volver a dársela. (Las administradoras siempre ven todo.)</small>
+          <small style="color:#8fb0cb;font-size:10px;margin-top:6px;display:block">Destildá una pestaña para ocultársela a este usuario. Tildala para volver a dársela. (Las administradoras siempre ven todo.)</small>
         </div>
       </div>
 
@@ -9286,7 +11015,7 @@ function renderPadmNuevo(userData){
       </div>
     </div>
 
-    ${!esEdicion ? `<div style="font-size:11px;color:#5a7a9a;padding:8px 2px">
+    ${!esEdicion ? `<div style="font-size:11px;color:#8fb0cb;padding:8px 2px">
       💡 Los usuarios creados acá se guardan en la nube (Supabase) y se sincronizan a todos los dispositivos.
       El usuario podrá cambiar su contraseña después desde ⚙️ → Cambiar mi contraseña.
     </div>` : ''}
@@ -11179,12 +12908,12 @@ function mostrarRecordatoriosEventos(forzar){
     return `<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid rgba(13,148,136,.25);border-radius:12px;margin-bottom:10px;background:${urgente?'rgba(239,68,68,.08)':'rgba(13,148,136,.06)'}">
       <div style="flex-shrink:0;text-align:center;min-width:60px">
         <div style="font-size:11px;font-weight:800;color:${urgente?'#ef4444':color};text-transform:uppercase;letter-spacing:.5px">${cuando}</div>
-        <div style="font-size:11px;color:#5a7a9a;margin-top:2px">${_fechaLabel(e.fecha)}</div>
+        <div style="font-size:11px;color:#8fb0cb;margin-top:2px">${_fechaLabel(e.fecha)}</div>
       </div>
       <div style="flex:1">
         <div style="font-weight:700;color:#1a2b40;font-size:14px">${e.titulo||''}</div>
-        ${e.hora?`<div style="font-size:12px;color:#5a7a9a;margin-top:2px">🕐 ${e.hora}</div>`:''}
-        ${e.lugar?`<div style="font-size:12px;color:#5a7a9a;margin-top:2px">📍 ${e.lugar}</div>`:''}
+        ${e.hora?`<div style="font-size:12px;color:#8fb0cb;margin-top:2px">🕐 ${e.hora}</div>`:''}
+        ${e.lugar?`<div style="font-size:12px;color:#8fb0cb;margin-top:2px">📍 ${e.lugar}</div>`:''}
         ${e.descripcion?`<div style="font-size:12px;color:#3a5a78;margin-top:4px;white-space:pre-wrap">${e.descripcion.replace(/</g,'&lt;')}</div>`:''}
       </div>
     </div>`;
@@ -11210,7 +12939,7 @@ function mostrarRecordatoriosEventos(forzar){
         ${filas}
       </div>
       <div style="padding:0 16px 18px;display:flex;gap:8px">
-        <button onclick="cerrarRecordatorioEventos()" style="flex:1;background:${color};color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Entendido</button>
+        <button onclick="cerrarRecordatorioEventos()" style="flex:1;${inkEstilo(color)};border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Entendido</button>
         <button onclick="cerrarRecordatorioEventos();verSectorEventos()" style="flex:1;background:rgba(13,148,136,.12);color:${color};border:1px solid rgba(13,148,136,.3);border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Ver eventos</button>
       </div>
     </div>`;
@@ -11369,12 +13098,12 @@ function renderNavegacionTable(q){
       <tbody>
         ${filtrados.length ? filtrados.map(a=>`<tr>
           <td style="font-weight:600;color:#a8c8e0">${a.nombre||'—'}</td>
-          <td style="font-size:11px;color:#5a7a9a">${a.usuario||'—'}</td>
+          <td style="font-size:11px;color:#8fb0cb">${a.usuario||'—'}</td>
           <td style="font-size:11px;color:#7aafd4">${a.rol||'—'}</td>
           <td><span class="badge bb" style="font-size:10px">${a.sector||'—'}</span></td>
           <td style="font-weight:600;color:#18a0a8">${a.modulo||'—'}</td>
           <td style="font-size:11px;color:#7aafd4;white-space:nowrap">${a.fecha||'—'}</td>
-        </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#5a7a9a;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
+        </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#8fb0cb;padding:20px">Sin resultados para esa búsqueda</td></tr>'}
       </tbody>
     </table></div></div>`;
 }
@@ -14252,12 +15981,21 @@ const CAL_S = 'CALENDARIO', CAL_M = 'CALENDARIO';
 const CAL_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const CAL_MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const CAL_SEM = ['L','M','M','J','V','S','D'];
-const CAL_TIPOS = ['Actividad','Capacitación','Ceremonial','Comisión','Curso','Guardia','Licencia','Reunión','Viaje','Otro'];
+const CAL_TIPOS = ['Actividad','Acto','Capacitación','Ceremonial','Comisión','Curso','Educación Física',
+  'Evaluación','Examen','Guardia','Instrucción','Licencia','Mantenimiento','Práctica de tiro','Reunión',
+  'Sanidad','Visita','Viaje','Otro'];
 // v1.5.80 — Gama fría, sin naranja ni dorado. Las licencias pasan a verde
 // esmeralda, que era el bloque naranja que se comía el calendario entero.
 const CAL_COLOR = {'Actividad':'#2563eb','Capacitación':'#7c3aed','Ceremonial':'#db2777','Comisión':'#0891b2',
   'Curso':'#4f46e5','Guardia':'#475569','Licencia':'#10b981','Reunión':'#14b8a6','Viaje':'#f472b6','Otro':'#64748b',
-  'Autorización':'#0ea5e9','Evento':'#e11d48','Academia':'#8b5cf6'};
+  // v1.5.98 — Tipos nuevos, cada uno con su color. Ninguno repite los de arriba.
+  'Acto':'#a16207','Educación Física':'#65a30d','Evaluación':'#075985','Examen':'#b91c1c',
+  'Instrucción':'#15803d','Mantenimiento':'#78716c','Práctica de tiro':'#ea580c',
+  'Sanidad':'#0369a1','Visita':'#9333ea',
+  'Autorización':'#0ea5e9','Evento':'#e11d48','Academia':'#7c3aed',
+  // v1.5.96 — Las fechas del país: el feriado en dorado institucional y la
+  // efeméride en violeta, para distinguirlas de lo que carga la gente.
+  'Feriado':'#c79a3a','Efeméride':'#7e22ce'};
 const CAL_MIN_MESES = 5;          // como mínimo se muestran 5 meses
 let CAL_MES_ABIERTO = null;       // 'YYYY-MM' del mes desplegado en grande
 let CAL_DIA_SEL = null;           // 'YYYY-MM-DD' del día elegido
@@ -14370,6 +16108,20 @@ function calMarcas(mesKey){
     });
   }catch(_){}
 
+  // 5) v1.5.96 — Fechas patrias, feriados y efemérides argentinas. No se cargan
+  // a mano: salen de la lista del sistema, así que están en todos los meses.
+  try{
+    const anio = Number(mesKey.slice(0,4));
+    const tabla = efemDelAnio(anio) || {};
+    Object.keys(tabla).forEach(iso=>{
+      tabla[iso].forEach(e=>{
+        push(iso, { tipo: (e.tipo==='feriado' ? 'Feriado' : 'Efeméride'),
+          color: (e.tipo==='feriado' ? CAL_COLOR.Feriado : CAL_COLOR['Efeméride']),
+          fuente:'efe', titulo: e.tit, hora:'', quien:'', detalle: e.res, por:'' });
+      });
+    });
+  }catch(_){}
+
   // 4) Eventos ya cargados en la pestaña Eventos
   try{
     S.get('EVENTOS','EVENTOS').forEach(e=>{
@@ -14457,7 +16209,8 @@ function calPanelDiaHTML(marcas){
   let lab = d ? d.toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}) : CAL_DIA_SEL;
   lab = lab.charAt(0).toUpperCase()+lab.slice(1);
   const items = marcas[CAL_DIA_SEL] || [];
-  const origen = { cal:'', lic:'🏖️ Licencias', aut:'🪪 Autorizaciones', ev:'🔔 Eventos', aca:'🎓 Academias' };
+  const origen = { cal:'', lic:'🏖️ Licencias', aut:'🪪 Autorizaciones', ev:'🔔 Eventos',
+    aca:'🎓 Academias y Reuniones', efe:'🇦🇷 Fecha del país' };
   const filas = items.length ? items.map(m=>{
     const puede = (m.fuente==='cal');
     let r = null;
@@ -14811,7 +16564,7 @@ function renderAcademias(){
   const head = `
     <div class="aca-head">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="aca-title">🎓 Academias</span>
+        <span class="aca-title">🎓 Academias y Reuniones DCFyCCCO</span>
         <span class="aca-sub">${rows.length} academia${rows.length===1?'':'s'} · ${total} efectivos en el organigrama</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -14978,7 +16731,7 @@ function _acaVistaPropia(){
   const yo   = miLP ? ((typeof _licPersona==='function' ? _licPersona(miLP) : null) || null) : null;
   if(!rows.length){
     return `<div class="aca-wrap">
-      <div class="aca-head"><div><span class="aca-title">🎓 Academias</span>
+      <div class="aca-head"><div><span class="aca-title">🎓 Academias y Reuniones DCFyCCCO</span>
         <span class="aca-sub">Las capacitaciones que se dan al personal</span></div></div>
       <div class="aca-vacio">Todavía no hay academias cargadas.</div></div>`;
   }
@@ -15005,7 +16758,7 @@ function _acaVistaPropia(){
   }).join('');
   return `<div class="aca-wrap">
     <div class="aca-head">
-      <div><span class="aca-title">🎓 Academias</span>
+      <div><span class="aca-title">🎓 Academias y Reuniones DCFyCCCO</span>
         <span class="aca-sub">${miLP
           ? ((yo ? acaEsc(yo.nombre)+' · ' : '') + 'participaste en <b>'+mias+'</b> de '+rows.length)
           : (rows.length + ' academia' + (rows.length===1?'':'s') + ' cargada' + (rows.length===1?'':'s'))}</span></div>
