@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.2">
+<meta name="app-version" content="1.6.4">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1042,6 +1042,14 @@ textarea.fi{resize:vertical;min-height:72px}
 .ne-portada h2{margin:0 0 9px;font-size:17px;letter-spacing:.4px;color:inherit;font-weight:800}
 .ne-portada p{margin:0;font-size:12.5px;line-height:1.7;color:inherit;opacity:.92;white-space:pre-line}
 .ne-portada img{max-width:110px;max-height:110px;margin:0 auto 10px;display:block;border-radius:8px}
+/* v1.6.3 — Placa blanca atrás de los escudos: el de la Policía es azul noche y
+   sobre el fondo azul de la portada no se veía. */
+.ne-placa{display:inline-flex;align-items:center;justify-content:center;gap:14px;
+  background:#ffffff;border-radius:14px;padding:12px 18px;margin:0 auto 12px;
+  box-shadow:0 6px 18px rgba(4,14,28,.25)}
+.ne-placa img{margin:0;border-radius:0;max-height:96px;max-width:none}
+.ne-placa .nl-esc-sep{height:62px;background:#d7e3ee}
+.ne-portada .ne-placa{display:inline-flex}
 
 /* — Índice — */
 .ne-indice{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
@@ -19601,12 +19609,12 @@ function renderResena(){
     if(b.tipo!=='portada') return neBloqueHTML(b);
     if(NE_ED===b._id) return neFormBloque(b);
     return `<div class="ne-portada" data-b="${b._id}">
-      ${b.img ? `<img src="${neEsc(b.img)}" alt="">`
-        : (neEscudo() ? `<img src="${neEsc(neEscudo())}" alt="">`
-        : `<div class="nl-escs" style="margin-bottom:10px">
-             <img class="nl-esc" style="max-height:96px" src="${NE_ESC_POL}" alt="">
-             <span class="nl-esc-sep" style="height:60px"></span>
-             <img class="nl-esc" style="max-height:96px" src="${NE_ESC_DCF}" alt=""></div>`)}
+      ${b.img ? `<div class="ne-placa"><img src="${neEsc(b.img)}" alt=""></div>`
+        : (neEscudo() ? `<div class="ne-placa"><img src="${neEsc(neEscudo())}" alt=""></div>`
+        : `<div class="ne-placa">
+             <img src="${NE_ESC_POL}" alt="">
+             <span class="nl-esc-sep"></span>
+             <img src="${NE_ESC_DCF}" alt=""></div>`)}
       <h2>${neEsc(b.t)}</h2>
       <p>${neEsc(b.txt)}</p>
       ${(NE_MODOED&&admin)?`<div class="ne-tools" style="justify-content:center">
@@ -20139,21 +20147,48 @@ function scFechaLarga(iso){
 }
 // Los 39 del organigrama con su LP. Si el Organigrama tiene gente cargada que
 // no está en el listado oficial, también se suma (por nombre y jerarquía).
+// v1.6.3 — Clave para comparar nombres: sin acentos, sin signos, sin importar
+// el orden de las palabras. Así "PEREZ CLAUDIO ALEXIS" y "Pérez, Claudio Alexis"
+// son la misma persona y no se carga dos veces.
+function scClave(n){
+  return String(n||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Z0-9\s]/g,' ').split(/\s+/).filter(Boolean).sort().join(' ');
+}
+// v1.6.4 — Mismo problema, un paso más: en el Organigrama algunos figuran con
+// menos nombres que en el listado oficial (por ejemplo "Mariela López" contra
+// "LOPEZ MARIELA SUSANA"), así que la clave exacta no alcanzaba y se cargaban
+// dos veces. Se consideran la misma persona cuando comparten al menos dos
+// palabras Y todas las palabras de un nombre están adentro del otro.
+function scPalabras(n){
+  return String(n||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Z0-9\s]/g,' ').split(/\s+/).filter(Boolean);
+}
+function scMismaPersona(a, b){
+  const A = scPalabras(a), B = scPalabras(b);
+  if(!A.length || !B.length) return false;
+  const comunes = A.filter(w => B.indexOf(w) >= 0).length;
+  if(comunes < 2) return false;
+  return comunes === A.length || comunes === B.length;
+}
 function scPersonal(){
   const out = [];
   const vistos = new Set();
+  // 1) El listado oficial del Departamento: los 39, cada uno con su LP.
   try{
     (typeof LIC_PERSONAL!=='undefined' ? LIC_PERSONAL : []).forEach(p=>{
-      const k = (p.nombre||'').toUpperCase();
-      if(vistos.has(k)) return; vistos.add(k);
+      const k = scClave(p.nombre);
+      if(!k || vistos.has(k)) return; vistos.add(k);
       out.push({ nombre:p.nombre||'', jerarquia:p.jerarquia||'', lp:p.lp||'' });
     });
   }catch(_){}
+  // 2) Del Organigrama solo se suma quien no esté ya en el listado oficial.
   try{
     (S.get('ORGANIGRAMA','ORGANIGRAMA')||[]).forEach(r=>{
       const n = (r.apellidoNombre||'').trim();
-      if(!n || vistos.has(n.toUpperCase())) return;
-      vistos.add(n.toUpperCase());
+      const k = scClave(n);
+      if(!k || vistos.has(k)) return;
+      if(out.some(p => scMismaPersona(p.nombre, n))) return;   // ya está, escrito distinto
+      vistos.add(k);
       out.push({ nombre:n, jerarquia:r.jerarquia||'', lp:r.lp||'' });
     });
   }catch(_){}
@@ -20386,26 +20421,32 @@ async function scBorrar(id){
   else S.del(SC_S, SC_M, id);
   if(SC_EDIT===id) scCancelar(); else renderTable();
 }
+// v1.6.3 — Sin emojis: en varios celulares llegaban como "?". Los rótulos van
+// en negrita de WhatsApp (*así*) y la lista con guiones comunes.
+function scEtiquetaPlana(p){
+  const j = p.jerarquia ? p.jerarquia + ' ' : '';
+  return (p.lp ? 'LP ' + p.lp + ' - ' : '') + j + (p.nombre||'');
+}
 function scTexto(r){
   const L = [];
-  L.push('🚔 *SALIDA DE COMISIÓN*');
-  L.push('DCFyCCCO «Cabo 1.º (PM) Juan Ariel Belarde»');
+  L.push('*SALIDA DE COMISION*');
+  L.push('DCFyCCCO "Cabo Primero (PM) Juan Ariel Belarde"');
   L.push('');
-  L.push('📅 Fecha: ' + scFechaLarga(r.fecha));
-  L.push('🕐 Hora de salida: ' + (r.salida||'—'));
-  L.push('🕐 Hora de llegada: ' + (r.llegada||'— (en comisión)'));
-  if(r.jp)     L.push('🚓 JP N.º: ' + r.jp);
-  if(r.chofer) L.push('🧑‍✈️ Chofer: ' + r.chofer);
-  if(r.asunto) L.push('📋 Asunto: ' + r.asunto);
+  L.push('*Fecha:* ' + scFechaLarga(r.fecha));
+  L.push('*Hora de salida:* ' + (r.salida||'-'));
+  L.push('*Hora de llegada:* ' + (r.llegada||'- (en comisión)'));
+  if(r.jp)     L.push('*JP N.:* ' + r.jp);
+  if(r.chofer) L.push('*Chofer:* ' + r.chofer);
+  if(r.asunto) L.push('*Asunto:* ' + r.asunto);
   const g = r.personal||[];
   if(g.length){
     L.push('');
-    L.push('👮 Personal de comisión (' + g.length + '):');
-    g.forEach(p=> L.push('• ' + scEtiqueta(p)));
+    L.push('*Personal de comisión (' + g.length + '):*');
+    g.forEach(p=> L.push('- ' + scEtiquetaPlana(p)));
   }
   L.push('');
-  if(r.informa) L.push('✍️ Informa: ' + r.informa);
-  L.push('📲 Cargado por: ' + (r._por||'—'));
+  if(r.informa) L.push('*Informa:* ' + r.informa);
+  L.push('*Cargado por:* ' + (r._por||'-'));
   return L.join('\n');
 }
 function scWhatsApp(id){
