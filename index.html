@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.5.98">
+<meta name="app-version" content="1.6.2">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1004,6 +1004,314 @@ textarea.fi{resize:vertical;min-height:72px}
 /* Animaciones */
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .28s ease forwards}
+
+/* ═════ NUESTRA ESCUELA (v1.6.0) — Reseña y Presentación ═════
+   v1.6.0 — Arreglo de letras que no se leían. Dos causas:
+   1) Las tarjetas usaban SOLO degradado (sin color de fondo sólido). El
+      corrector automático de contraste mira el background-color, veía
+      "transparente", seguía subiendo hasta el panel blanco y concluía que el
+      fondo era claro: entonces oscurecía la letra… sobre un fondo oscuro.
+      Ahora toda superficie lleva color sólido + degradado encima.
+   2) Ese corrector deja el color escrito en el elemento; al volver al modo
+      oscuro quedaban letras oscuras pegadas. Las pestañas llevan ahora
+      data-cc-no, que el corrector respeta y no toca.
+   Regla de oro de acá abajo: el color lo fija la SUPERFICIE (tarjeta, deck,
+   recuadro) y los textos de adentro van con color:inherit. Un solo lugar por
+   superficie para cada modo. */
+.ne-wrap{padding:2px 2px 34px;color:#c8d8e8}
+.light-mode .ne-wrap{color:#33506c}
+.ne-p,.ne-li{color:inherit}
+.ne-barra{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.ne-bt{background:#13294a;border:1px solid rgba(96,165,250,.4);color:#dbeafe;
+  padding:8px 12px;border-radius:9px;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ne-bt:hover{background:#1c3a66}
+.ne-bt.on{background:#2563eb;border-color:#3b82f6;color:#ffffff;font-weight:700}
+.ne-bt.gris{background:#152740;border-color:rgba(122,175,212,.3);color:#dbe7f3}
+.ne-bt.rojo{background:#3a1f1f;border-color:rgba(214,110,110,.5);color:#f0b3b3}
+.ne-bt.dorado{background:#c79a3a;border-color:#c79a3a;color:#1a1206;font-weight:700}
+.ne-bt.verde{background:#12563f;border-color:#1d7a5a;color:#d6f7ea}
+.ne-bt.mini{padding:5px 9px;font-size:11.5px}
+.ne-buscar{flex:1;min-width:150px;background:#0b1626;border:1px solid rgba(122,175,212,.3);
+  border-radius:9px;color:#eaf3fb;padding:9px 11px;font-size:13px;font-family:inherit}
+
+/* — Portada del documento — */
+.ne-portada{background:#12325f;background-image:linear-gradient(150deg,rgba(59,130,246,.28),rgba(9,20,38,.55));
+  border:1px solid rgba(96,165,250,.4);border-radius:14px;padding:18px 16px;margin-bottom:14px;
+  text-align:center;color:#e7f1fb}
+.ne-portada .ne-est{font-size:24px;color:#93c5fd;line-height:1;margin-bottom:8px}
+.ne-portada h2{margin:0 0 9px;font-size:17px;letter-spacing:.4px;color:inherit;font-weight:800}
+.ne-portada p{margin:0;font-size:12.5px;line-height:1.7;color:inherit;opacity:.92;white-space:pre-line}
+.ne-portada img{max-width:110px;max-height:110px;margin:0 auto 10px;display:block;border-radius:8px}
+
+/* — Índice — */
+.ne-indice{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ne-ix{background:#132842;border:1px solid rgba(122,175,212,.3);color:#cfe0f0;
+  border-radius:20px;padding:6px 11px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.ne-ix:hover{border-color:#3b82f6;color:#ffffff}
+
+/* — Capítulos — */
+.ne-cap{background:#101e30;border:1px solid rgba(122,175,212,.18);
+  border-left:4px solid #3b82f6;border-radius:12px;margin-bottom:10px;overflow:hidden;color:#c8d8e8}
+.ne-cab{width:100%;display:flex;align-items:center;gap:9px;background:none;border:none;
+  padding:13px 14px;cursor:pointer;text-align:left;font-family:inherit;color:#eaf3fb}
+.ne-cab:hover{background:rgba(122,175,212,.07)}
+.ne-num{flex:none;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  background:#1c3f77;border:1px solid rgba(96,165,250,.45);border-radius:8px;
+  font-size:11.5px;font-weight:800;color:#bfdbfe}
+.ne-cab h3{flex:1;margin:0;font-size:14px;font-weight:700;letter-spacing:.2px;color:inherit}
+.ne-fle{flex:none;color:#93b4cf;font-size:11px;transition:transform .18s}
+.ne-fle.ab{transform:rotate(90deg)}
+.ne-cuerpo{padding:0 14px 15px;color:inherit}
+
+/* — Contenido — */
+.ne-sub{font-size:12.5px;font-weight:800;color:#93c5fd;margin:14px 0 7px;letter-spacing:.2px}
+.ne-sub .ne-sn{color:#8fb4d0;font-weight:700;margin-right:5px}
+.ne-fun{font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  color:#d8ab4a;margin:13px 0 6px}
+.ne-p{font-size:13px;line-height:1.65;margin:0 0 8px;text-align:justify}
+.ne-li{font-size:13px;line-height:1.6;margin:0 0 5px;padding-left:16px;position:relative}
+.ne-li::before{content:'';position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%;
+  background:#3b82f6}
+.ne-nota{background:#14305c;border:1px solid rgba(96,165,250,.4);border-radius:11px;
+  padding:11px 13px;font-size:12.5px;line-height:1.6;color:#dbeafe;margin:12px 0;font-style:italic}
+.ne-tabwrap{overflow-x:auto;margin:10px 0 4px;-webkit-overflow-scrolling:touch}
+.ne-tabla{width:100%;border-collapse:collapse;font-size:12px;min-width:430px}
+.ne-tabla th{background:#1c3f77;color:#e2edfa;font-size:10px;letter-spacing:.9px;
+  text-transform:uppercase;padding:8px 9px;text-align:left;border:1px solid rgba(96,165,250,.35)}
+.ne-tabla td{padding:8px 9px;border:1px solid rgba(122,175,212,.2);color:#c8d8e8;line-height:1.5;
+  vertical-align:top}
+.ne-tabla tr:last-child td{background:#3a2f16;color:#f0dcae;font-weight:700}
+
+/* — Edición — */
+.ne-ed{background:#122844;border:1px dashed rgba(96,165,250,.5);border-radius:11px;
+  padding:12px;margin:10px 0;color:#dbe7f3}
+.ne-in{width:100%;background:#0b1626;border:1px solid rgba(122,175,212,.3);border-radius:8px;
+  color:#eaf3fb;padding:9px 11px;font-size:13px;font-family:inherit;margin-bottom:9px}
+.ne-in option{background:#0b1626;color:#eaf3fb}
+.ne-lb{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:#a8c4dc;margin:0 0 4px}
+.ne-tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px;padding-top:8px;
+  border-top:1px dashed rgba(122,175,212,.22)}
+
+/* — Presentación (láminas) — */
+.ne-deck{background:#0f2a5e;background-image:linear-gradient(155deg,rgba(59,130,246,.3),rgba(6,14,28,.6));
+  border:1px solid rgba(96,165,250,.35);border-radius:16px;padding:22px 18px;min-height:330px;
+  display:flex;flex-direction:column;position:relative;color:#e8f2fc}
+.ne-deck .ne-lnum{position:absolute;top:12px;right:14px;font-size:10.5px;letter-spacing:1.4px;
+  color:#a9c4de}
+.ne-deck h2{margin:6px 0 4px;font-size:19px;line-height:1.3;color:#ffffff;font-weight:800;
+  letter-spacing:.2px}
+.ne-deck .ne-lsub{font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#a8cbf5;
+  font-weight:700;margin-bottom:14px}
+.ne-deck .ne-lbody{flex:1;font-size:14px;line-height:1.7;color:inherit}
+.ne-deck .ne-p,.ne-deck .ne-li{font-size:14px;color:inherit}
+.ne-deck .ne-limg{max-width:100%;max-height:210px;display:block;margin:12px auto 4px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.16)}
+.ne-nav{display:flex;align-items:center;gap:8px;margin-top:13px}
+.ne-nav .ne-bt{flex:none}
+.ne-nav .ne-cont{flex:1;text-align:center;font-size:12px;color:#a8c4dc}
+.ne-puntos{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:11px}
+.ne-pt{width:8px;height:8px;border-radius:50%;background:rgba(122,175,212,.35);border:none;
+  padding:0;cursor:pointer}
+.ne-pt.on{background:#3b82f6;transform:scale(1.35)}
+
+/* — Modo proyección: siempre oscuro, en los dos modos de la app — */
+#neProy{position:fixed;inset:0;z-index:9999;background:#070f1c;display:none;
+  flex-direction:column;padding:20px}
+#neProy.ver{display:flex}
+#neProy .ne-deck,.light-mode #neProy .ne-deck{flex:1;border-radius:20px;padding:34px 28px;
+  justify-content:center;background:#0f2a5e;color:#e8f2fc}
+#neProy .ne-deck h2,.light-mode #neProy .ne-deck h2{font-size:27px;color:#ffffff}
+#neProy .ne-deck .ne-lbody{flex:none;font-size:17px;line-height:1.8}
+#neProy .ne-deck .ne-p,#neProy .ne-deck .ne-li{font-size:17px}
+#neProy .ne-deck .ne-limg{max-height:38vh}
+#neProy .ne-nav .ne-cont{color:#a8c4dc}
+
+/* — Modo claro — */
+.light-mode .ne-portada{background:#123a63;background-image:linear-gradient(150deg,rgba(59,130,246,.35),rgba(9,20,38,.25));
+  border-color:#0f2f52;color:#f2f7fc}
+.light-mode .ne-portada .ne-est{color:#bfdbfe}
+.light-mode .ne-cap{background:#ffffff;border-color:#dde7f0;border-left-color:#1d4ed8;color:#33506c}
+.light-mode .ne-cab{color:#15314f}
+.light-mode .ne-cab:hover{background:#f3f7fb}
+.light-mode .ne-num{background:#e2ecfb;border-color:#bcd3ee;color:#123a63}
+.light-mode .ne-sub{color:#1a4fa8}
+.light-mode .ne-sub .ne-sn{color:#5b7d9c}
+.light-mode .ne-fun{color:#7a5c14}
+.light-mode .ne-nota{background:#e7effc;border-color:#bcd3ee;color:#1f3b5c}
+.light-mode .ne-ix{background:#f3f7fb;border-color:#dde7f0;color:#28486a}
+.light-mode .ne-tabla th{background:#dce8fa;color:#123a63;border-color:#bcd3ee}
+.light-mode .ne-tabla td{color:#33506c;border-color:#dde7f0}
+.light-mode .ne-tabla tr:last-child td{background:#fbf1da;color:#5e460f}
+.light-mode .ne-bt{background:#e7effc;border-color:#bcd3ee;color:#123a63}
+.light-mode .ne-bt:hover{background:#d7e5fa}
+.light-mode .ne-bt.gris{background:#f0f4f9;border-color:#dbe4ee;color:#28486a}
+.light-mode .ne-bt.rojo{background:#fdeaea;border-color:#eec2c2;color:#96302f}
+.light-mode .ne-bt.verde{background:#e3f7ef;border-color:#b7e3d2;color:#12563f}
+.light-mode .ne-bt.on{background:#1d4ed8;border-color:#1d4ed8;color:#ffffff}
+.light-mode .ne-buscar,.light-mode .ne-in{background:#ffffff;border-color:#cbd8e6;color:#15314f}
+.light-mode .ne-in option{background:#ffffff;color:#15314f}
+.light-mode .ne-lb{color:#4a6a88}
+.light-mode .ne-ed{background:#eef4fd;border-color:#bcd3ee;color:#28486a}
+.light-mode .ne-fle{color:#5b7d9c}
+.light-mode .ne-deck{background:#123a63;background-image:linear-gradient(155deg,rgba(59,130,246,.35),rgba(9,20,38,.2));
+  border-color:#0f2f52;color:#f2f7fc}
+.light-mode .ne-deck .ne-lsub{color:#bfdbfe}
+.light-mode .ne-deck .ne-lnum,.light-mode .ne-nav .ne-cont{color:#4a6a88}
+
+/* ═════ LÁMINAS ESTILO PDF INSTITUCIONAL (v1.6.2) ═════
+   Las láminas van claras en los dos modos de la app, igual que el PDF: fondo
+   casi blanco, títulos azul noche y acentos celestes. Como llevan data-cc-no,
+   el corrector de contraste no las toca y el look se mantiene igual siempre. */
+.ne-deck,.light-mode .ne-deck{background:#ffffff;
+  background-image:linear-gradient(170deg,#f7fbff 0%,#ffffff 45%,#f4f9fe 100%);
+  border:1px solid #dbe7f3;border-radius:14px;padding:34px 18px 14px;min-height:340px;
+  display:flex;flex-direction:column;position:relative;color:#33506c;overflow:hidden}
+.ne-deck h2,.light-mode .ne-deck h2{margin:0 0 8px;font-size:21px;line-height:1.22;
+  color:#12345c;font-weight:800;letter-spacing:-.2px}
+.ne-deck h2 span{color:#3d86c6;font-weight:800}
+.nl-prog{position:absolute;top:0;left:0;right:0;height:4px;background:#e8f0f8}
+.nl-prog i{display:block;height:100%;background-image:linear-gradient(90deg,#1d4ed8,#5fa8e0)}
+.nl-num{position:absolute;top:11px;right:14px;font-size:10px;letter-spacing:1.4px;color:#8aa6c0}
+.nl-kick{font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:#2f7fc4;
+  font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.nl-kick::before{content:'';width:16px;height:2px;background:#2f7fc4;flex:none;border-radius:2px}
+.nl-div{width:64px;height:3px;border-radius:3px;background:#cddbe8;margin:6px 0 12px}
+.nl-sub{font-size:13.5px;line-height:1.65;color:#3c5a78;margin:0 0 14px}
+.nl-body{flex:1}
+.nl-p{font-size:13px;line-height:1.6;color:#3c5a78;margin:0 0 8px}
+
+.nl-grid{display:grid;gap:8px;margin-bottom:11px}
+.nl-grid-card{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.nl-grid-chip{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.nl-grid-kpi{grid-template-columns:repeat(auto-fit,minmax(95px,1fr))}
+.nl-grid-dato{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+
+.nl-card{background:#f6fafe;border:1px solid #dce8f4;border-left:3px solid #4a9ad4;
+  border-radius:9px;padding:11px 12px}
+.nl-card-t{font-size:13px;font-weight:800;color:#12345c;margin-bottom:6px;line-height:1.3}
+.nl-card-p{font-size:12.5px;line-height:1.55;color:#3c5a78;margin:0 0 4px}
+.nl-ul{margin:0;padding:0;list-style:none}
+.nl-ul li{font-size:12.5px;line-height:1.5;color:#3c5a78;padding-left:14px;position:relative;margin-bottom:5px}
+.nl-ul li::before{content:'–';position:absolute;left:0;color:#4a9ad4;font-weight:700}
+
+.nl-chip{background:#ffffff;border:1px solid #dce8f4;border-radius:9px;padding:10px 12px;
+  font-size:12.5px;line-height:1.4;color:#26456a}
+.nl-dato{background:#f6fafe;border:1px solid #dce8f4;border-radius:9px;padding:9px 12px}
+.nl-dato span{display:block;font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;
+  color:#7d9ab5;margin-bottom:3px}
+.nl-dato b{font-size:12.5px;color:#26456a;font-weight:600;line-height:1.4}
+.nl-kpi{background:#f6fafe;border:1px solid #dce8f4;border-radius:9px;padding:11px 12px}
+.nl-kpi b{display:block;font-size:26px;line-height:1;color:#2f7fc4;font-weight:800;margin-bottom:5px}
+.nl-kpi span{font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:#7d9ab5;line-height:1.3}
+.nl-jefe{background:#12345c;border-radius:10px;padding:13px 14px;margin-bottom:11px;text-align:center}
+.nl-jefe b{display:block;font-size:14px;color:#ffffff;font-weight:800;margin-bottom:3px}
+.nl-jefe span{font-size:12px;color:#bcd7ef;line-height:1.45}
+.nl-nota{background:#1a5f9e;background-image:linear-gradient(100deg,#164e85,#2f8fd0);
+  border-radius:10px;padding:12px 14px;margin:11px 0;font-size:12.5px;line-height:1.6;color:#ffffff}
+.nl-pie{border-left:3px solid #cddbe8;padding:2px 0 2px 11px;margin:11px 0 4px;
+  font-size:11.5px;line-height:1.55;color:#6e8ba6}
+
+.ne-deck .ne-tabla{min-width:0}
+.ne-deck .ne-tabla th{background:#e8f1fb;color:#12345c;border-color:#cfe0f0}
+.ne-deck .ne-tabla td{color:#3c5a78;border-color:#e2ecf6}
+.ne-deck .ne-tabla tr:last-child td{background:transparent;color:#3c5a78;font-weight:400}
+
+/* Portada y cierre */
+.nl-portada{justify-content:center;text-align:center;padding:38px 18px 14px}
+.nl-centro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.nl-portada h2{font-size:23px;margin:4px 0 6px}
+.nl-t2{font-size:15px;color:#3d86c6;font-weight:700;margin-bottom:4px}
+.nl-portada .nl-div{margin:12px auto}
+.nl-pcentro{font-size:11.5px;letter-spacing:1.6px;color:#5d7f9e;line-height:2}
+.nl-esc{max-height:140px;max-width:60%;display:block;margin:0 auto 14px}
+.nl-escs{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
+.nl-escs .nl-esc{margin:0;max-height:120px}
+.nl-esc-sep{width:1px;height:74px;background:#cddbe8;flex:none}
+.nl-escbox{text-align:center;margin:2px 0 12px}
+.nl-escbox .nl-esc{max-height:120px;margin:0 auto}
+
+/* Pie de cada lámina */
+.nl-foot{display:flex;align-items:center;gap:9px;margin-top:14px;padding-top:10px;
+  border-top:1px solid #e4edf6}
+.nl-foot img{width:22px;height:22px;object-fit:contain;flex:none}
+.nl-foot span{font-size:8.5px;letter-spacing:1.1px;color:#8aa6c0;line-height:1.4}
+
+/* Modo proyección: la lámina se agranda, el fondo va oscuro */
+#neProy .ne-deck,.light-mode #neProy .ne-deck{background:#ffffff;
+  background-image:linear-gradient(170deg,#f7fbff,#ffffff 55%,#f4f9fe);color:#33506c;
+  padding:30px 26px 14px}
+#neProy .ne-deck h2,.light-mode #neProy .ne-deck h2{font-size:30px;color:#12345c}
+#neProy .nl-sub{font-size:16px}
+#neProy .nl-card-t{font-size:15px}
+#neProy .nl-card-p,#neProy .nl-ul li,#neProy .nl-chip{font-size:14px}
+#neProy .nl-nota{font-size:15px}
+#neProy .nl-kpi b{font-size:34px}
+#neProy .nl-esc{max-height:180px}
+#neProy .nl-portada h2{font-size:32px}
+
+/* ═════ SALIDA DE COMISIÓN (v1.6.0) ═════ */
+.sc-wrap{padding:2px 2px 34px;color:#c8d8e8}
+.light-mode .sc-wrap{color:#33506c}
+.sc-card{background:#101e30;border:1px solid rgba(122,175,212,.18);border-left:4px solid #16a34a;
+  border-radius:12px;padding:13px 14px;margin-bottom:10px;color:#c8d8e8}
+.sc-card.abierta{border-left-color:#f59e0b}
+.light-mode .sc-card{background:#ffffff;border-color:#dde7f0;border-left-color:#16a34a;color:#33506c}
+.light-mode .sc-card.abierta{border-left-color:#d97706}
+.sc-form{background:#101e30;border:1px solid rgba(122,175,212,.18);border-radius:12px;
+  padding:14px;margin-bottom:14px;color:#c8d8e8}
+.light-mode .sc-form{background:#ffffff;border-color:#dde7f0;color:#33506c}
+.sc-tit{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#4ade80;
+  font-weight:800;margin-bottom:12px}
+.light-mode .sc-tit{color:#15803d}
+.sc-lb{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:#a8c4dc;margin:0 0 4px}
+.light-mode .sc-lb{color:#4a6a88}
+.sc-in{width:100%;background:#0b1626;border:1px solid rgba(122,175,212,.3);border-radius:8px;
+  color:#eaf3fb;padding:9px 11px;font-size:13px;font-family:inherit;margin-bottom:10px}
+.sc-in option{background:#0b1626;color:#eaf3fb}
+.light-mode .sc-in{background:#ffffff;border-color:#cbd8e6;color:#15314f}
+.light-mode .sc-in option{background:#ffffff;color:#15314f}
+.sc-fila{display:flex;gap:9px;flex-wrap:wrap}
+.sc-fila>div{flex:1;min-width:130px}
+.sc-bt{background:#152740;border:1px solid rgba(122,175,212,.3);color:#dbe7f3;padding:8px 12px;
+  border-radius:9px;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sc-bt.verde{background:#16a34a;border-color:#16a34a;color:#04180d;font-weight:700}
+.sc-bt.wa{background:#25d366;border-color:#25d366;color:#04180d;font-weight:700}
+.sc-bt.ambar{background:#3a2f16;border-color:#a97a1c;color:#f5d894}
+.sc-bt.rojo{background:#3a1f1f;border-color:rgba(214,110,110,.5);color:#f0b3b3}
+.sc-bt.mini{padding:6px 10px;font-size:11.5px}
+.light-mode .sc-bt{background:#f0f4f9;border-color:#dbe4ee;color:#28486a}
+.light-mode .sc-bt.ambar{background:#fdf3dd;border-color:#e6c983;color:#7a5c14}
+.light-mode .sc-bt.rojo{background:#fdeaea;border-color:#eec2c2;color:#96302f}
+.sc-pers{max-height:260px;overflow:auto;border:1px solid rgba(122,175,212,.22);border-radius:9px;
+  padding:6px;margin-bottom:10px;background:#0b1626}
+.light-mode .sc-pers{background:#f8fbfe;border-color:#dde7f0}
+.sc-per{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;cursor:pointer;
+  font-size:12.5px;line-height:1.35}
+.sc-per:hover{background:rgba(122,175,212,.09)}
+.sc-per input{width:17px;height:17px;flex:none}
+.sc-per b{font-weight:700}
+.sc-per small{display:block;font-size:10.5px;opacity:.75;letter-spacing:.3px}
+.sc-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.sc-chip{background:#1c3f77;border:1px solid rgba(96,165,250,.4);color:#dbeafe;border-radius:16px;
+  padding:5px 10px;font-size:11.5px;display:flex;align-items:center;gap:6px}
+.light-mode .sc-chip{background:#e2ecfb;border-color:#bcd3ee;color:#123a63}
+.sc-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:14px;
+  line-height:1;padding:0;opacity:.75;font-family:inherit}
+.sc-dato{font-size:12.5px;line-height:1.6;margin:0 0 3px;color:inherit}
+.sc-dato b{color:#93c5fd;font-weight:700}
+.light-mode .sc-dato b{color:#1a4fa8}
+.sc-est{font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800;
+  padding:3px 8px;border-radius:12px;flex:none}
+.sc-est.abierta{background:#3a2f16;color:#f5d894}
+.sc-est.cerrada{background:#12563f;color:#a7f3d0}
+.light-mode .sc-est.abierta{background:#fdf3dd;color:#7a5c14}
+.light-mode .sc-est.cerrada{background:#dcfce7;color:#12563f}
+.sc-acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:9px;
+  border-top:1px solid rgba(122,175,212,.16)}
+.light-mode .sc-acc{border-top-color:#e6edf5}
+.sc-fecha{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#8fb4d0;
+  font-weight:800;margin:16px 0 8px}
+.light-mode .sc-fecha{color:#4a6a88}
 
 /* ═════ ORGANIGRAMA — Toggle y Vista Árbol ═════ */
 .org-toggle{display:flex;gap:6px;padding:8px 2px 14px;align-items:center}
@@ -3288,6 +3596,44 @@ const SECTORS = [
     ]},
 
   ]},
+  // ─── NUESTRA ESCUELA (v1.5.99) — Reseña y Presentación ───
+  // Las ven TODOS (universal). Editar/agregar/borrar: solo administradoras
+  // (el control está adentro de renderResena() y renderPresenta()).
+  { id:'RESENA', name:'Reseña Institucional', icon:'📖', color:'#1d4ed8', bg:'#dbeafe',
+    universal:true, custom:'resena', modules:[
+    { id:'RESENA', name:'Reseña Institucional', fields:[
+      {key:'n',    label:'N.º',    type:'text'},
+      {key:'t',    label:'Título', type:'text'},
+      {key:'tipo', label:'Tipo',   type:'select', opts:['portada','cap','sub','fun','nota','tabla']},
+      {key:'txt',  label:'Texto',  type:'textarea'},
+    ]},
+  ]},
+
+  { id:'PRESENTACION', name:'Presentación', icon:'🖥️', color:'#0369a1', bg:'#e0f2fe',
+    universal:true, custom:'presenta', modules:[
+    { id:'PRESENTACION', name:'Presentación', fields:[
+      {key:'tit', label:'Título',  type:'text'},
+      {key:'sub', label:'Bajada',  type:'text'},
+      {key:'txt', label:'Texto',   type:'textarea'},
+    ]},
+  ]},
+
+  // ─── SALIDA DE COMISIÓN (v1.6.0) ───
+  // La ven y la cargan TODOS. Borrar queda solo para administradoras (el
+  // control está adentro de renderComision / scBorrar).
+  { id:'SALIDA_COMISION', name:'Salida de Comisión', icon:'🚔', color:'#16a34a', bg:'#dcfce7',
+    universal:true, custom:'comision', modules:[
+    { id:'SALIDA_COMISION', name:'Salida de Comisión', fields:[
+      {key:'fecha',   label:'Fecha',            type:'date'},
+      {key:'salida',  label:'Hora de salida',   type:'text'},
+      {key:'llegada', label:'Hora de llegada',  type:'text'},
+      {key:'jp',      label:'N.º de JP',        type:'text'},
+      {key:'chofer',  label:'Chofer',           type:'text'},
+      {key:'asunto',  label:'Asunto',           type:'textarea'},
+      {key:'informa', label:'Quién informa',    type:'text'},
+    ]},
+  ]},
+
   // ─── Sectores compartidos (visibles para todos los usuarios) ───
   { id:'ORGANIGRAMA', name:'Organigrama', icon:'🏛️', color:'#4338ca', bg:'#ccfbf1', universal:true, modules:[
     { id:'ORGANIGRAMA', name:'Organigrama', fields:[
@@ -4707,8 +5053,16 @@ function doLogout(){
 //   color = el color de la carpeta (la barrita de la izquierda y el ícono).
 //           Es lo que hace que el menú se vea vivo y no todo del mismo color.
 const SB_GRUPOS = [
+  // v1.5.99 — NUESTRA ESCUELA: primera carpeta del menú, debajo del Panel de
+  // inicio y arriba del Panel Institucional. Adentro van la Reseña, la
+  // Presentación y el Organigrama (que se mudó acá desde "Personal del
+  // DCFyCCCO", carpeta que dejó de existir). La estrella va en azul.
+  { id:'NUESTRA_ESCUELA', name:'Nuestra Escuela', ac:'Cabo 1.º (PM) Juan Ariel Belarde',
+    icon:'<span style="color:#3b82f6;text-shadow:0 0 8px rgba(59,130,246,.6)">★</span>',
+    color:'#3b82f6', ids:['RESENA','PRESENTACION','ORGANIGRAMA'] },
+  // v1.6.0 — Salida de Comisión entra acá, con las pestañas de uso diario.
   { id:'DEST', name:'Panel Institucional', icon:'★', color:'#c79a3a',
-    ids:['NUMEROS_VARIOS','EXPEDIENTES','DISPOSICIONES','GESTION_DOC','AUTORIZACIONES','LICENCIAS','ACADEMIAS'] },
+    ids:['NUMEROS_VARIOS','EXPEDIENTES','DISPOSICIONES','GESTION_DOC','AUTORIZACIONES','LICENCIAS','ACADEMIAS','SALIDA_COMISION'] },
   // Carpeta propia para lo que se comunica hacia afuera/adentro.
   { id:'COM',  name:'Comunicaciones', icon:'📣', color:'#18a0a8', ids:['MINUTAS','NOVEDADES'] },
   // ÁREAS DEL DEPARTAMENTO: carpeta con SUBCARPETAS, una por Secretaría.
@@ -4737,8 +5091,8 @@ const SB_GRUPOS = [
     ids:['CALENDARIO','HORARIO_DIARIO','DIAGRAMA','AVISOS','CRONOGRAMA','ALMUERZO','EVENTOS','CEREMONIAL'] },
   { id:'RECU', name:'Recursos', icon:'📦', color:'#d9a03e',
     ids:['PERTENENCIAS','PERTENENCIAS_INTERNAS','INTERNET_PASS'] },
-  { id:'PERSONAL_DPTO', name:'Personal del DCFyCCCO', ac:'39 efectivos', icon:'👮', color:'#6f8ed8',
-    ids:['ORGANIGRAMA'] },
+  // v1.5.99 — "Personal del DCFyCCCO" ya no está: su única pestaña (el
+  // Organigrama) pasó a la carpeta Nuestra Escuela, arriba de todo.
 ];
 function _sbEstado(){ try{ return JSON.parse(localStorage.getItem('suep_sb_grupos')||'{}'); }catch(_){ return {}; } }
 function sbGrupoAbierto(id){
@@ -4749,7 +5103,7 @@ function sbGrupoAbierto(id){
   // v1.5.63 — Arrancan abiertas: Panel Institucional, Comunicaciones, la carpeta
   // de Áreas (sus subcarpetas arrancan cerradas, así se ve el índice),
   // Planificación / Diagramación y Personal del DCFyCCCO.
-  return id==='DEST' || id==='COM' || id==='AREAS' || id==='PLAN' || id==='PERSONAL_DPTO';
+  return id==='NUESTRA_ESCUELA' || id==='DEST' || id==='COM' || id==='AREAS' || id==='PLAN';
 }
 function sbToggleGrupo(id){
   const st = _sbEstado();
@@ -4838,7 +5192,7 @@ function buildSidebar(){
     </button>`;
   };
   const btnHTML = s=>{
-    const destacado = (s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES' || s.id==='DISPOSICIONES' || s.id==='GESTION_DOC' || s.id==='AUTORIZACIONES' || s.id==='LICENCIAS' || s.id==='ACADEMIAS');
+    const destacado = (s.id==='SALIDA_COMISION' || s.id==='NUMEROS_VARIOS' || s.id==='EXPEDIENTES' || s.id==='DISPOSICIONES' || s.id==='GESTION_DOC' || s.id==='AUTORIZACIONES' || s.id==='LICENCIAS' || s.id==='ACADEMIAS');
     return `
     <button class="sector-btn${destacado?' sb-destacado':''}" id="sb_${s.id}"
       data-nom="${(s.name||'').toLowerCase()}" onclick="selectSector('${s.id}')">
@@ -5265,6 +5619,24 @@ function renderTable(searchOverride){
   // ─── Pestaña custom: ALMUERZO ───
   if(CS.custom==='almuerzo'){
     area.innerHTML = renderAlmuerzo();
+    return;
+  }
+
+  // ─── Pestaña custom: SALIDA DE COMISIÓN (v1.6.0) ───
+  if(CS.custom==='comision'){
+    area.innerHTML = renderComision();
+    return;
+  }
+
+  // ─── Pestaña custom: RESEÑA INSTITUCIONAL (v1.5.99) ───
+  if(CS.custom==='resena'){
+    area.innerHTML = renderResena();
+    return;
+  }
+
+  // ─── Pestaña custom: PRESENTACIÓN EN LÁMINAS (v1.5.99) ───
+  if(CS.custom==='presenta'){
+    area.innerHTML = renderPresenta();
     return;
   }
 
@@ -10520,7 +10892,8 @@ function generarImpresion(){
   let hayAlgo = false;
 
   SECTORS.forEach(sec=>{
-    if(sec.custom==='almuerzo' || sec.custom==='gestiondoc' || sec.custom==='avisos' || sec.id==='ORGANIGRAMA') return; // se manejan aparte / no aplican
+    if(sec.custom==='almuerzo' || sec.custom==='gestiondoc' || sec.custom==='avisos' || sec.id==='ORGANIGRAMA'
+       || sec.custom==='resena' || sec.custom==='presenta' || sec.custom==='comision') return; // se manejan aparte / no aplican
     let secHTML = '';
     const procesarModulo = (mod, titulo)=>{
       // Recargo / Imaginarias: listar marcados por fecha
@@ -12794,6 +13167,9 @@ function reconstruirNotifsFaltantes(){
   // Recolectar TODOS los registros de todos los sectores/módulos/subTabs
   const nuevos = [];
   SECTORS.forEach(sec=>{
+    // v1.5.99 — La Reseña y la Presentación son un texto institucional, no
+    // cargas del día: no se reconstruyen notificaciones para sus bloques.
+    if(sec.custom==='resena' || sec.custom==='presenta') return;
     (sec.modules||[]).forEach(mod=>{
       const targets = mod.subTabs ? mod.subTabs : [mod];
       targets.forEach(t=>{
@@ -18850,6 +19226,1201 @@ function avPuedeTocar(a){
   if(!avPuedeCargar() || !a) return false;
   return CU.permiso === 'admin' || String(a._por||'') === String(CU.nombre||'');
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// NUESTRA ESCUELA  (v1.5.99)
+// ───────────────────────────────────────────────────────────────────────────
+// Carpeta propia, la primera del menú, con tres pestañas:
+//   1) Reseña Institucional — el documento completo de la Escuela.
+//   2) Presentación         — el mismo contenido en láminas, para mostrar.
+//   3) Organigrama          — el que ya estaba (se mudó acá desde
+//                             "Personal del DCFyCCCO", que dejó de existir).
+//
+// Cómo funciona la edición:
+//   • La ven TODOS. Editar, agregar, mover y borrar es SOLO de administradoras.
+//   • El texto viene de fábrica dentro de la app (constantes de acá abajo), así
+//     se lee aunque el equipo esté sin internet y sin haber bajado nada.
+//   • Recién cuando una administradora toca algo por primera vez, el texto se
+//     "materializa": pasa a guardarse como registros y desde ese momento manda
+//     la versión guardada (y viaja a la nube como cualquier otra pestaña).
+//     Por eso no se duplica nada ni se pisa lo editado.
+// ═══════════════════════════════════════════════════════════════════════════
+const NE_RS = 'RESENA',       NE_RM = 'RESENA';
+// v1.6.1 — El escudo se guarda aparte (una sola vez) y se muestra solo en la
+// portada de la reseña, en la primera lámina y en la impresión. Si un bloque o
+// una lámina tienen imagen propia, esa manda.
+const NE_ESC_M = 'ESCUDO';
+// Escudos oficiales recortados del PDF institucional. Vienen adentro de la app
+// (no hay que subir nada) y se pueden reemplazar con el botón 🛡️ Escudo.
+const NE_ESC_POL = 'data:image/png;base64,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';
+const NE_ESC_DCF = 'data:image/png;base64,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';
+const NE_PS = 'PRESENTACION', NE_PM = 'PRESENTACION';
+
+// Bloques de la reseña. tipo: cap (capítulo) · sub (subtítulo) · fun (bajada)
+// · nota (recuadro destacado) · tabla (filas separadas con " | ").
+// En el texto, la línea que arranca con "• " se dibuja como viñeta.
+const NE_RESENA_BASE = [
+{n:'', t:'Reseña institucional', tipo:'portada', txt:'POLICÍA DE LA PROVINCIA DEL NEUQUÉN\nDIRECCIÓN DE INSTITUTOS POLICIALES\nDepartamento Centro de Formación y Capacitación\n«Cabo Primero (PM) Juan Ariel Belarde»\nFormación inicial de Aspirantes a Agentes de Seguridad\nPlaza Huincul · Provincia del Neuquén'},
+
+{n:'1', t:'Presentación general', tipo:'cap', txt:'El Departamento Centro de Formación y Capacitación «Cabo Primero (PM) Juan Ariel Belarde», con asiento en Plaza Huincul, depende de la Dirección de Institutos Policiales y tiene como misión formar integralmente a los futuros agentes de la Policía de la Provincia del Neuquén.\nLa Escuela desarrolla esa misión mediante un Proyecto Educativo Situado, elaborado según las necesidades reales de la institución y de la comunidad. El trabajo es integral y combina formación académica, jurídica, ética, física, operacional, emocional y tecnológica.\nSe busca formar un policía preparado técnicamente, pero fundamentalmente responsable, respetuoso, equilibrado y con criterio para tomar decisiones dentro de la ley. Para ello, la Escuela está organizada mediante una Rectoría, tres Secretarías —Académica, Operacional y Logística— y un Área de Sanidad, que trabajan de manera articulada durante todo el proceso formativo.'},
+
+{n:'2', t:'Identidad y propuesta formativa', tipo:'cap', txt:''},
+{n:'2.1', t:'Misión y dependencia institucional', tipo:'sub', txt:'La Escuela integra la estructura de la Dirección de Institutos Policiales de la Policía de la Provincia del Neuquén. Su misión es la formación integral de los futuros agentes de seguridad de la provincia.\nSu propuesta formativa se desarrolla mediante un Proyecto Educativo Situado, diseñado de acuerdo con las necesidades institucionales, sociales y operativas propias de la provincia.'},
+{n:'2.2', t:'Proyecto Educativo Situado', tipo:'sub', txt:'El proyecto articula, en un mismo trayecto, las siguientes dimensiones de la formación policial:\n• Conocimientos jurídicos.\n• Formación ética.\n• Derechos humanos.\n• Procedimientos policiales.\n• Preparación física.\n• Prácticas operacionales.\n• Inteligencia emocional.\n• Atención a la ciudadanía.\n• Competencias digitales.'},
+{n:'', t:'', tipo:'nota', txt:'El Proyecto Educativo Situado no se importa de otro contexto: responde a la realidad policial y social de la provincia del Neuquén y se ejecuta bajo la coordinación de la Secretaría Académica.'},
+{n:'2.3', t:'Perfil profesional buscado', tipo:'sub', txt:'El perfil profesional buscado es el de un agente disciplinado, responsable y preparado técnicamente, pero también equilibrado, respetuoso, empático y capaz de tomar decisiones fundadas.\nSe procura formar policías con criterio propio, vocación de servicio y capacidad para resolver conflictos, que ejerzan la autoridad dentro del marco legal, respetando la dignidad de las personas y utilizando la fuerza de manera racional, gradual y proporcional.'},
+{n:'2.4', t:'Marco federal de formación policial (CAFFoP)', tipo:'sub', txt:'La Escuela desarrolla la formación inicial conforme a los lineamientos establecidos por el Consejo Académico Federal en Formación Policial (CAFFoP), que promueve:\n• Estándares comunes de profesionalización.\n• Respeto por los derechos humanos.\n• Uso racional de la fuerza.\n• Perspectiva ética.\n• Preparación para intervenir eficazmente ante las demandas actuales de la seguridad pública.\nBajo este marco, la formación integra permanentemente la teoría con la práctica, procurando que cada conocimiento adquirido pueda ser aplicado de manera responsable, legal y profesional en situaciones concretas de la función policial.'},
+{n:'', t:'', tipo:'nota', txt:'El objetivo no es que el aspirante solamente memorice contenidos, sino que sepa aplicarlos correctamente en situaciones reales.'},
+{n:'2.5', t:'Articulación entre teoría y práctica', tipo:'sub', txt:'Docentes e instructores trabajan de manera articulada mediante clases, talleres, simulaciones, resolución de situaciones problemáticas, prácticas físicas y operacionales, ejercicios en el polígono y actividades de fortalecimiento académico.'},
+{n:'2.6', t:'Convivencia institucional', tipo:'sub', txt:'La convivencia institucional se encuentra regulada por un Reglamento de Normas de Convivencia actualizado, que establece derechos, deberes, pautas de conducta y criterios de intervención.\nSu finalidad es fortalecer el respeto, la responsabilidad, la disciplina consciente, el buen trato y la resolución adecuada de los conflictos durante el proceso formativo.'},
+
+{n:'3', t:'Organización de la Escuela', tipo:'cap', txt:'Para el cumplimiento de su misión formativa, la Escuela organiza su funcionamiento mediante distintas áreas que trabajan de manera articulada bajo la conducción de la Rectoría. La estructura institucional está integrada por Rectoría, Secretaría Académica, Secretaría Operacional, Secretaría Logística y Área de Sanidad.'},
+{n:'', t:'', tipo:'nota', txt:'Estas áreas trabajan coordinadamente porque la formación policial no depende solamente del aula: requiere acompañamiento académico, instrucción operacional, disciplina, condiciones materiales adecuadas y atención integral de la salud.'},
+{n:'3.1', t:'Rectoría', tipo:'sub', txt:'Conduce integralmente la Escuela, establece los lineamientos institucionales, supervisa las distintas áreas y representa al establecimiento ante la superioridad policial y otros organismos.'},
+{n:'3.2', t:'Secretaría Académica', tipo:'sub', txt:'La Secretaría Académica planifica, organiza, coordina y supervisa el desarrollo del Proyecto Educativo Situado. Tiene bajo su responsabilidad la ejecución de la propuesta curricular, procurando la articulación permanente entre la formación teórica, práctica y operacional. Administra, asimismo, la documentación académica y realiza el seguimiento del rendimiento y la trayectoria de cada aspirante.'},
+{n:'', t:'Principales funciones', tipo:'fun', txt:'• Organizar las materias, horarios y actividades académicas.\n• Coordinar y acompañar la labor de los docentes.\n• Supervisar el cumplimiento de programas y cargas horarias.\n• Gestionar evaluaciones, mesas examinadoras y registros de calificaciones.\n• Realizar el seguimiento de las trayectorias y del rendimiento académico de los aspirantes.\n• Elaborar informes, estadísticas y documentación académica.\n• Articular el trabajo de docentes e instructores.\n• Organizar talleres, capacitaciones y actividades complementarias.\n• Promover la aplicación de los lineamientos federales de formación policial establecidos por el CAFFoP.'},
+{n:'', t:'Integración', tipo:'fun', txt:'El área está integrada por personal policial y profesionales del Cuerpo Técnico. Cuenta, además, con tres profesores de Educación Física: un profesor civil contratado mediante horas cátedra y dos profesionales pertenecientes al Cuerpo Técnico. Este personal cumple funciones de lunes a viernes, con una jornada de siete horas diarias, conforme a la reglamentación vigente.'},
+{n:'3.3', t:'Secretaría Operacional', tipo:'sub', txt:'La Secretaría Operacional tiene a su cargo la formación disciplinaria, procedimental y actitudinal de los aspirantes. Dirige la formación policial, física y disciplinaria, y coordina instructores, formaciones, servicios internos, prácticas, ceremonias y actividades operacionales.'},
+{n:'', t:'Integración y régimen de servicio', tipo:'fun', txt:'Está integrada por oficiales y suboficiales que cuentan con el Curso de Habilitación o el Curso de Instructor Policial. Los instructores cumplen turnos de doce horas de servicio por treinta y seis horas de descanso, organizados mediante una rotación mensual.'},
+{n:'', t:'Principales responsabilidades', tipo:'fun', txt:'• Impartir instrucción de orden cerrado.\n• Promover la disciplina, la responsabilidad y la correcta presentación personal.\n• Coordinar formaciones y actividades operacionales.\n• Supervisar el cumplimiento del régimen interno y de las normas de convivencia.\n• Desempeñarse como tutores de las distintas secciones.\n• Acompañar la adaptación de los aspirantes a la vida institucional.\n• Orientarlos tanto en su trayectoria académica como en su formación operacional, procedimental y actitudinal.'},
+{n:'', t:'Guardia', tipo:'fun', txt:'De esta Secretaría depende asimismo la Guardia, función desempeñada por suboficiales bajo el mismo régimen de doce horas por treinta y seis. Además de garantizar la seguridad, el orden interno y la continuidad del servicio, los jefes de guardia colaboran con la instrucción y con las distintas actividades desarrolladas en la Escuela.'},
+{n:'', t:'', tipo:'nota', txt:'La función del instructor no se limita a enseñar técnicas o procedimientos policiales: también implica observar, orientar y acompañar integralmente al aspirante durante todo su proceso formativo.'},
+{n:'3.4', t:'Secretaría Logística', tipo:'sub', txt:'La Secretaría Logística garantiza los recursos y las condiciones materiales indispensables para el normal funcionamiento de la institución. Interviene en infraestructura, mantenimiento, movilidad, alimentación, indumentaria, equipamiento, abastecimiento y apoyo general de las actividades académicas y operacionales.'},
+{n:'', t:'Principales funciones', tipo:'fun', txt:'• La gestión de pedidos y suministros.\n• El mantenimiento y mejoramiento de las instalaciones.\n• La administración del racionamiento y la alimentación.\n• La provisión, conservación y control de los recursos materiales.\n• El apoyo logístico de las actividades académicas, operacionales e institucionales.'},
+{n:'', t:'Sectores dependientes y régimen de servicio', tipo:'fun', txt:'De esta Secretaría dependen el sector de Cocina, el Pañol y el personal afectado a las tareas de mantenimiento. Sus integrantes cumplen servicios diurnos bajo el régimen de doce horas de trabajo por treinta y seis horas de descanso.'},
+{n:'3.5', t:'Área de Sanidad', tipo:'sub', txt:'El Área de Sanidad está integrada por un médico policial y personal de Enfermería. Su función principal es proteger y acompañar la salud integral de los aspirantes y del personal de la Escuela: brinda atención primaria, realiza controles y seguimiento, interviene ante emergencias y desarrolla acciones preventivas vinculadas con el bienestar físico y psicológico.'},
+{n:'', t:'Principales funciones', tipo:'fun', txt:'• La atención sanitaria primaria.\n• La evaluación y el seguimiento del estado de salud de los aspirantes.\n• La asistencia inmediata ante lesiones, accidentes o emergencias.\n• El control de certificados e indicaciones médicas.\n• La prevención de enfermedades y lesiones.\n• El acompañamiento de las actividades físicas y operacionales cuando corresponda.\n• La orientación y derivación a centros de mayor complejidad cuando la situación lo requiere.\nSu intervención permite detectar tempranamente dificultades de salud que pudieran afectar la formación o el bienestar del aspirante.'},
+
+{n:'4', t:'Áreas dependientes de la Secretaría Académica', tipo:'cap', txt:''},
+{n:'4.1', t:'Oficina Administrativa', tipo:'sub', txt:'Dependiente de la Secretaría Académica, la Oficina Administrativa interviene en la gestión documental y en las comunicaciones necesarias para el funcionamiento institucional.'},
+{n:'', t:'Tareas', tipo:'fun', txt:'• Recepción, registro y distribución de documentación.\n• Elaboración y tramitación de notas, memorándums, informes y comunicaciones internas.\n• Registro y archivo de actuaciones administrativas.\n• Gestión de notificaciones y documentación del personal y de los aspirantes.\n• Coordinación de comunicaciones con otras dependencias policiales.\n• Apoyo administrativo a Rectoría y a las distintas áreas de la Escuela.'},
+{n:'4.2', t:'Área de Reclutamiento', tipo:'sub', txt:'El Área de Reclutamiento recibe y orienta durante todo el año a las personas interesadas en ingresar a la Policía de la Provincia del Neuquén.'},
+{n:'', t:'Funciones', tipo:'fun', txt:'• Brindar información sobre requisitos y etapas del proceso de ingreso.\n• Recibir y controlar la documentación presentada.\n• Registrar a los postulantes.\n• Coordinar evaluaciones y convocatorias.\n• Comunicar fechas, resultados e indicaciones.\n• Acompañar administrativamente las distintas instancias del proceso de selección.\n• Articular su intervención con las áreas médicas, psicológicas y evaluadoras correspondientes.\nEsta tarea permite mantener un contacto permanente con potenciales postulantes y garantizar una atención organizada, clara y accesible.'},
+{n:'4.3', t:'Ceremonial y Protocolo', tipo:'sub', txt:'El Área de Ceremonial y Protocolo es atendida por personal que cumple funciones dentro de la Secretaría Académica. Se encarga de planificar y coordinar los actos, ceremonias y actividades institucionales de la Escuela.'},
+{n:'', t:'Responsabilidades', tipo:'fun', txt:'• Organizar actos académicos, policiales y conmemorativos.\n• Aplicar las normas de ceremonial y protocolo.\n• Coordinar autoridades, invitados, formaciones y ubicación de símbolos patrios.\n• Elaborar programas, guiones y secuencias ceremoniales.\n• Preparar los espacios y elementos necesarios para cada actividad.\n• Preservar la identidad, la imagen y las tradiciones institucionales.'},
+
+{n:'5', t:'Propuesta curricular', tipo:'cap', txt:''},
+{n:'5.1', t:'Espacios curriculares — Ciclo lectivo 2026', tipo:'sub', txt:'Los espacios curriculares del ciclo lectivo 2026 se organizan en seis áreas de formación, conforme al siguiente detalle:'},
+{n:'', t:'', tipo:'tabla', txt:'ÁREA DE FORMACIÓN | ESPACIOS CURRICULARES | N.º\nJurídica e institucional | Legislación Policial · Formación y Ética · Derechos Humanos · Derecho General | 4\nAcadémica y atención ciudadana | Alfabetización Académica y Atención al Público · Inteligencia Emocional | 2\nProcedimental y operativa | Procedimientos Policiales · Comisaría Modelo · Investigación Criminal · Antinarcóticos · Tránsito y Seguridad Vial | 5\nTécnica policial | Arma y Tiro · Defensa Policial · Bastón Rígido Policial · Primeros Auxilios Policiales | 4\nFísica y disciplinaria | Educación Física · Orden Cerrado | 2\nComplementaria y transversal | Derecho Contravencional · Delito Digital y Evidencia Tecnológica · Cultura Digital e Imagen Institucional · Resiliencia y Salud Mental · Ley Micaela | 5\nTOTAL | Seis áreas de formación | 22'},
+{n:'', t:'', tipo:'nota', txt:'Propósito: formar agentes capaces de intervenir con criterio profesional, legalidad y responsabilidad.'},
+{n:'5.2', t:'Proyección para el ciclo lectivo 2027', tipo:'sub', txt:'Para 2027 se proyecta implementar un trayecto formativo continuo de nueve meses, organizado en seis bloques y veintiún espacios curriculares.\nLa propuesta profundiza la articulación entre teoría y práctica mediante talleres, simulaciones y actividades operacionales realizadas en la sede. Además, incorpora y fortalece contenidos vinculados con:\n• Tecnología.\n• Mediación de conflictos.\n• Género y diversidades.\n• Salud mental policial.\n• Derechos humanos.\n• Uso racional de la fuerza.'},
+
+{n:'6', t:'Herramientas digitales de gestión', tipo:'cap', txt:'La Escuela cuenta con la plataforma SUEP y con una plataforma digital destinada a la gestión integral de los aspirantes. En ellas se registra y actualiza información académica, administrativa y operacional, lo que permite disponer de datos en tiempo real, realizar un seguimiento permanente y agilizar trámites, comunicaciones y procesos internos.'},
+
+{n:'7', t:'Síntesis institucional', tipo:'cap', txt:'La Escuela funciona mediante áreas que trabajan coordinadamente bajo la conducción de la Rectoría. La Secretaría Operacional dirige la instrucción, la disciplina y el acompañamiento cotidiano de los aspirantes; la Secretaría Logística garantiza la alimentación, los suministros, el mantenimiento y los recursos materiales; el Área de Sanidad protege y realiza el seguimiento de la salud; y la Secretaría Académica organiza el Proyecto Educativo Situado, los docentes, las materias, las evaluaciones y las trayectorias formativas.\nDe esta última dependen también la Oficina Administrativa, el Área de Reclutamiento y Ceremonial y Protocolo. Esta organización permite abordar la formación policial de manera integral, articulando educación, disciplina, salud, administración y apoyo logístico.'},
+
+{n:'8', t:'Ideas clave', tipo:'cap', txt:'• Formación integral: conocimientos, práctica, disciplina, salud y valores.\n• Proyecto situado: responde a la realidad policial y social del Neuquén.\n• Perfil buscado: un agente profesional, humano, equilibrado y con criterio.\n• Metodología: teoría, talleres, simulaciones y prácticas operacionales.\n• Trabajo articulado: Rectoría, Secretaría Académica, Operacional, Logística y Sanidad.'},
+];
+
+// Láminas de la presentación — calcadas del PDF institucional
+// (PRESENTACION_DCFYCCO_INSTRUCTORES). Cada lámina tiene:
+//   estilo  · 'portada' (centrada, con escudo) o '' (lámina común)
+//   kicker  · el rótulo chico de arriba ("— IDENTIDAD")
+//   tit     · el título en azul oscuro
+//   tit2    · la segunda parte del título, en celeste
+//   sub     · el párrafo de entrada
+//   txt     · el cuerpo, escrito con estas marcas al principio del renglón:
+//              #  tarjeta (el renglón es el título; los que siguen, su contenido)
+//              -  ítem adentro de la tarjeta
+//              »  cajita simple
+//              +  dato con rótulo:   + DOCUMENTO :: Reseña institucional
+//              =  número grande:     = 22 :: ESPACIOS CURRICULARES
+//              ^  caja oscura:       ^ Rectoría :: qué hace
+//              |  fila de tabla (columnas separadas con |)
+//              >  recuadro azul destacado
+//              ~  notita al pie, con barrita
+//              •  viñeta suelta
+//            El renglón sin marca es un párrafo.
+const NE_LAMINAS_BASE = [
+{estilo:'portada', kicker:'PORTADA', tit:'Policía de la Provincia', tit2:'del Neuquén', sub:'', escudo:'pol',
+ txt:'DIRECCIÓN DE INSTITUTOS POLICIALES\nFORMACIÓN INICIAL DE AGENTES DE SEGURIDAD'},
+
+{estilo:'', kicker:'POLICÍA DE LA PROVINCIA DEL NEUQUÉN · DIRECCIÓN DE INSTITUTOS POLICIALES',
+ tit:'Departamento Centro de Formación y Capacitación', tit2:'«Cabo Primero (PM) Juan Ariel Belarde»', sub:'', escudo:'dcf',
+ txt:'+ DOCUMENTO :: Reseña institucional\n+ ASIENTO :: Plaza Huincul, Neuquén\n+ MISIÓN :: Formación inicial de Agentes de Seguridad'},
+
+{estilo:'', kicker:'IDENTIDAD', tit:'Una escuela con', tit2:'misión definida',
+ sub:'Formar integralmente a los futuros agentes de la Policía de la Provincia del Neuquén, mediante un Proyecto Educativo Situado diseñado según las necesidades institucionales, sociales y operativas de la provincia.',
+ txt:'# Dependencia\nDirección de Institutos Policiales, Policía de la Provincia del Neuquén.\n# Asiento\nPlaza Huincul, provincia del Neuquén.\n# Alcance\nFormación inicial de aspirantes a agentes de seguridad.\n> La propuesta no se importa de otro contexto: responde a la realidad policial y social del Neuquén, y se revisa en función de lo que la provincia necesita.'},
+
+{estilo:'', kicker:'PROPUESTA FORMATIVA', tit:'Proyecto Educativo', tit2:'Situado',
+ sub:'Un único trayecto que articula nueve dimensiones de la formación policial.',
+ txt:'» Conocimientos jurídicos\n» Formación ética\n» Derechos humanos\n» Procedimientos policiales\n» Preparación física\n» Prácticas operacionales\n» Inteligencia emocional\n» Atención a la ciudadanía\n» Competencias digitales\n~ Cada dimensión se planifica desde la Secretaría Académica y se sostiene en el trabajo conjunto de docentes e instructores durante todo el ciclo.'},
+
+{estilo:'', kicker:'PERFIL PROFESIONAL', tit:'Qué agente queremos', tit2:'formar', sub:'',
+ txt:'# Solidez profesional\n- Disciplinado y responsable\n- Preparado técnicamente para la función\n- Con capacidad para resolver conflictos\n# Criterio y trato\n- Equilibrado, respetuoso y empático\n- Capaz de tomar decisiones fundadas\n- Con criterio propio y vocación de servicio\n> Ejercer la autoridad dentro del marco legal, respetando la dignidad de las personas y aplicando la fuerza de manera racional, gradual y proporcional.'},
+
+{estilo:'', kicker:'MARCO FEDERAL', tit:'Alineados al', tit2:'CAFFoP',
+ sub:'La formación inicial se desarrolla conforme a los lineamientos del Consejo Académico Federal en Formación Policial.',
+ txt:'» Estándares comunes de profesionalización\n» Respeto por los derechos humanos\n» Uso racional de la fuerza\n» Perspectiva ética\n» Preparación para intervenir eficazmente ante las demandas actuales de la seguridad pública\n~ Bajo este marco, cada contenido se enseña para ser aplicado de manera responsable, legal y profesional en situaciones concretas de la función policial.'},
+
+{estilo:'', kicker:'MODELO FORMATIVO', tit:'De la teoría', tit2:'a la intervención',
+ sub:'Docentes e instructores trabajan de manera articulada. El aula y el patio forman parte del mismo trayecto.',
+ txt:'» Clases\n» Talleres\n» Simulaciones\n» Situaciones problemáticas\n» Prácticas físicas\n» Prácticas operacionales\n» Ejercicios en el polígono\n» Fortalecimiento académico\n> El objetivo no es que el aspirante memorice contenidos, sino que sepa aplicarlos correctamente en situaciones reales.'},
+
+{estilo:'', kicker:'CONVIVENCIA INSTITUCIONAL', tit:'Reglamento de', tit2:'Normas de Convivencia',
+ sub:'Documento actualizado que ordena la vida institucional durante todo el proceso formativo.',
+ txt:'# Derechos\nLo que el aspirante puede exigir dentro de la institución.\n# Deberes\nLas obligaciones que asume al incorporarse.\n# Pautas de conducta\nEl estándar esperado dentro y fuera del aula.\n# Criterios de intervención\nCómo se actúa ante cada situación, con previsibilidad.\n> Su finalidad: fortalecer el respeto, la responsabilidad, la disciplina consciente, el buen trato y la resolución adecuada de los conflictos.'},
+
+{estilo:'', kicker:'ORGANIZACIÓN', tit:'Cómo está organizada', tit2:'la Escuela', sub:'',
+ txt:'^ Rectoría :: Conduce, fija lineamientos, supervisa y representa a la Escuela\n# Secretaría Académica\nProyecto Educativo Situado, materias, docentes y trayectorias\n# Secretaría Operacional\nFormación policial, física y disciplinaria\n# Secretaría Logística\nRecursos materiales y condiciones de funcionamiento\n# Área de Sanidad\nSalud integral de aspirantes y personal\n+ DEPENDEN DE LA SECRETARÍA ACADÉMICA :: Oficina Administrativa · Reclutamiento · Ceremonial y Protocolo\n~ La formación policial no depende solamente del aula: requiere acompañamiento académico, instrucción operacional, disciplina, condiciones materiales adecuadas y atención integral de la salud.'},
+
+{estilo:'', kicker:'ÁREA', tit:'Secretaría', tit2:'Operacional',
+ sub:'Tiene a su cargo la formación disciplinaria, procedimental y actitudinal de los aspirantes.',
+ txt:'# Integración y régimen\n- Oficiales y suboficiales con Curso de Habilitación o Curso de Instructor Policial\n- Turnos de 12 horas de servicio por 36 de descanso, con rotación mensual\n- De ella depende la Guardia, bajo el mismo régimen\n# Responsabilidades\n- Instrucción de orden cerrado y coordinación de formaciones\n- Disciplina, responsabilidad y presentación personal\n- Supervisión del régimen interno y las normas de convivencia\n- Tutoría de secciones y acompañamiento de la adaptación\n> El instructor no solo enseña técnicas: observa, orienta y acompaña al aspirante durante todo su proceso formativo.'},
+
+{estilo:'', kicker:'ÁREA', tit:'Secretaría', tit2:'Logística',
+ sub:'Garantiza los recursos y las condiciones materiales indispensables para el funcionamiento de la institución.',
+ txt:'# Funciones\n- Gestión de pedidos y suministros\n- Mantenimiento y mejoramiento de las instalaciones\n- Administración del racionamiento y la alimentación\n- Provisión, conservación y control de recursos materiales\n- Apoyo a las actividades académicas, operacionales e institucionales\n# Sectores y régimen\n- Dependen de esta Secretaría: Cocina, Pañol y el personal de Mantenimiento\n- Servicios diurnos bajo el régimen de 12 por 36 horas\n~ Sin alimentación, indumentaria, equipamiento y mantenimiento resueltos, la actividad académica y operacional no se sostiene.'},
+
+{estilo:'', kicker:'ÁREA', tit:'Área de', tit2:'Sanidad',
+ sub:'Integrada por un médico policial y personal de Enfermería. Protege y acompaña la salud integral de los aspirantes y del personal.',
+ txt:'# Atención\n- Atención sanitaria primaria\n- Asistencia inmediata ante lesiones, accidentes o emergencias\n# Seguimiento\n- Evaluación del estado de salud de los aspirantes\n- Control de certificados e indicaciones médicas\n- Derivación a centros de mayor complejidad\n# Prevención\n- Prevención de enfermedades y lesiones\n- Acompañamiento de actividades físicas y operacionales\n> Su intervención permite detectar tempranamente dificultades de salud que puedan afectar la formación o el bienestar del aspirante.'},
+
+{estilo:'', kicker:'ÁREA', tit:'Secretaría', tit2:'Académica',
+ sub:'Planifica, organiza, coordina y supervisa el Proyecto Educativo Situado, articulando formación teórica, práctica y operacional.',
+ txt:'» Materias, horarios y actividades\n» Coordinación de docentes\n» Programas y cargas horarias\n» Evaluaciones y mesas examinadoras\n» Seguimiento de trayectorias\n» Informes, estadísticas y documentación\n» Articulación docentes–instructores\n» Talleres y capacitaciones\n» Aplicación de los lineamientos CAFFoP\n~ Integrada por personal policial y profesionales del Cuerpo Técnico. Cuenta con tres profesores de Educación Física: uno civil contratado por horas cátedra y dos del Cuerpo Técnico. Cumplen funciones de lunes a viernes, siete horas diarias, conforme a la reglamentación vigente.'},
+
+{estilo:'', kicker:'DEPENDEN DE LA SECRETARÍA ACADÉMICA', tit:'Tres áreas que', tit2:'sostienen el día a día', sub:'',
+ txt:'# Oficina Administrativa\n- Recepción, registro y distribución de documentación\n- Notas, memorándums, informes y comunicaciones internas\n- Archivo de actuaciones y notificaciones\n- Coordinación con otras dependencias policiales\n- Apoyo a Rectoría y a todas las áreas\n# Reclutamiento\n- Información sobre requisitos y etapas del ingreso\n- Recepción y control de documentación\n- Registro de postulantes\n- Coordinación de evaluaciones y convocatorias\n- Articulación con áreas médicas, psicológicas y evaluadoras\n# Ceremonial y Protocolo\n- Actos académicos, policiales y conmemorativos\n- Aplicación de normas de ceremonial\n- Autoridades, invitados, formaciones y símbolos patrios\n- Programas, guiones y secuencias ceremoniales\n- Preservación de la identidad y las tradiciones\n~ Reclutamiento atiende durante todo el año a quienes desean ingresar a la Policía del Neuquén, lo que sostiene un contacto permanente con los potenciales postulantes.'},
+
+{estilo:'', kicker:'CICLO LECTIVO 2026', tit:'Espacios curriculares', tit2:'por área de formación', sub:'',
+ txt:'| ÁREA DE FORMACIÓN | ESPACIOS CURRICULARES | N.º\n| Jurídica e institucional | Legislación Policial · Formación y Ética · Derechos Humanos · Derecho General | 4\n| Académica y atención ciudadana | Alfabetización Académica y Atención al Público · Inteligencia Emocional | 2\n| Procedimental y operativa | Procedimientos Policiales · Comisaría Modelo · Investigación Criminal · Antinarcóticos · Tránsito y Seguridad Vial | 5\n| Técnica policial | Arma y Tiro · Defensa Policial · Bastón Rígido Policial · Primeros Auxilios Policiales | 4\n| Física y disciplinaria | Educación Física · Orden Cerrado | 2\n| Complementaria y transversal | Derecho Contravencional · Delito Digital y Evidencia Tecnológica · Cultura Digital e Imagen Institucional · Resiliencia y Salud Mental · Ley Micaela | 5\n= 6 :: ÁREAS DE FORMACIÓN\n= 22 :: ESPACIOS CURRICULARES\n= 2026 :: CICLO LECTIVO EN CURSO'},
+
+{estilo:'', kicker:'CICLO LECTIVO 2027', tit:'Un trayecto formativo', tit2:'continuo de nueve meses',
+ sub:'La propuesta profundiza la articulación entre teoría y práctica mediante talleres, simulaciones y actividades operacionales realizadas en la sede.',
+ txt:'= 9 :: MESES DE CURSADA CONTINUA\n= 6 :: BLOQUES FORMATIVOS\n= 21 :: ESPACIOS CURRICULARES\n» Tecnología\n» Mediación de conflictos\n» Género y diversidades\n» Salud mental policial\n» Derechos humanos\n» Uso racional de la fuerza\n~ Propósito: formar agentes capaces de intervenir con criterio profesional, legalidad y responsabilidad.'},
+
+{estilo:'', kicker:'GESTIÓN DIGITAL', tit:'Información', tit2:'en tiempo real',
+ sub:'La Escuela gestiona su actividad con dos herramientas digitales que concentran los datos académicos, administrativos y operacionales.',
+ txt:'# Plataforma SUEP\nSistema en uso institucional para el registro y la actualización de la información de la Escuela.\n# Plataforma de gestión de aspirantes\nHerramienta digital destinada a la gestión integral del aspirante a lo largo de todo el trayecto formativo.\n» Datos disponibles en tiempo real\n» Seguimiento permanente\n» Trámites y comunicaciones más ágiles'},
+
+{estilo:'', kicker:'SÍNTESIS', tit:'Cinco áreas,', tit2:'un mismo trayecto', sub:'',
+ txt:'» Rectoría: conduce y articula el conjunto\n» Académica: proyecto, materias, evaluaciones y trayectorias\n» Operacional: instrucción, disciplina y acompañamiento diario\n» Logística: alimentación, suministros y mantenimiento\n» Sanidad: protección y seguimiento de la salud de aspirantes y personal\n> De la Secretaría Académica dependen además Oficina Administrativa, Reclutamiento y Ceremonial y Protocolo. Esta organización permite abordar la formación policial de manera integral.'},
+
+{estilo:'', kicker:'PARA RECORDAR', tit:'Ideas', tit2:'clave', sub:'',
+ txt:'# 01 · Formación integral\nConocimientos, práctica, disciplina, salud y valores en un mismo proceso.\n# 02 · Proyecto situado\nResponde a la realidad policial y social del Neuquén.\n# 03 · Perfil buscado\nUn agente profesional, humano, equilibrado y con criterio.\n# 04 · Metodología\nTeoría, talleres, simulaciones y prácticas operacionales.\n# 05 · Trabajo articulado\nRectoría, Secretarías Académica, Operacional y Logística, y Área de Sanidad.'},
+
+{estilo:'portada', kicker:'CIERRE', tit:'Departamento Centro de Formación y Capacitación', tit2:'«Cabo Primero (PM) Juan Ariel Belarde»',
+ sub:'', escudo:'ambos',
+ txt:'POLICÍA DE LA PROVINCIA DEL NEUQUÉN\nDIRECCIÓN DE INSTITUTOS POLICIALES · PLAZA HUINCUL'},
+];
+
+// ───────────────────────────────────────────────────────────────────────────
+// Estado de pantalla (no se guarda: es solo de esta sesión)
+// ───────────────────────────────────────────────────────────────────────────
+var NE_ABIERTO = {};      // qué capítulos están desplegados
+var NE_ED      = null;    // _id del bloque/lámina que se está editando
+var NE_NUEVO   = null;    // 'fin' o el _o después del cual se inserta
+var NE_MODOED  = false;   // modo edición (solo administradoras)
+var NE_Q       = '';      // texto del buscador de la reseña
+var NE_I       = 0;       // lámina actual
+var NE_PRIMERA = true;    // la primera vez se abre el capítulo 1
+var NE_IMG     = null;    // imagen del bloque/lámina que se está editando
+var NE_ESCPAN  = false;   // panel para cargar el escudo institucional
+
+function neEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function neAdmin(){ return !!(CU && CU.permiso==='admin'); }
+function neOrden(rows){ return (rows||[]).slice().sort((a,b)=>(+a._o||0)-(+b._o||0)); }
+function neId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function neAhora(){ return new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'}); }
+
+// Lo guardado manda; si todavía nadie tocó nada, se lee el texto de fábrica.
+function neBloques(){
+  const g = neOrden(S.get(NE_RS, NE_RM));
+  if(g.length) return g;
+  return NE_RESENA_BASE.map((b,i)=>({...b, _id:'base'+i, _o:(i+1)*10, _base:true}));
+}
+function neLams(){
+  const g = neOrden(S.get(NE_PS, NE_PM));
+  if(g.length) return g;
+  return NE_LAMINAS_BASE.map((b,i)=>({...b, _id:'base'+i, _o:(i+1)*10, _base:true}));
+}
+
+// Materializa el texto de fábrica como registros guardados. Se llama recién
+// cuando una administradora va a modificar algo por primera vez.
+function neSembrar(cual){
+  const esLam = cual==='lam';
+  const s = esLam ? NE_PS : NE_RS, m = esLam ? NE_PM : NE_RM;
+  let rows = S.get(s, m);
+  if(rows.length) return neOrden(rows);
+  rows = (esLam ? NE_LAMINAS_BASE : NE_RESENA_BASE).map((b,i)=>({
+    ...b, _o:(i+1)*10, _id:neId()+i.toString(36),
+    _por:'Sistema (texto original)', _sector:s, _mod:m, _ts:neAhora()
+  }));
+  S.set(s, m, rows);
+  try{ if(typeof syncToSupabase==='function') syncToSupabase(S.key(s,m), rows); }catch(_){}
+  return rows;
+}
+// Del id de pantalla ("baseN" o el _id real) al registro ya guardado.
+function neReal(cual, id){
+  const rows = neSembrar(cual);
+  if(String(id||'').indexOf('base')===0){
+    const i = parseInt(String(id).slice(4),10);
+    return rows[i] || null;
+  }
+  return rows.find(r=>r._id===id) || null;
+}
+
+// ─── Escudo institucional ───
+function neEscudo(){
+  try{ const r = S.get(NE_RS, NE_ESC_M); return (r && r[0] && r[0].img) || ''; }catch(_){ return ''; }
+}
+function neEscudoPanelHTML(){
+  if(!NE_ESCPAN) return '';
+  const esc = neEscudo();
+  return `<div class="ne-ed">
+    <div class="ne-lb">Escudo institucional</div>
+    <div style="font-size:12px;line-height:1.55;margin-bottom:9px">
+      Se sube una sola vez. Sale en la portada de la reseña, en la primera lámina de la
+      presentación y arriba de todo cuando se imprime.
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px">
+      <input type="file" accept="image/*" id="neEscFile" onchange="neSubirEscudo(this)"
+        style="flex:1;min-width:170px;font-size:12px">
+      ${esc?`<button class="ne-bt rojo mini" onclick="neBorrarEscudo()">Quitar escudo</button>`:''}
+      <button class="ne-bt gris mini" onclick="NE_ESCPAN=false;renderTable()">Cerrar</button>
+    </div>
+    ${esc?`<img src="${neEsc(esc)}" style="max-height:130px;display:block;margin:0 auto">`
+        :`<div style="font-size:12px;opacity:.75">Todavía no hay escudo cargado.</div>`}
+  </div>`;
+}
+async function neSubirEscudo(input){
+  const f = input && input.files && input.files[0];
+  if(!f) return;
+  if(!neAdmin()){ alert('Solo las administradoras pueden cargar el escudo.'); return; }
+  try{
+    let blob = f;
+    if(typeof _imagenReducidaBlob === 'function') blob = await _imagenReducidaBlob(f, 600, 600, 0.8);
+    const url = await new Promise((res, rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result);
+      r.onerror = ()=>rej(new Error('No se pudo leer el archivo'));
+      r.readAsDataURL(blob);
+    });
+    if(String(url).length > 400000){ alert('El escudo quedó muy pesado. Probá con una imagen más chica.'); return; }
+    const previo = S.get(NE_RS, NE_ESC_M);
+    if(previo && previo[0]){
+      if(typeof S.updSafe==='function') await S.updSafe(NE_RS, NE_ESC_M, previo[0]._id, {img:url});
+      else S.upd(NE_RS, NE_ESC_M, previo[0]._id, {img:url});
+    } else {
+      if(typeof S.addSafe==='function') await S.addSafe(NE_RS, NE_ESC_M, {img:url});
+      else S.add(NE_RS, NE_ESC_M, {img:url});
+    }
+    renderTable();
+  }catch(e){ console.error('Escudo:', e); alert('No se pudo cargar el escudo.'); }
+}
+async function neBorrarEscudo(){
+  if(!neAdmin()) return;
+  if(!confirm('¿Quitar el escudo? Deja de verse para todos.')) return;
+  const previo = S.get(NE_RS, NE_ESC_M);
+  if(previo && previo[0]){
+    if(typeof S.delSafe==='function') await S.delSafe(NE_RS, NE_ESC_M, previo[0]._id);
+    else S.del(NE_RS, NE_ESC_M, previo[0]._id);
+  }
+  renderTable();
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// RESEÑA INSTITUCIONAL
+// ───────────────────────────────────────────────────────────────────────────
+function neTexto(txt){
+  return String(txt||'').split('\n').map(l=>{
+    const t = l.trim();
+    if(!t) return '';
+    if(t.indexOf('•')===0) return `<div class="ne-li">${neEsc(t.replace(/^•\s*/,''))}</div>`;
+    return `<p class="ne-p">${neEsc(t)}</p>`;
+  }).join('');
+}
+function neTabla(txt){
+  const filas = String(txt||'').split('\n').filter(l=>l.trim());
+  if(!filas.length) return '';
+  const celdas = f => f.split('|').map(c=>c.trim());
+  const cab = celdas(filas[0]);
+  const cuerpo = filas.slice(1).map(f=>`<tr>${celdas(f).map(c=>`<td>${neEsc(c)}</td>`).join('')}</tr>`).join('');
+  return `<div class="ne-tabwrap"><table class="ne-tabla">
+    <thead><tr>${cab.map(c=>`<th>${neEsc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${cuerpo}</tbody></table></div>`;
+}
+function neBloqueHTML(b){
+  if(NE_ED === b._id) return neFormBloque(b);
+  let cont = '';
+  if(b.tipo==='nota')       cont = `<div class="ne-nota">${neEsc(b.txt)}</div>`;
+  else if(b.tipo==='tabla') cont = neTabla(b.txt);
+  else if(b.tipo==='sub')   cont = `<div class="ne-sub">${b.n?`<span class="ne-sn">${neEsc(b.n)}</span>`:''}${neEsc(b.t)}</div>${neTexto(b.txt)}`;
+  else if(b.tipo==='fun')   cont = `<div class="ne-fun">${neEsc(b.t)}</div>${neTexto(b.txt)}`;
+  else                      cont = neTexto(b.txt);
+  if(b.img) cont += `<img class="ne-limg" src="${neEsc(b.img)}" alt="" style="max-height:230px;margin:10px auto 4px">`;
+  const tools = (NE_MODOED && neAdmin()) ? `<div class="ne-tools">
+      <button class="ne-bt mini gris" onclick="neEditar('${b._id}')">✏️ Editar</button>
+      <button class="ne-bt mini gris" onclick="neMover('res','${b._id}',-1)">▲</button>
+      <button class="ne-bt mini gris" onclick="neMover('res','${b._id}',1)">▼</button>
+      <button class="ne-bt mini gris" onclick="neNuevoBloque('${b._id}')">＋ Abajo</button>
+      <button class="ne-bt mini rojo" onclick="neBorrar('res','${b._id}')">Borrar</button>
+    </div>` : '';
+  return `<div data-b="${b._id}">${cont}${tools}</div>` +
+         (NE_NUEVO === b._id ? neFormBloque({_id:'nuevo', tipo:'sub', n:'', t:'', txt:''}, true) : '');
+}
+function neFormBloque(b, esNuevo){
+  const tipos = [['cap','Capítulo (título grande)'],['sub','Subtítulo'],['fun','Bajada / lista'],
+                 ['nota','Recuadro destacado'],['tabla','Tabla (columnas separadas con |)'],['portada','Portada']];
+  return `<div class="ne-ed">
+    <div class="ne-lb">Tipo de bloque</div>
+    <select class="ne-in" id="neTipo">${tipos.map(t=>`<option value="${t[0]}"${b.tipo===t[0]?' selected':''}>${t[1]}</option>`).join('')}</select>
+    <div style="display:flex;gap:8px">
+      <div style="width:88px"><div class="ne-lb">N.º</div><input class="ne-in" id="neN" value="${neEsc(b.n)}" placeholder="3.2"></div>
+      <div style="flex:1"><div class="ne-lb">Título</div><input class="ne-in" id="neT" value="${neEsc(b.t)}"></div>
+    </div>
+    <div class="ne-lb">Texto — un renglón por párrafo. Si el renglón arranca con • se dibuja como viñeta.</div>
+    <textarea class="ne-in" id="neTxt" style="min-height:150px;line-height:1.6">${neEsc(b.txt)}</textarea>
+    ${neImgControlHTML()}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="ne-bt dorado" onclick="neGuardarBloque('${b._id}',${esNuevo?'true':'false'})">Guardar</button>
+      <button class="ne-bt gris" onclick="NE_ED=null;NE_NUEVO=null;renderTable()">Cancelar</button>
+    </div>
+  </div>`;
+}
+function neCoincide(b, q){
+  if(!q) return true;
+  return ((b.n||'')+' '+(b.t||'')+' '+(b.txt||'')).toLowerCase().indexOf(q) >= 0;
+}
+function renderResena(){
+  const bloques = neBloques();
+  const q = (NE_Q||'').trim().toLowerCase();
+  const admin = neAdmin();
+
+  // Armado en capítulos: todo lo que viene después de un 'cap' le pertenece.
+  const caps = []; let actual = null; const previos = [];
+  bloques.forEach(b=>{
+    if(b.tipo==='portada'){ previos.push(b); return; }
+    if(b.tipo==='cap'){ actual = {cab:b, hijos:[]}; caps.push(actual); return; }
+    if(actual) actual.hijos.push(b); else previos.push(b);
+  });
+  if(NE_PRIMERA && caps.length){ NE_ABIERTO[caps[0].cab._id] = true; NE_PRIMERA = false; }
+
+  const port = previos.map(b=>{
+    if(b.tipo!=='portada') return neBloqueHTML(b);
+    if(NE_ED===b._id) return neFormBloque(b);
+    return `<div class="ne-portada" data-b="${b._id}">
+      ${b.img ? `<img src="${neEsc(b.img)}" alt="">`
+        : (neEscudo() ? `<img src="${neEsc(neEscudo())}" alt="">`
+        : `<div class="nl-escs" style="margin-bottom:10px">
+             <img class="nl-esc" style="max-height:96px" src="${NE_ESC_POL}" alt="">
+             <span class="nl-esc-sep" style="height:60px"></span>
+             <img class="nl-esc" style="max-height:96px" src="${NE_ESC_DCF}" alt=""></div>`)}
+      <h2>${neEsc(b.t)}</h2>
+      <p>${neEsc(b.txt)}</p>
+      ${(NE_MODOED&&admin)?`<div class="ne-tools" style="justify-content:center">
+        <button class="ne-bt mini gris" onclick="neEditar('${b._id}')">✏️ Editar portada</button></div>`:''}
+    </div>`;
+  }).join('');
+
+  const indice = caps.length ? `<div class="ne-indice">${caps.map(c=>
+    `<button class="ne-ix" onclick="neIrCap('${c.cab._id}')">${c.cab.n?neEsc(c.cab.n)+'. ':''}${neEsc(c.cab.t)}</button>`).join('')}</div>` : '';
+
+  const cuerpo = caps.map(c=>{
+    const hayQ = !!q;
+    const propios = neCoincide(c.cab, q);
+    const hijos = c.hijos.filter(h=>neCoincide(h, q));
+    if(hayQ && !propios && !hijos.length) return '';
+    const abierto = hayQ ? true : !!NE_ABIERTO[c.cab._id];
+    const lista = (hayQ ? hijos : c.hijos);
+    return `<div class="ne-cap" id="necap_${c.cab._id}">
+      <button class="ne-cab" onclick="neToggleCap('${c.cab._id}')">
+        ${c.cab.n?`<span class="ne-num">${neEsc(c.cab.n)}</span>`:''}
+        <h3>${neEsc(c.cab.t)}</h3>
+        <span class="ne-fle${abierto?' ab':''}">▶</span>
+      </button>
+      ${abierto?`<div class="ne-cuerpo">
+        ${NE_ED===c.cab._id ? neFormBloque(c.cab) : (neTexto(c.cab.txt) + ((NE_MODOED&&admin)?`<div class="ne-tools">
+            <button class="ne-bt mini gris" onclick="neEditar('${c.cab._id}')">✏️ Editar capítulo</button>
+            <button class="ne-bt mini gris" onclick="neMover('res','${c.cab._id}',-1)">▲</button>
+            <button class="ne-bt mini gris" onclick="neMover('res','${c.cab._id}',1)">▼</button>
+            <button class="ne-bt mini gris" onclick="neNuevoBloque('${c.cab._id}')">＋ Abajo</button>
+            <button class="ne-bt mini rojo" onclick="neBorrar('res','${c.cab._id}')">Borrar</button>
+          </div>`:''))}
+        ${NE_NUEVO===c.cab._id ? neFormBloque({_id:'nuevo',tipo:'sub',n:'',t:'',txt:''}, true) : ''}
+        ${lista.map(neBloqueHTML).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
+
+  const barra = `<div class="ne-barra">
+    <input class="ne-buscar" id="neBuscar" placeholder="🔍 Buscar en la reseña…" value="${neEsc(NE_Q)}"
+      oninput="NE_Q=this.value;renderTable();setTimeout(()=>{const i=document.getElementById('neBuscar');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},0)">
+    <button class="ne-bt gris" onclick="neTodos(true)">Abrir todo</button>
+    <button class="ne-bt gris" onclick="neTodos(false)">Cerrar todo</button>
+    <button class="ne-bt gris" onclick="neImprimir()">🖨️ Imprimir</button>
+    ${admin?`<button class="ne-bt${NE_MODOED?' on':''}" onclick="NE_MODOED=!NE_MODOED;NE_ED=null;NE_NUEVO=null;renderTable()">
+      ${NE_MODOED?'✓ Editando':'✏️ Editar'}</button>`:''}
+    ${admin?`<button class="ne-bt gris" onclick="NE_ESCPAN=!NE_ESCPAN;renderTable()">🛡️ Escudo</button>`:''}
+  </div>${neEscudoPanelHTML()}`;
+
+  const aviso = (NE_MODOED&&admin) ? `<div class="ne-nota" style="font-style:normal">
+    Estás en modo edición. Lo que cambies lo ven todos y viaja a la nube.
+    El resto del personal ve la reseña pero no puede modificarla.</div>` : '';
+
+  const pie = (NE_MODOED&&admin) ? `<div style="margin-top:12px">
+    <button class="ne-bt" onclick="neNuevoBloque('fin')">＋ Agregar un bloque al final</button></div>` : '';
+
+  return `<div class="ne-wrap" data-cc-no>${barra}${aviso}${port}${indice}${cuerpo || `<div style="text-align:center;color:#6f92ae;font-size:13px;padding:22px 10px">No hay nada que coincida con “${neEsc(NE_Q)}”.</div>`}${pie}</div>`;
+}
+function neToggleCap(id){ NE_ABIERTO[id] = !NE_ABIERTO[id]; renderTable(); }
+function neTodos(ab){
+  neBloques().forEach(b=>{ if(b.tipo==='cap') NE_ABIERTO[b._id] = ab; });
+  NE_PRIMERA = false; renderTable();
+}
+function neIrCap(id){
+  NE_ABIERTO[id] = true; renderTable();
+  setTimeout(()=>{ const e=document.getElementById('necap_'+id); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 60);
+}
+function neEditar(id){
+  const b = neBloques().find(x=>x._id===id);
+  NE_IMG = b ? (b.img||null) : null;
+  NE_ED = id; NE_NUEVO = null; renderTable();
+}
+function neNuevoBloque(id){ NE_IMG = null; NE_NUEVO = id; NE_ED = null; renderTable(); }
+
+// ─── Imagen (escudo, foto, lámina escaneada) ───
+// Se guarda achicada adentro del registro. Sirve tanto para la portada de la
+// reseña como para cualquier lámina de la presentación.
+function neImgControlHTML(){
+  return `<div class="ne-lb">Imagen (opcional) — escudo, foto o lámina</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px">
+      <input type="file" accept="image/*" id="neImgFile" onchange="neSubirImagen(this)"
+        style="flex:1;min-width:170px;font-size:12px">
+      <button class="ne-bt gris mini" onclick="neQuitarImagen()">Quitar</button>
+    </div>
+    <img id="neImgPrev" class="ne-limg" src="${NE_IMG||''}"
+      style="max-height:150px;margin:0 0 10px;${NE_IMG?'':'display:none'}">`;
+}
+async function neSubirImagen(input){
+  const f = input && input.files && input.files[0];
+  if(!f) return;
+  try{
+    let blob = f;
+    if(typeof _imagenReducidaBlob === 'function') blob = await _imagenReducidaBlob(f, 900, 900, 0.72);
+    const url = await new Promise((res, rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result);
+      r.onerror = ()=>rej(new Error('No se pudo leer el archivo'));
+      r.readAsDataURL(blob);
+    });
+    if(String(url).length > 450000){
+      alert('La imagen quedó muy pesada aun achicada. Probá con una más liviana o recortada.');
+      return;
+    }
+    NE_IMG = url;
+    const p = document.getElementById('neImgPrev');
+    if(p){ p.src = url; p.style.display = 'block'; }
+  }catch(e){
+    console.error('Imagen:', e);
+    alert('No se pudo cargar la imagen.');
+  }
+}
+function neQuitarImagen(){
+  NE_IMG = null;
+  const p = document.getElementById('neImgPrev');
+  if(p){ p.src = ''; p.style.display = 'none'; }
+  const f = document.getElementById('neImgFile');
+  if(f) f.value = '';
+}
+
+async function neGuardarBloque(id, esNuevo){
+  if(!neAdmin()){ alert('Solo las administradoras pueden modificar la reseña.'); return; }
+  const d = {
+    tipo: document.getElementById('neTipo').value,
+    n:   (document.getElementById('neN').value||'').trim(),
+    t:   (document.getElementById('neT').value||'').trim(),
+    txt: (document.getElementById('neTxt').value||''),
+    img: NE_IMG || '',
+  };
+  if(!d.t && !d.txt.trim()){ alert('Escribí al menos un título o un texto.'); return; }
+  try{
+    if(esNuevo){
+      const rows = neSembrar('res');
+      const refId = NE_NUEVO;
+      let o;
+      if(refId==='fin'){ o = (rows.length? Math.max(...rows.map(r=>+r._o||0)) : 0) + 10; }
+      else{
+        const ref = neReal('res', refId);
+        const oRef = ref ? (+ref._o||0) : 0;
+        const sig = rows.map(r=>+r._o||0).filter(x=>x>oRef).sort((a,b)=>a-b)[0];
+        o = sig ? (oRef+sig)/2 : oRef+10;
+      }
+      if(typeof S.addSafe==='function') await S.addSafe(NE_RS, NE_RM, {...d, _o:o});
+      else S.add(NE_RS, NE_RM, {...d, _o:o});
+    } else {
+      const r = neReal('res', id);
+      if(!r){ alert('No encontré ese bloque.'); return; }
+      if(typeof S.updSafe==='function') await S.updSafe(NE_RS, NE_RM, r._id, d);
+      else S.upd(NE_RS, NE_RM, r._id, d);
+    }
+    NE_ED = null; NE_NUEVO = null; renderTable();
+  }catch(e){ console.error('Reseña: no se pudo guardar', e); alert('No se pudo guardar. Probá de nuevo.'); }
+}
+async function neBorrar(cual, id){
+  if(!neAdmin()){ alert('Solo las administradoras pueden borrar.'); return; }
+  if(!confirm('¿Borrar este bloque? Deja de verse para todos.')) return;
+  const r = neReal(cual==='lam'?'lam':'res', id); if(!r) return;
+  const s = cual==='lam'?NE_PS:NE_RS, m = cual==='lam'?NE_PM:NE_RM;
+  if(typeof S.delSafe==='function') await S.delSafe(s, m, r._id); else S.del(s, m, r._id);
+  NE_ED = null; if(cual==='lam' && NE_I>0) NE_I--;
+  renderTable();
+}
+async function neMover(cual, id, dir){
+  if(!neAdmin()) return;
+  const esLam = cual==='lam';
+  const rows = neSembrar(esLam?'lam':'res');
+  const r = neReal(esLam?'lam':'res', id); if(!r) return;
+  const i = rows.findIndex(x=>x._id===r._id);
+  const j = i + dir;
+  if(i<0 || j<0 || j>=rows.length) return;
+  const s = esLam?NE_PS:NE_RS, m = esLam?NE_PM:NE_RM;
+  const oA = +rows[i]._o||0, oB = +rows[j]._o||0;
+  if(typeof S.updSafe==='function'){
+    await S.updSafe(s, m, rows[i]._id, {_o:oB}, {sinNotif:true});
+    await S.updSafe(s, m, rows[j]._id, {_o:oA}, {sinNotif:true});
+  } else { S.upd(s,m,rows[i]._id,{_o:oB}); S.upd(s,m,rows[j]._id,{_o:oA}); }
+  if(esLam) NE_I = j;
+  renderTable();
+}
+
+function neImprimir(){
+  if(typeof _vlBloquear==='function' && _vlBloquear('🔒 Tu cuenta es de solo consulta: la impresión no está habilitada.')) return;
+  const bloques = neBloques();
+  let html = '';
+  bloques.forEach(b=>{
+    if(b.tipo==='portada'){
+      html += `<div class="port"><div style="text-align:center;margin-bottom:12px">${
+        (b.img||neEscudo())
+          ? `<img src="${neEsc(b.img||neEscudo())}" style="max-width:130px">`
+          : `<img src="${NE_ESC_POL}" style="max-width:104px;vertical-align:middle">
+             <img src="${NE_ESC_DCF}" style="max-width:96px;vertical-align:middle;margin-left:18px">`}</div><h1>${neEsc(b.t)}</h1><div class="sub">${neEsc(b.txt).replace(/\n/g,'<br>')}</div></div>`;
+    } else if(b.tipo==='cap'){
+      html += `<h2>${b.n?neEsc(b.n)+'. ':''}${neEsc(b.t)}</h2>` + neTexto(b.txt);
+    } else if(b.tipo==='sub'){
+      html += `<h3>${b.n?neEsc(b.n)+'. ':''}${neEsc(b.t)}</h3>` + neTexto(b.txt);
+    } else if(b.tipo==='fun'){
+      html += `<h4>${neEsc(b.t)}</h4>` + neTexto(b.txt);
+    } else if(b.tipo==='nota'){
+      html += `<div class="nota">${neEsc(b.txt)}</div>`;
+    } else if(b.tipo==='tabla'){
+      html += neTabla(b.txt);
+    } else { html += neTexto(b.txt); }
+    if(b.img && b.tipo!=='portada') html += `<img src="${neEsc(b.img)}" style="max-width:80%;display:block;margin:12px auto">`;
+  });
+  const win = window.open('', '_blank');
+  if(!win){ alert('El navegador bloqueó la ventana de impresión.'); return; }
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <title>Reseña institucional — DCFyCCCO</title><style>
+    body{font-family:Georgia,'Times New Roman',serif;color:#16202b;max-width:780px;margin:0 auto;padding:34px 26px;line-height:1.6}
+    .port{text-align:center;border-bottom:3px double #1d4ed8;padding-bottom:20px;margin-bottom:26px}
+    .port h1{font-size:24px;margin:0 0 12px;color:#12315a}
+    .port .sub{font-size:13px;color:#3c556e;line-height:1.9}
+    h2{font-size:18px;color:#12315a;border-bottom:1px solid #cbd8e5;padding-bottom:5px;margin:26px 0 10px}
+    h3{font-size:15px;color:#1d4ed8;margin:18px 0 6px}
+    h4{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#8a6a1f;margin:14px 0 5px}
+    .ne-p{margin:0 0 8px;text-align:justify;font-size:13.5px}
+    .ne-li{margin:0 0 4px;padding-left:15px;position:relative;font-size:13.5px}
+    .ne-li:before{content:'•';position:absolute;left:2px;color:#1d4ed8}
+    .nota{background:#eef4fd;border-left:4px solid #1d4ed8;padding:10px 13px;margin:12px 0;font-style:italic;font-size:13px}
+    .ne-tabla{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0}
+    .ne-tabla th{background:#e8f0fb;border:1px solid #b9cee6;padding:7px;text-align:left;font-size:10.5px;text-transform:uppercase}
+    .ne-tabla td{border:1px solid #d3e0ec;padding:7px;vertical-align:top}
+    .ne-tabla tr:last-child td{background:#fdf6e6;font-weight:700}
+    @media print{body{padding:0}h2{page-break-after:avoid}}
+    </style></head><body>${html}
+    <div style="margin-top:30px;border-top:1px solid #cbd8e5;padding-top:10px;font-size:10.5px;color:#5b7d9c;text-align:center">
+      SUEP — Departamento Centro de Formación y Capacitación Cutral-Có · Impreso el ${neEsc(neAhora())}</div>
+    </body></html>`);
+  win.document.close();
+  setTimeout(()=>{ try{ win.print(); }catch(_){} }, 400);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// PRESENTACIÓN (láminas)
+// ───────────────────────────────────────────────────────────────────────────
+// ─── Cuerpo de una lámina: convierte las marcas en tarjetas, cajitas,
+//     recuadros, tablas y números grandes. Los elementos del mismo tipo que
+//     vienen seguidos se agrupan en una grilla. ───
+function neCuerpo(txt){
+  const lineas = String(txt||'').split('\n');
+  const out = [];
+  let grupo = null, tipo = null, tabla = null, tarjeta = null;
+
+  const cerrarTarjeta = ()=>{
+    if(!tarjeta) return;
+    grupo.push(`<div class="nl-card"><div class="nl-card-t">${neEsc(tarjeta.t)}</div>
+      ${tarjeta.items.length?`<ul class="nl-ul">${tarjeta.items.map(i=>`<li>${neEsc(i)}</li>`).join('')}</ul>`:''}
+      ${tarjeta.p.length?tarjeta.p.map(p=>`<p class="nl-card-p">${neEsc(p)}</p>`).join(''):''}</div>`);
+    tarjeta = null;
+  };
+  const cerrar = ()=>{
+    cerrarTarjeta();
+    if(tabla){ out.push(neTabla(tabla.join('\n'))); tabla = null; }
+    if(grupo && grupo.length){
+      const clase = tipo==='card' ? 'nl-grid nl-grid-card'
+                  : tipo==='chip' ? 'nl-grid nl-grid-chip'
+                  : tipo==='kpi'  ? 'nl-grid nl-grid-kpi'
+                  : 'nl-grid nl-grid-dato';
+      out.push(`<div class="${clase}">${grupo.join('')}</div>`);
+    }
+    grupo = null; tipo = null;
+  };
+  const abrir = t => { if(tipo!==t){ cerrar(); grupo = []; tipo = t; } };
+  const partir = s => { const i = s.indexOf('::'); return i<0 ? [s.trim(),''] : [s.slice(0,i).trim(), s.slice(i+2).trim()]; };
+
+  lineas.forEach(cruda=>{
+    const l = cruda.trim();
+    if(!l){ return; }
+    const m = l[0], resto = l.slice(1).trim();
+    if(m === '#'){ abrir('card'); cerrarTarjeta(); tarjeta = {t:resto, items:[], p:[]}; return; }
+    if(m === '-' && tarjeta){ tarjeta.items.push(resto); return; }
+    if(tarjeta && '»+=^|>~•'.indexOf(m) < 0){ tarjeta.p.push(l); return; }
+    if(m === '»'){ abrir('chip'); grupo.push(`<div class="nl-chip">${neEsc(resto)}</div>`); return; }
+    if(m === '+'){ const [a,b] = partir(resto); abrir('dato');
+      grupo.push(`<div class="nl-dato"><span>${neEsc(a)}</span><b>${neEsc(b)}</b></div>`); return; }
+    if(m === '='){ const [a,b] = partir(resto); abrir('kpi');
+      grupo.push(`<div class="nl-kpi"><b>${neEsc(a)}</b><span>${neEsc(b)}</span></div>`); return; }
+    if(m === '^'){ const [a,b] = partir(resto); cerrar();
+      out.push(`<div class="nl-jefe"><b>${neEsc(a)}</b>${b?`<span>${neEsc(b)}</span>`:''}</div>`); return; }
+    if(m === '|'){ cerrarTarjeta(); if(!tabla){ cerrar(); tabla = []; } tabla.push(resto); return; }
+    if(m === '>'){ cerrar(); out.push(`<div class="nl-nota">${neEsc(resto)}</div>`); return; }
+    if(m === '~'){ cerrar(); out.push(`<div class="nl-pie">${neEsc(resto)}</div>`); return; }
+    if(m === '•'){ cerrar(); out.push(`<div class="ne-li">${neEsc(resto)}</div>`); return; }
+    cerrar(); out.push(`<p class="nl-p">${neEsc(l)}</p>`);
+  });
+  cerrar();
+  return out.join('');
+}
+
+function neEscudoDe(l){
+  if(l.img) return `<img class="nl-esc" src="${neEsc(l.img)}" alt="">`;
+  const propio = neEscudo();
+  if(l.escudo === 'ambos') return `<div class="nl-escs">
+      <img class="nl-esc" src="${NE_ESC_POL}" alt=""><span class="nl-esc-sep"></span>
+      <img class="nl-esc" src="${propio || NE_ESC_DCF}" alt=""></div>`;
+  if(l.escudo === 'pol') return `<img class="nl-esc" src="${NE_ESC_POL}" alt="">`;
+  if(l.escudo === 'dcf') return `<img class="nl-esc" src="${propio || NE_ESC_DCF}" alt="">`;
+  return '';
+}
+
+function neLamHTML(l, n, total){
+  const pie = `<div class="nl-foot">
+      <img src="${neEscudo() || NE_ESC_DCF}" alt="">
+      <span>RESEÑA INSTITUCIONAL · ESCUELA «CABO PRIMERO JUAN ARIEL BELARDE»</span></div>`;
+  const barra = `<div class="nl-prog"><i style="width:${Math.round(n*100/Math.max(total,1))}%"></i></div>`;
+
+  if(l.estilo === 'portada'){
+    return `<div class="ne-deck nl-portada">
+      ${barra}<div class="nl-num">${n} / ${total}</div>
+      <div class="nl-centro">
+        ${neEscudoDe(l)}
+        <h2>${neEsc(l.tit)}</h2>
+        ${l.tit2?`<div class="nl-t2">${neEsc(l.tit2)}</div>`:''}
+        <div class="nl-div"></div>
+        <div class="nl-pcentro">${neEsc(l.txt).replace(/\n/g,'<br>')}</div>
+      </div>
+      ${pie}</div>`;
+  }
+  return `<div class="ne-deck">
+    ${barra}<div class="nl-num">${n} / ${total}</div>
+    ${l.kicker?`<div class="nl-kick">${neEsc(l.kicker)}</div>`:''}
+    <h2>${neEsc(l.tit)}${l.tit2?` <span>${neEsc(l.tit2)}</span>`:''}</h2>
+    <div class="nl-div"></div>
+    ${l.sub?`<p class="nl-sub">${neEsc(l.sub)}</p>`:''}
+    ${l.escudo||l.img?`<div class="nl-escbox">${neEscudoDe(l)}</div>`:''}
+    <div class="nl-body">${neCuerpo(l.txt)}</div>
+    ${pie}</div>`;
+}
+
+function renderPresenta(){
+  const lams = neLams();
+  const admin = neAdmin();
+  if(!lams.length) return `<div class="ne-wrap" data-cc-no><div style="text-align:center;color:#6f92ae;font-size:13px;padding:24px">
+    No hay láminas cargadas.</div>${admin?`<button class="ne-bt" onclick="neNuevaLam()">＋ Nueva lámina</button>`:''}</div>`;
+  if(NE_I >= lams.length) NE_I = lams.length-1;
+  if(NE_I < 0) NE_I = 0;
+  const l = lams[NE_I];
+
+  const barra = `<div class="ne-barra">
+    <button class="ne-bt" onclick="neProyectar()">🖥️ Modo proyección</button>
+    ${admin?`<button class="ne-bt${NE_MODOED?' on':''}" onclick="NE_MODOED=!NE_MODOED;NE_ED=null;renderTable()">
+      ${NE_MODOED?'✓ Editando':'✏️ Editar'}</button>`:''}
+    ${admin?`<button class="ne-bt gris" onclick="NE_ESCPAN=!NE_ESCPAN;renderTable()">🛡️ Escudo</button>`:''}
+  </div>${neEscudoPanelHTML()}`;
+
+  const form  = (NE_ED===l._id)     ? neFormLam(l, false) : '';
+  const nuevo = (NE_ED==='nuevaLam') ? neFormLam({kicker:'',tit:'',tit2:'',sub:'',txt:'',estilo:'',escudo:''}, true) : '';
+
+  const tools = (NE_MODOED && admin && !NE_ED) ? `<div class="ne-tools">
+      <button class="ne-bt mini gris" onclick="neEditarLam('${l._id}')">✏️ Editar esta lámina</button>
+      <button class="ne-bt mini gris" onclick="neMover('lam','${l._id}',-1)">◀ Mover</button>
+      <button class="ne-bt mini gris" onclick="neMover('lam','${l._id}',1)">Mover ▶</button>
+      <button class="ne-bt mini gris" onclick="neNuevaLam()">＋ Nueva</button>
+      <button class="ne-bt mini rojo" onclick="neBorrar('lam','${l._id}')">Borrar</button>
+    </div>` : '';
+
+  return `<div class="ne-wrap" data-cc-no>
+    ${barra}${nuevo}
+    ${form || neLamHTML(l, NE_I+1, lams.length)}
+    <div class="ne-nav">
+      <button class="ne-bt gris" onclick="neLamIr(-1)">‹ Anterior</button>
+      <div class="ne-cont">Lámina ${NE_I+1} de ${lams.length}</div>
+      <button class="ne-bt gris" onclick="neLamIr(1)">Siguiente ›</button>
+    </div>
+    <div class="ne-puntos">${lams.map((x,i)=>`<button class="ne-pt${i===NE_I?' on':''}" title="${neEsc(x.tit)}" onclick="NE_I=${i};NE_ED=null;renderTable()"></button>`).join('')}</div>
+    ${tools}
+  </div>`;
+}
+function neLamIr(d){
+  const total = neLams().length;
+  NE_I = (NE_I + d + total) % total;
+  NE_ED = null;
+  if(document.getElementById('neProy') && document.getElementById('neProy').classList.contains('ver')) nePintarProy();
+  else renderTable();
+}
+// Ayuda de las marcas, para que se pueda editar sin acordarse de memoria
+const NE_AYUDA = `Marcas para el cuerpo (al principio del renglón):
+#  tarjeta (el renglón es el título; los de abajo, su contenido)
+-  ítem de la tarjeta
+»  cajita simple
++  dato con rótulo →  + ASIENTO :: Plaza Huincul
+=  número grande  →  = 22 :: ESPACIOS CURRICULARES
+^  caja oscura    →  ^ Rectoría :: qué hace
+|  fila de tabla (columnas separadas con |)
+>  recuadro azul destacado
+~  notita al pie
+•  viñeta suelta`;
+
+function neFormLam(l, esNueva){
+  const ops = [['','Lámina común'],['portada','Portada / cierre (centrada)']];
+  const escs = [['','Sin escudo'],['pol','Escudo de la Policía'],['dcf','Escudo del DCFyCCCO'],['ambos','Los dos escudos']];
+  return `<div class="ne-ed">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="flex:1;min-width:150px"><div class="ne-lb">Tipo de lámina</div>
+        <select class="ne-in" id="neLEst">${ops.map(o=>`<option value="${o[0]}"${(l.estilo||'')===o[0]?' selected':''}>${o[1]}</option>`).join('')}</select></div>
+      <div style="flex:1;min-width:150px"><div class="ne-lb">Escudo</div>
+        <select class="ne-in" id="neLEsc">${escs.map(o=>`<option value="${o[0]}"${(l.escudo||'')===o[0]?' selected':''}>${o[1]}</option>`).join('')}</select></div>
+    </div>
+    <div class="ne-lb">Rubro (el rotulito de arriba)</div>
+    <input class="ne-in" id="neLKick" value="${neEsc(l.kicker||'')}" placeholder="Ej.: IDENTIDAD">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="flex:1;min-width:150px"><div class="ne-lb">Título</div>
+        <input class="ne-in" id="neLTit" value="${neEsc(l.tit||'')}"></div>
+      <div style="flex:1;min-width:150px"><div class="ne-lb">Segunda parte (en celeste)</div>
+        <input class="ne-in" id="neLTit2" value="${neEsc(l.tit2||'')}"></div>
+    </div>
+    <div class="ne-lb">Bajada</div>
+    <textarea class="ne-in" id="neLSub" style="min-height:60px;line-height:1.55">${neEsc(l.sub||'')}</textarea>
+    <div class="ne-lb">Cuerpo</div>
+    <textarea class="ne-in" id="neLTxt" style="min-height:170px;line-height:1.6">${neEsc(l.txt||'')}</textarea>
+    <details style="margin:-2px 0 10px"><summary style="font-size:11.5px;cursor:pointer;opacity:.8">Ver las marcas que se pueden usar</summary>
+      <pre style="font-size:11px;line-height:1.6;white-space:pre-wrap;margin:7px 0 0;font-family:inherit">${neEsc(NE_AYUDA)}</pre></details>
+    ${neImgControlHTML()}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="ne-bt dorado" onclick="neGuardarLam('${esNueva?'nueva':l._id}',${esNueva?'true':'false'})">
+        ${esNueva?'Agregar lámina':'Guardar'}</button>
+      <button class="ne-bt gris" onclick="NE_ED=null;renderTable()">Cancelar</button>
+    </div></div>`;
+}
+function neEditarLam(id){
+  const l = neLams().find(x=>x._id===id);
+  NE_IMG = l ? (l.img||null) : null;
+  NE_ED = id; renderTable();
+}
+function neNuevaLam(){ NE_IMG = null; NE_ED = 'nuevaLam'; renderTable(); }
+async function neGuardarLam(id, esNueva){
+  if(!neAdmin()){ alert('Solo las administradoras pueden modificar la presentación.'); return; }
+  const d = {
+    estilo: (document.getElementById('neLEst').value||''),
+    escudo: (document.getElementById('neLEsc').value||''),
+    kicker: (document.getElementById('neLKick').value||'').trim(),
+    tit:  (document.getElementById('neLTit').value||'').trim(),
+    tit2: (document.getElementById('neLTit2').value||'').trim(),
+    sub:  (document.getElementById('neLSub').value||'').trim(),
+    txt:  (document.getElementById('neLTxt').value||''),
+    img:  NE_IMG || '',
+  };
+  if(!d.tit && !d.txt.trim()){ alert('Escribí al menos un título o un texto.'); return; }
+  try{
+    if(esNueva){
+      const rows = neSembrar('lam');
+      const o = (rows.length? Math.max(...rows.map(r=>+r._o||0)) : 0) + 10;
+      if(typeof S.addSafe==='function') await S.addSafe(NE_PS, NE_PM, {...d, _o:o});
+      else S.add(NE_PS, NE_PM, {...d, _o:o});
+      NE_I = S.get(NE_PS, NE_PM).length - 1;
+    } else {
+      const r = neReal('lam', id);
+      if(!r){ alert('No encontré esa lámina.'); return; }
+      if(typeof S.updSafe==='function') await S.updSafe(NE_PS, NE_PM, r._id, d);
+      else S.upd(NE_PS, NE_PM, r._id, d);
+    }
+    NE_ED = null; renderTable();
+  }catch(e){ console.error('Presentación: no se pudo guardar', e); alert('No se pudo guardar. Probá de nuevo.'); }
+}
+
+// Modo proyección: pantalla completa, sin menú ni barras.
+function neProyectar(){
+  let c = document.getElementById('neProy');
+  if(!c){
+    c = document.createElement('div');
+    c.id = 'neProy';
+    c.setAttribute('data-cc-no','');
+    c.innerHTML = `<div id="neProyLam" style="flex:1;display:flex"></div>
+      <div class="ne-nav">
+        <button class="ne-bt gris" onclick="neLamIr(-1)">‹ Anterior</button>
+        <div class="ne-cont" id="neProyCont"></div>
+        <button class="ne-bt gris" onclick="neSalirProy()">✕ Salir</button>
+        <button class="ne-bt gris" onclick="neLamIr(1)">Siguiente ›</button>
+      </div>`;
+    document.body.appendChild(c);
+    document.addEventListener('keydown', neTeclas);
+  }
+  c.classList.add('ver');
+  nePintarProy();
+  try{ if(c.requestFullscreen) c.requestFullscreen(); }catch(_){}
+}
+function nePintarProy(){
+  const lams = neLams(); if(!lams.length) return;
+  if(NE_I>=lams.length) NE_I = 0;
+  const cont = document.getElementById('neProyLam');
+  if(cont) cont.innerHTML = neLamHTML(lams[NE_I], NE_I+1, lams.length);
+  const c = document.getElementById('neProyCont');
+  if(c) c.textContent = `${NE_I+1} / ${lams.length}`;
+}
+function neSalirProy(){
+  const c = document.getElementById('neProy');
+  if(c) c.classList.remove('ver');
+  try{ if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); }catch(_){}
+  renderTable();
+}
+function neTeclas(e){
+  const c = document.getElementById('neProy');
+  if(!c || !c.classList.contains('ver')) return;
+  if(e.key==='ArrowRight' || e.key===' ') { e.preventDefault(); neLamIr(1); }
+  else if(e.key==='ArrowLeft') { e.preventDefault(); neLamIr(-1); }
+  else if(e.key==='Escape') neSalirProy();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SALIDA DE COMISIÓN  (v1.6.0)
+// ───────────────────────────────────────────────────────────────────────────
+// Registro de las salidas de comisión del Departamento. Pensada como Minutas:
+// se carga rápido, queda guardada y se puede mandar por WhatsApp.
+//
+// Permisos:
+//   • Cargar y completar: TODOS (menos las cuentas de solo consulta).
+//     La salida se anota con la hora de salida y el resto queda abierto para
+//     que después lo complete cualquiera (hora de llegada, asunto, JP, etc.).
+//   • Borrar: SOLO administradoras.
+//
+// El personal sale del listado oficial (LIC_PERSONAL: los 39 con su LP). Si
+// alguien no tiene LP cargado se muestra igual con jerarquía y nombre. Además
+// se puede sumar a mano al personal que no es de la Escuela.
+// ═══════════════════════════════════════════════════════════════════════════
+const SC_S = 'SALIDA_COMISION', SC_M = 'SALIDA_COMISION';
+var SC_EDIT   = null;   // _id de la salida que se está editando
+var SC_SEL    = [];     // personal elegido en el formulario abierto
+var SC_MAN    = '';     // texto del campo "agregar a mano"
+var SC_BUSCAR = '';     // filtro del listado de personal
+var SC_Q      = '';     // filtro del listado de salidas
+var SC_ABRIR  = false;  // panel de selección de personal desplegado
+
+function scEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function scAdmin(){ return !!(CU && CU.permiso==='admin'); }
+function scHoraAhora(){ return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12:false}); }
+function scFechaLarga(iso){
+  if(!iso) return '—';
+  const p = String(iso).split('-');
+  if(p.length!==3) return iso;
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+// Los 39 del organigrama con su LP. Si el Organigrama tiene gente cargada que
+// no está en el listado oficial, también se suma (por nombre y jerarquía).
+function scPersonal(){
+  const out = [];
+  const vistos = new Set();
+  try{
+    (typeof LIC_PERSONAL!=='undefined' ? LIC_PERSONAL : []).forEach(p=>{
+      const k = (p.nombre||'').toUpperCase();
+      if(vistos.has(k)) return; vistos.add(k);
+      out.push({ nombre:p.nombre||'', jerarquia:p.jerarquia||'', lp:p.lp||'' });
+    });
+  }catch(_){}
+  try{
+    (S.get('ORGANIGRAMA','ORGANIGRAMA')||[]).forEach(r=>{
+      const n = (r.apellidoNombre||'').trim();
+      if(!n || vistos.has(n.toUpperCase())) return;
+      vistos.add(n.toUpperCase());
+      out.push({ nombre:n, jerarquia:r.jerarquia||'', lp:r.lp||'' });
+    });
+  }catch(_){}
+  return out;
+}
+function scEtiqueta(p){
+  const j = p.jerarquia ? p.jerarquia+' ' : '';
+  return (p.lp ? 'LP '+p.lp+' — ' : '') + j + (p.nombre||'');
+}
+function scSalidas(){
+  return (S.get(SC_S, SC_M)||[]).slice().sort((a,b)=>{
+    const f = String(b.fecha||'').localeCompare(String(a.fecha||''));
+    return f !== 0 ? f : String(b.salida||'').localeCompare(String(a.salida||''));
+  });
+}
+
+// ─── Formulario ───
+function scFormHTML(r){
+  const esNueva = !r;
+  const pers = scPersonal();
+  const q = (SC_BUSCAR||'').toLowerCase();
+  const lista = pers.filter(p=> !q || (p.nombre+' '+p.jerarquia+' '+p.lp).toLowerCase().indexOf(q)>=0);
+  const elegido = n => SC_SEL.some(x=>x.nombre===n);
+
+  const chips = SC_SEL.length ? `<div class="sc-chips">${SC_SEL.map((p,i)=>
+    `<span class="sc-chip">${scEsc(scEtiqueta(p))}${p.manual?' ✍️':''}
+      <button onclick="scQuitar(${i})" title="Quitar">×</button></span>`).join('')}</div>` : '';
+
+  const panel = SC_ABRIR ? `
+    <input class="sc-in" id="scBuscarPers" placeholder="🔍 Buscar por nombre, jerarquía o LP…"
+      value="${scEsc(SC_BUSCAR)}" oninput="SC_BUSCAR=this.value;scRe('scBuscarPers')">
+    <div class="sc-pers">
+      ${lista.length ? lista.map(p=>`
+        <label class="sc-per">
+          <input type="checkbox" ${elegido(p.nombre)?'checked':''}
+            onchange="scTildar('${scEsc(p.nombre).replace(/'/g,"\\'")}',this.checked)">
+          <span><b>${scEsc(p.nombre)}</b>
+            <small>${scEsc(p.jerarquia||'—')}${p.lp?' · LP '+scEsc(p.lp):' · sin LP cargado'}</small></span>
+        </label>`).join('')
+        : `<div style="padding:12px;font-size:12.5px;opacity:.7">No hay coincidencias.</div>`}
+    </div>
+    <div class="sc-lb">Personal que no es de la Escuela</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input class="sc-in" id="scManual" style="margin:0" placeholder="Jerarquía, nombre y LP si lo sabés"
+        value="${scEsc(SC_MAN)}" oninput="SC_MAN=this.value">
+      <button class="sc-bt" onclick="scAgregarManual()">Agregar</button>
+    </div>` : '';
+
+  return `<div class="sc-form">
+    <div class="sc-tit">${esNueva ? '🚔 Nueva salida de comisión' : '✏️ Editando salida del '+scEsc(scFechaLarga(r.fecha))}</div>
+
+    <div class="sc-fila">
+      <div><div class="sc-lb">Fecha</div>
+        <input class="sc-in" id="scFecha" type="date" value="${scEsc(r? r.fecha : todayISO())}"></div>
+      <div><div class="sc-lb">Hora de salida</div>
+        <input class="sc-in" id="scSalida" type="time" value="${scEsc(r? r.salida : scHoraAhora())}"></div>
+      <div><div class="sc-lb">Hora de llegada</div>
+        <input class="sc-in" id="scLlegada" type="time" value="${scEsc(r? (r.llegada||'') : '')}"></div>
+    </div>
+
+    <div class="sc-fila">
+      <div><div class="sc-lb">N.º de JP</div>
+        <input class="sc-in" id="scJP" value="${scEsc(r? (r.jp||'') : '')}" placeholder="Ej.: 1234"></div>
+      <div style="flex:2"><div class="sc-lb">Chofer</div>
+        <input class="sc-in" id="scChofer" value="${scEsc(r? (r.chofer||'') : '')}" placeholder="Jerarquía y nombre"></div>
+    </div>
+
+    <div class="sc-lb">Asunto</div>
+    <textarea class="sc-in" id="scAsunto" style="min-height:70px;line-height:1.55"
+      placeholder="Se puede dejar en blanco y completarlo después">${scEsc(r? (r.asunto||'') : '')}</textarea>
+
+    <div class="sc-lb">Personal que va de comisión (${SC_SEL.length})</div>
+    ${chips}
+    <button class="sc-bt" style="margin-bottom:10px" onclick="SC_ABRIR=!SC_ABRIR;scRe()">
+      ${SC_ABRIR ? '▲ Cerrar el listado' : '▼ Elegir personal del listado'}</button>
+    ${panel}
+
+    <div class="sc-lb">Quién informa</div>
+    <input class="sc-in" id="scInforma" value="${scEsc(r? (r.informa||'') : '')}"
+      placeholder="Se completa a mano">
+
+    <div style="font-size:11.5px;opacity:.75;margin-bottom:11px">
+      Queda registrado que la cargó <b>${scEsc((CU&&CU.nombre)||'—')}</b>.
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="sc-bt verde" onclick="scGuardar(false)">${esNueva?'Guardar salida':'Guardar cambios'}</button>
+      <button class="sc-bt wa" onclick="scGuardar(true)">📲 Guardar y enviar</button>
+      ${!esNueva ? `<button class="sc-bt" onclick="scCancelar()">Cancelar</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderComision(){
+  const soloVer = (typeof esVisor==='function') && esVisor();
+  const salidas = scSalidas();
+  const q = (SC_Q||'').trim().toLowerCase();
+  const filtradas = !q ? salidas : salidas.filter(r=>
+    ((r.asunto||'')+' '+(r.chofer||'')+' '+(r.jp||'')+' '+(r.informa||'')+' '+(r._por||'')+' '+
+     (r.fecha||'')+' '+((r.personal||[]).map(p=>p.nombre+' '+p.lp).join(' '))).toLowerCase().indexOf(q)>=0);
+
+  const form = soloVer ? '' : (SC_EDIT ? scFormHTML(salidas.find(x=>x._id===SC_EDIT)) : scFormHTML(null));
+
+  // Agrupado por fecha
+  let cuerpo = '', ultima = null;
+  filtradas.forEach(r=>{
+    if(r.fecha !== ultima){ ultima = r.fecha; cuerpo += `<div class="sc-fecha">📅 ${scEsc(scFechaLarga(r.fecha))}</div>`; }
+    const cerrada = !!(r.llegada||'').trim();
+    const gente = (r.personal||[]);
+    cuerpo += `<div class="sc-card${cerrada?'':' abierta'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="font-size:14px;font-weight:800">${scEsc(r.salida||'--:--')} → ${scEsc(r.llegada||'sin regreso')}</div>
+        <span class="sc-est ${cerrada?'cerrada':'abierta'}">${cerrada?'cerrada':'en comisión'}</span>
+      </div>
+      ${r.jp     ? `<div class="sc-dato"><b>JP N.º:</b> ${scEsc(r.jp)}</div>`:''}
+      ${r.asunto ? `<div class="sc-dato"><b>Asunto:</b> ${scEsc(r.asunto)}</div>`:''}
+      ${r.chofer ? `<div class="sc-dato"><b>Chofer:</b> ${scEsc(r.chofer)}</div>`:''}
+      ${gente.length ? `<div class="sc-dato"><b>Personal (${gente.length}):</b></div>
+        ${gente.map(p=>`<div class="sc-dato" style="padding-left:10px">• ${scEsc(scEtiqueta(p))}${p.manual?' ✍️':''}</div>`).join('')}`:''}
+      ${r.informa? `<div class="sc-dato"><b>Informa:</b> ${scEsc(r.informa)}</div>`:''}
+      <div class="sc-dato" style="opacity:.7;font-size:11.5px;margin-top:6px">
+        Cargó: ${scEsc(r._por||'—')}${r._editPor?' · Última edición: '+scEsc(r._editPor):''}</div>
+      ${soloVer ? '' : `<div class="sc-acc">
+        ${!cerrada ? `<button class="sc-bt ambar mini" onclick="scRegistrarLlegada('${r._id}')">🕐 Registrar llegada</button>`:''}
+        <button class="sc-bt mini" onclick="scEditar('${r._id}')">✏️ Completar / editar</button>
+        <button class="sc-bt wa mini" onclick="scWhatsApp('${r._id}')">📲 WhatsApp</button>
+        ${scAdmin() ? `<button class="sc-bt rojo mini" onclick="scBorrar('${r._id}')">Borrar</button>`:''}
+      </div>`}
+    </div>`;
+  });
+
+  return `<div class="sc-wrap" data-cc-no>
+    <div class="ne-nota" style="font-style:normal;margin-top:0">
+      Se anota la salida con fecha y hora; el resto queda abierto para que lo complete
+      cualquiera cuando la comisión vuelve. Cargar y completar lo puede hacer todo el
+      personal; borrar, solo las administradoras.
+    </div>
+    ${form}
+    <div style="display:flex;gap:8px;align-items:center;margin:16px 0 4px;flex-wrap:wrap">
+      <input class="ne-buscar" id="scBuscar" placeholder="🔍 Buscar salida…" value="${scEsc(SC_Q)}"
+        oninput="SC_Q=this.value;scRe('scBuscar')">
+      <span style="font-size:11.5px;opacity:.75">${filtradas.length} de ${salidas.length}</span>
+    </div>
+    ${cuerpo || `<div style="text-align:center;font-size:13px;opacity:.7;padding:22px 10px">
+      Todavía no hay salidas cargadas.</div>`}
+  </div>`;
+}
+
+// Re-dibuja manteniendo el foco del campo que se estaba tipeando
+function scRe(foco){
+  renderTable();
+  if(!foco) return;
+  setTimeout(()=>{
+    const i = document.getElementById(foco);
+    if(i){ i.focus(); try{ i.setSelectionRange(i.value.length, i.value.length); }catch(_){} }
+  }, 0);
+}
+function scTildar(nombre, marcar){
+  const p = scPersonal().find(x=>x.nombre===nombre);
+  if(!p) return;
+  if(marcar){ if(!SC_SEL.some(x=>x.nombre===nombre)) SC_SEL.push({...p}); }
+  else SC_SEL = SC_SEL.filter(x=>x.nombre!==nombre);
+  scRe();
+}
+function scQuitar(i){ SC_SEL.splice(i,1); scRe(); }
+function scAgregarManual(){
+  const t = (SC_MAN||'').trim();
+  if(!t){ alert('Escribí el nombre de la persona.'); return; }
+  SC_SEL.push({ nombre:t, jerarquia:'', lp:'', manual:true });
+  SC_MAN = '';
+  scRe();
+}
+function scEditar(id){
+  const r = scSalidas().find(x=>x._id===id); if(!r) return;
+  SC_EDIT = id;
+  SC_SEL = (r.personal||[]).map(p=>({...p}));
+  SC_ABRIR = false;
+  renderTable();
+  setTimeout(()=>{ const e=document.querySelector('.sc-form'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
+}
+function scCancelar(){ SC_EDIT=null; SC_SEL=[]; SC_ABRIR=false; SC_MAN=''; renderTable(); }
+
+async function scGuardar(enviar){
+  if(typeof _vlBloquear==='function' && _vlBloquear('🔒 Tu cuenta es de solo consulta.')) return;
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const d = {
+    fecha:    g('scFecha') || todayISO(),
+    salida:   g('scSalida'),
+    llegada:  g('scLlegada'),
+    jp:       g('scJP'),
+    chofer:   g('scChofer'),
+    asunto:   g('scAsunto'),
+    informa:  g('scInforma'),
+    personal: SC_SEL.map(p=>({nombre:p.nombre, jerarquia:p.jerarquia||'', lp:p.lp||'', manual:!!p.manual})),
+  };
+  if(!d.salida){ alert('Poné al menos la hora de salida.'); return; }
+  let guardada = null;
+  try{
+    if(SC_EDIT){
+      if(typeof S.updSafe==='function') await S.updSafe(SC_S, SC_M, SC_EDIT, d);
+      else S.upd(SC_S, SC_M, SC_EDIT, d);
+      guardada = {...(scSalidas().find(x=>x._id===SC_EDIT)||{}), ...d};
+    } else {
+      if(typeof S.addSafe==='function') guardada = await S.addSafe(SC_S, SC_M, d);
+      else guardada = S.add(SC_S, SC_M, d);
+    }
+    SC_EDIT = null; SC_SEL = []; SC_ABRIR = false; SC_MAN = '';
+    renderTable();
+    if(enviar && guardada) scEnviarTexto(scTexto(guardada));
+  }catch(e){
+    console.error('Salida de comisión: no se pudo guardar', e);
+    alert('No se pudo guardar. Probá de nuevo.');
+  }
+}
+async function scRegistrarLlegada(id){
+  if(typeof _vlBloquear==='function' && _vlBloquear('🔒 Tu cuenta es de solo consulta.')) return;
+  const r = scSalidas().find(x=>x._id===id); if(!r) return;
+  const h = prompt('Hora de llegada (HH:MM)', scHoraAhora());
+  if(h===null) return;
+  const limpia = String(h).trim();
+  if(!/^\d{1,2}:\d{2}$/.test(limpia)){ alert('Escribila como HH:MM, por ejemplo 14:30.'); return; }
+  if(typeof S.updSafe==='function') await S.updSafe(SC_S, SC_M, id, {llegada:limpia});
+  else S.upd(SC_S, SC_M, id, {llegada:limpia});
+  renderTable();
+}
+async function scBorrar(id){
+  if(!scAdmin()){ alert('Solo las administradoras pueden borrar una salida.'); return; }
+  if(!confirm('¿Borrar esta salida de comisión? Deja de verse para todos.')) return;
+  if(typeof S.delSafe==='function') await S.delSafe(SC_S, SC_M, id);
+  else S.del(SC_S, SC_M, id);
+  if(SC_EDIT===id) scCancelar(); else renderTable();
+}
+function scTexto(r){
+  const L = [];
+  L.push('🚔 *SALIDA DE COMISIÓN*');
+  L.push('DCFyCCCO «Cabo 1.º (PM) Juan Ariel Belarde»');
+  L.push('');
+  L.push('📅 Fecha: ' + scFechaLarga(r.fecha));
+  L.push('🕐 Hora de salida: ' + (r.salida||'—'));
+  L.push('🕐 Hora de llegada: ' + (r.llegada||'— (en comisión)'));
+  if(r.jp)     L.push('🚓 JP N.º: ' + r.jp);
+  if(r.chofer) L.push('🧑‍✈️ Chofer: ' + r.chofer);
+  if(r.asunto) L.push('📋 Asunto: ' + r.asunto);
+  const g = r.personal||[];
+  if(g.length){
+    L.push('');
+    L.push('👮 Personal de comisión (' + g.length + '):');
+    g.forEach(p=> L.push('• ' + scEtiqueta(p)));
+  }
+  L.push('');
+  if(r.informa) L.push('✍️ Informa: ' + r.informa);
+  L.push('📲 Cargado por: ' + (r._por||'—'));
+  return L.join('\n');
+}
+function scWhatsApp(id){
+  const r = scSalidas().find(x=>x._id===id); if(!r) return;
+  scEnviarTexto(scTexto(r));
+}
+function scEnviarTexto(txt){
+  if(typeof _vlBloquear==='function' && _vlBloquear('🔒 Tu cuenta es de solo consulta.')) return;
+  try{
+    if(typeof _abrirWhatsApp === 'function'){ _abrirWhatsApp(txt); return; }
+  }catch(_){}
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
+
 function renderAvisos(){
   const regs = S.get(AV_S, AV_M).slice().sort((a,b) => String(b.desde||'').localeCompare(String(a.desde||'')));
   const hoy = todayISO();
