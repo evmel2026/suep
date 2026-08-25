@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.4">
+<meta name="app-version" content="1.6.5">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4732,6 +4732,10 @@ function _aplicarModoVisor(user){
 // AUTH
 // ══════════════════════════════════════════════
 function iniciarSesion(user, esRestauracion){
+      // v1.6.5 — Candado final: ninguna cuenta dada de baja abre sesión.
+      if(typeof _usuarioBloqueado==='function' && _usuarioBloqueado(user)){
+        alert(_MSG_BLOQUEADA); return;
+      }
       CU=user;
       // ✅ v1.5.35: la sesión NO se guarda en el dispositivo. Al cerrar y volver
       // a abrir la app siempre se pide usuario+contraseña (o la huella, para
@@ -4811,7 +4815,8 @@ async function intentarRestaurarSesion(){
   }catch(_){ /* sin conexión: se entra con los datos locales */ }
   try{ if(typeof _mergeAllDynUsers==='function') _mergeAllDynUsers(); }catch(_){ }
   const user=(typeof USERS!=='undefined'?USERS:[]).find(x=>x.usuario===ses.usuario);
-  if(!user){ try{ localStorage.removeItem('suep_sesion'); }catch(_){ } return false; }
+  if(!user || (typeof _usuarioBloqueado==='function' && _usuarioBloqueado(user))){
+    try{ localStorage.removeItem('suep_sesion'); }catch(_){ } return false; }
   iniciarSesion(user, true);
   setTimeout(()=>{
     try{ if(typeof reconstruirNotifsFaltantes==='function') reconstruirNotifsFaltantes(); }catch(_){ }
@@ -4830,6 +4835,12 @@ function togglePwd(id, btn){
     if(btn){ btn.textContent = '👁️'; btn.setAttribute('aria-label','Mostrar contraseña'); }
   }
 }
+// v1.6.5 — Una cuenta desactivada o eliminada desde el Panel de Administración
+// NO puede entrar (antes la marca se guardaba pero el login no la miraba).
+function _usuarioBloqueado(user){
+  return !!(user && (user.desactivado || user.eliminado));
+}
+const _MSG_BLOQUEADA = 'Esta cuenta fue dada de baja. Consultá con la Secretaría Académica.';
 function doLogin(){
   const u=document.getElementById('loginUser').value.trim();
   const p=document.getElementById('loginPass').value;
@@ -4838,9 +4849,15 @@ function doLogin(){
   err.classList.remove('show'); btn.disabled=true; btn.textContent='VERIFICANDO...';
   setTimeout(()=>{
     const user=USERS.find(x=>x.usuario===u&&getUserPassword(x.usuario)===p);
-    if(user){
+    if(user && _usuarioBloqueado(user)){
+      err.textContent = _MSG_BLOQUEADA; err.classList.add('show');
+    } else if(user){
+      err.textContent = 'Usuario o contraseña incorrectos';
       iniciarSesion(user);
-    } else { err.classList.add('show'); }
+    } else {
+      err.textContent = 'Usuario o contraseña incorrectos';
+      err.classList.add('show');
+    }
     btn.disabled=false; btn.textContent='INGRESAR AL SISTEMA';
   },600);
 }
@@ -4963,6 +4980,7 @@ async function loginConHuella(){
       if(nom && USERS.some(x=>x.usuario===nom)){ usuario=nom; _guardarHuella(usuario, idUsado); }
     }
     const user=USERS.find(x=>x.usuario===usuario);
+    if(user && _usuarioBloqueado(user)){ alert(_MSG_BLOQUEADA); return; }
     if(user){ iniciarSesion(user); return; }
     alert('La huella se verificó, pero no se pudo identificar tu usuario en este dispositivo.\nIngresá esta vez con usuario y contraseña: la huella se vuelve a activar sola.');
   }catch(e){
@@ -7390,7 +7408,45 @@ function _n96Estilos(){
 ';
   document.head.appendChild(st);
 }
-function horEnsureEstilos(){ _n96Estilos(); }
+function horEnsureEstilos(){ _n96Estilos(); _hrEditEstilos(); }
+// v1.6.5 — Estilos del modo edición de la pizarra (menús y casilleros combinados)
+function _hrEditEstilos(){
+  if(document.getElementById('estilos-hr-edit')) return;
+  const st = document.createElement('style');
+  st.id = 'estilos-hr-edit';
+  st.textContent = [
+    '.hr-tabla td.hr-mrg{box-shadow:inset 0 0 0 1px rgba(90,166,221,.55)}',
+    '.hr-ed{cursor:pointer;outline:1px dashed rgba(232,190,98,.6);outline-offset:-3px}',
+    '.hr-pt{opacity:.75;font-weight:800}',
+    '.hr-reset.on{background:rgba(232,190,98,.22);border-color:rgba(232,190,98,.6);color:#ffe6b8}',
+    '.hr-aviso.hr-edit{background:rgba(232,190,98,.12);border-color:rgba(232,190,98,.45);color:#ffe6b8}',
+    '.hrm-ov{position:fixed;inset:0;background:rgba(4,12,22,.72);z-index:99999;display:flex;',
+    '  align-items:flex-end;justify-content:center;padding:14px}',
+    '.hrm-box{width:100%;max-width:430px;background:#0f2036;border:1px solid rgba(122,175,212,.28);',
+    '  border-radius:18px;padding:15px;box-shadow:0 18px 50px rgba(0,0,0,.5);max-height:82vh;overflow:auto}',
+    '.hrm-tit{font-size:12px;font-weight:800;color:#8fc6ee;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:7px}',
+    '.hrm-nota{font-size:12px;color:#b6cde0;margin-bottom:11px;line-height:1.45}',
+    '.hrm-sub{font-size:12.5px;color:#e8be62;font-weight:700;margin:2px 0 9px}',
+    '.hrm-bt{display:block;width:100%;text-align:left;background:rgba(122,175,212,.10);',
+    '  border:1px solid rgba(122,175,212,.26);color:#e6f0f9;border-radius:12px;padding:12px 14px;',
+    '  font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:8px}',
+    '.hrm-bt:hover{background:rgba(122,175,212,.22)}',
+    '.hrm-bt.hrm-rojo{color:#ffb4b4;border-color:rgba(248,113,113,.42);background:rgba(248,113,113,.10)}',
+    '.hrm-bt.hrm-gris{color:#9fb6c9;text-align:center;font-weight:700}',
+    '.light-mode .hrm-box{background:#fff;border-color:#dbe6f1}',
+    '.light-mode .hrm-tit{color:#14568f}',
+    '.light-mode .hrm-nota{color:#4a6a88}',
+    '.light-mode .hrm-sub{color:#8a6410}',
+    '.light-mode .hrm-bt{background:#f2f7fc;border-color:#dbe6f1;color:#1c3b58}',
+    '.light-mode .hrm-bt:hover{background:#e6f1fc}',
+    '.light-mode .hrm-bt.hrm-rojo{background:#fdecec;border-color:#f3c9c9;color:#a12a2a}',
+    '.light-mode .hrm-bt.hrm-gris{color:#5a7a94}',
+    '.light-mode .hr-tabla td.hr-mrg{box-shadow:inset 0 0 0 1px rgba(31,111,184,.45)}',
+    '.light-mode .hr-aviso.hr-edit{background:#fdf5e4;border-color:#e6d2a4;color:#6b4a08}',
+    '@media(min-width:640px){.hrm-ov{align-items:center}}'
+  ].join('\n');
+  document.head.appendChild(st);
+}
 function archEnsureEstilos(){ _n96Estilos(); }
 function efemEnsureEstilos(){ _n96Estilos(); }
 
@@ -7526,7 +7582,16 @@ function horPuedeEditar(){
 }
 function horVigente(){ return horHoy() >= HOR_DESDE; }
 
-// ─── Lo guardado: { 'YYYY-MM-DD': { 'fila|seccion': 'texto' }, ... } ───
+// ─── Lo guardado ────────────────────────────────────────────────────────
+// { 'YYYY-MM-DD': capa, '#plantilla': { LUN: capa, MAR: capa, … } }
+// Cada CAPA guarda:
+//   'fila|seccion' : el texto de un casillero
+//                    ('fila|T' = fila común a las 5 secciones, 'fila|H' = el horario)
+//   '#del'   : filas que se sacaron
+//   '#add'   : filas agregadas  [{id, tras, h, c:[…]}]
+//   '#span'  : casilleros combinados  { 'fila|seccion': {c:columnas, r:filas} }
+// La capa del DÍA pisa a la de la PLANTILLA (la que vale para todos los lunes,
+// todos los martes, etc.). Por eso cada cambio pregunta para cuándo vale.
 function horGuardado(){
   try{ return JSON.parse(localStorage.getItem(HOR_KEY) || '{}') || {}; }catch(_){ return {}; }
 }
@@ -7534,70 +7599,280 @@ function horGrabar(todo){
   try{ localStorage.setItem(HOR_KEY, JSON.stringify(todo)); }catch(_){}
   try{ if(typeof syncToSupabase === 'function') syncToSupabase(HOR_KEY, todo); }catch(_){}
 }
-// El horario de un día concreto: plantilla + los cambios de esa fecha.
-function horDelDia(iso){
+function horDiaCod(iso){
   const d = horParse(iso); if(!d) return null;
-  const dia = HOR_DIAS[d.getDay() - 1];
-  if(!dia) return null;                          // sábado y domingo no tienen clases
-  const base = HOR_BASE[dia] || [];
-  const camb = horGuardado()[iso] || {};
-  return base.map((f, i)=>{
-    if(f.hdr) return { hdr:f.hdr };
-    if(typeof f.t === 'string'){
-      const k = i + '|T';
-      return { h:f.h, t: (k in camb) ? camb[k] : f.t, tocado: (k in camb), fila:i, comun:true };
-    }
-    const cel = (f.c || []).map((v, s)=>{
-      const k = i + '|' + s;
-      return { v: (k in camb) ? camb[k] : v, tocado: (k in camb), fila:i, sec:s };
-    });
-    return { h:f.h, cel, fila:i };
+  return HOR_DIAS[d.getDay() - 1] || null;
+}
+function horNombreDia(iso){
+  const c = horDiaCod(iso);
+  return c ? HOR_NOM[c].toLowerCase() : '';
+}
+function horCapa(todo, iso, ambito){
+  if(ambito === 'plantilla'){
+    const dia = horDiaCod(iso); if(!dia) return null;
+    todo['#plantilla'] = todo['#plantilla'] || {};
+    todo['#plantilla'][dia] = todo['#plantilla'][dia] || {};
+    return todo['#plantilla'][dia];
+  }
+  todo[iso] = todo[iso] || {};
+  return todo[iso];
+}
+function horCapaVacia(o){
+  if(!o) return true;
+  return !Object.keys(o).some(k=>{
+    const v = o[k];
+    if(k === '#del' || k === '#add') return Array.isArray(v) && v.length;
+    if(k === '#span') return v && Object.keys(v).length;
+    return true;
   });
 }
-function horCuantosCambios(iso){
-  return Object.keys(horGuardado()[iso] || {}).length;
+function horLimpiar(todo, iso){
+  if(horCapaVacia(todo[iso])) delete todo[iso];
+  const dia = horDiaCod(iso);
+  if(dia && todo['#plantilla'] && horCapaVacia(todo['#plantilla'][dia])) delete todo['#plantilla'][dia];
+  if(todo['#plantilla'] && !Object.keys(todo['#plantilla']).length) delete todo['#plantilla'];
+}
+// Escribe un cambio en la capa que corresponda y vuelve a dibujar.
+function horAplicar(iso, ambito, fn){
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana y Sergio pueden cambiar el horario.'); return; }
+  const todo = horGuardado();
+  const capa = horCapa(todo, iso, ambito);
+  if(!capa) return;
+  fn(capa);
+  horLimpiar(todo, iso);
+  horGrabar(todo);
+  horRefrescar();
 }
 
-// ─── Editar un casillero ───
-function horEditar(iso, fila, sec){
+// El horario de un día concreto: plantilla del Excel + lo que se cambió.
+function horDelDia(iso){
+  const dia = horDiaCod(iso); if(!dia) return null;   // sábado y domingo no tienen clases
+  const base = HOR_BASE[dia] || [];
+  const todo = horGuardado();
+  const pla  = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
+  const camb = todo[iso] || {};
+  const del    = new Set([].concat(pla['#del'] || [], camb['#del'] || []).map(String));
+  const spans  = Object.assign({}, pla['#span'] || {}, camb['#span'] || {});
+  const extras = [].concat(pla['#add'] || [], camb['#add'] || []);
+  const val = k => (k in camb) ? camb[k] : (k in pla ? pla[k] : undefined);
+  const toc = k => (k in camb) || (k in pla);
+
+  const armar = (def, key) => {
+    if(def.hdr) return { tipo:'hdr', hdr:def.hdr, key:key };
+    const kh = key + '|H';
+    const h  = val(kh) !== undefined ? val(kh) : (def.h || '');
+    if(typeof def.t === 'string'){
+      const k = key + '|T';
+      const v = val(k);
+      return { tipo:'comun', h:h, t:(v !== undefined ? v : def.t), tocado:toc(k), key:key };
+    }
+    const cel = (def.c || ['','','','','']).map((v0, sec)=>{
+      const k = key + '|' + sec;
+      const v = val(k);
+      return { v:(v !== undefined ? v : v0), tocado:toc(k), sec:sec };
+    });
+    return { tipo:'cel', h:h, cel:cel, key:key };
+  };
+
+  const filas = [];
+  const tras = pos => extras.filter(e => e && e.id && String(e.tras) === String(pos) && !del.has(String(e.id)));
+  tras('-1').forEach(e => filas.push(armar(e, e.id)));
+  base.forEach((def, i)=>{
+    if(!del.has(String(i))) filas.push(armar(def, String(i)));
+    tras(String(i)).forEach(e => filas.push(armar(e, e.id)));
+  });
+  filas.spans = spans;
+  return filas;
+}
+function horContar(o){
+  if(!o) return 0;
+  let n = 0;
+  Object.keys(o).forEach(k=>{
+    if(k === '#del' || k === '#add') n += (o[k] || []).length;
+    else if(k === '#span') n += Object.keys(o[k] || {}).length;
+    else n++;
+  });
+  return n;
+}
+function horCuantosCambios(iso){
+  const todo = horGuardado();
+  const dia = horDiaCod(iso);
+  const pla = (dia && todo['#plantilla']) ? todo['#plantilla'][dia] : null;
+  return horContar(todo[iso]) + horContar(pla);
+}
+
+// ─── Editar el texto de un casillero (lo de siempre: un toque y listo) ───
+function horEditar(iso, key, sec){
   if(!horPuedeEditar()){ alert('Solo Mely, Eliana y Sergio pueden cambiar el horario.'); return; }
   const filas = horDelDia(iso); if(!filas) return;
-  const f = filas[fila]; if(!f) return;
-  const actual = (sec === 'T') ? f.t : (f.cel[Number(sec)] || {}).v;
-  const donde = (sec === 'T') ? 'todas las secciones' : ('la sección ' + (Number(sec)+1));
-  const txt = prompt('Horario de ' + f.h + ' · ' + donde + '\n\n'
+  const f = filas.find(x => String(x.key) === String(key)); if(!f) return;
+  const actual = (String(sec) === 'T') ? f.t : (((f.cel || [])[Number(sec)] || {}).v);
+  const donde  = (String(sec) === 'T') ? 'todas las secciones' : ('la sección ' + (Number(sec) + 1));
+  const txt = prompt('Horario de ' + (f.h || '—') + ' · ' + donde + '\n\n'
     + 'Escribí la materia y el docente. Si ese casillero queda libre, borralo todo y aceptá.', actual || '');
   if(txt === null) return;
-  const todo = horGuardado();
-  const dia = todo[iso] = todo[iso] || {};
-  dia[fila + '|' + sec] = txt.trim();
-  horGrabar(todo);
-  horRefrescar();
+  horAplicar(iso, 'dia', capa => { capa[key + '|' + sec] = txt.trim(); });
 }
 // Volver un casillero a lo que dice la plantilla del Excel.
-function horVolverBase(iso, fila, sec){
+function horVolverBase(iso, key, sec){
   if(!horPuedeEditar()) return;
+  const k = key + '|' + sec;
   const todo = horGuardado();
-  if(todo[iso]){
-    delete todo[iso][fila + '|' + sec];
-    if(!Object.keys(todo[iso]).length) delete todo[iso];
-  }
+  const dia = horDiaCod(iso);
+  if(todo[iso] && (k in todo[iso])) delete todo[iso][k];
+  else if(dia && todo['#plantilla'] && todo['#plantilla'][dia]) delete todo['#plantilla'][dia][k];
+  horLimpiar(todo, iso);
   horGrabar(todo);
   horRefrescar();
 }
-// Volver TODO un día a la plantilla.
+// Volver TODO un día (o todos los días iguales) a la plantilla.
 function horVolverDia(iso){
   if(!horPuedeEditar()) return;
-  const n = horCuantosCambios(iso);
-  if(!n){ alert('Ese día no tiene cambios: ya está igual que la plantilla.'); return; }
-  if(!confirm('¿Volver el día completo a la plantilla del horario?\n\n'
-    + 'Se deshacen ' + n + (n===1 ? ' cambio' : ' cambios') + ' de esa fecha.')) return;
-  const todo = horGuardado();
-  delete todo[iso];
-  horGrabar(todo);
-  horRefrescar();
+  horAmbito(iso, '↺ Volver a la plantilla del Excel',
+    'Se deshacen los cambios hechos a mano y el horario vuelve a quedar como el Excel.', ambito=>{
+    const todo = horGuardado();
+    const dia = horDiaCod(iso);
+    if(ambito === 'plantilla'){ if(todo['#plantilla']) delete todo['#plantilla'][dia]; }
+    else delete todo[iso];
+    horLimpiar(todo, iso);
+    horGrabar(todo);
+    horRefrescar();
+  });
 }
-// v1.5.97 — Elegir un día de la fila de arriba.
+
+// ─── v1.6.5 · MODO EDICIÓN: filas y casilleros combinados ───────────────
+var HOR_EDIT = false;                 // el modo edición está prendido o no
+var HOR_CB   = null;                  // qué hacer cuando eligen para cuándo vale
+
+function horModo(){ HOR_EDIT = !HOR_EDIT; horRefrescar(); }
+function horCerrarMenu(){ const o = document.getElementById('horMenuOv'); if(o) o.remove(); }
+function horPanel(titulo, cuerpo){
+  horCerrarMenu();
+  const ov = document.createElement('div');
+  ov.id = 'horMenuOv';
+  ov.className = 'hrm-ov';
+  ov.onclick = e => { if(e.target === ov) horCerrarMenu(); };
+  ov.innerHTML = '<div class="hrm-box" data-cc-no><div class="hrm-tit">' + titulo + '</div>' + cuerpo + '</div>';
+  document.body.appendChild(ov);
+}
+// Pregunta si el cambio vale para esa fecha sola o para todos los días iguales.
+function horAmbito(iso, titulo, nota, cb){
+  HOR_CB = cb;
+  const d = horParse(iso);
+  const fecha = d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : iso;
+  const nom = horNombreDia(iso);
+  horPanel(titulo,
+    (nota ? '<div class="hrm-nota">' + nota + '</div>' : '')
+    + '<div class="hrm-sub">¿Para cuándo vale el cambio?</div>'
+    + '<button class="hrm-bt" onclick="horElegirAmbito(\'dia\')">📅 Solo el ' + nom + ' ' + fecha + '</button>'
+    + '<button class="hrm-bt" onclick="horElegirAmbito(\'plantilla\')">🔁 Todos los ' + nom + ' de acá en más</button>'
+    + '<button class="hrm-bt hrm-gris" onclick="horCerrarMenu()">Cancelar</button>');
+}
+function horElegirAmbito(a){
+  const cb = HOR_CB; HOR_CB = null; horCerrarMenu();
+  if(typeof cb === 'function') cb(a);
+}
+function horSpanDe(iso, key, sec){
+  const filas = horDelDia(iso) || [];
+  const sp = (filas.spans || {})[key + '|' + sec] || {};
+  return { c: Math.max(1, Number(sp.c) || 1), r: Math.max(1, Number(sp.r) || 1) };
+}
+// Combinar: 'der' suma el casillero de al lado, 'abajo' el de la fila siguiente.
+function horCombinar(iso, key, sec, dir){
+  horAmbito(iso, dir === 'abajo' ? '⬇️ Combinar con el de abajo' : '➡️ Combinar con el de la derecha', '', ambito=>{
+    const sp = horSpanDe(iso, key, sec);
+    if(dir === 'abajo') sp.r = sp.r + 1; else sp.c = sp.c + 1;
+    horAplicar(iso, ambito, capa=>{
+      capa['#span'] = capa['#span'] || {};
+      capa['#span'][key + '|' + sec] = sp;
+    });
+  });
+}
+function horSeparar(iso, key, sec){
+  horAmbito(iso, '✂️ Separar el casillero', 'Vuelven a quedar los casilleros sueltos, con su texto de antes.', ambito=>{
+    const todo0 = horGuardado();
+    const dia = horDiaCod(iso);
+    const enPla = !!(dia && todo0['#plantilla'] && todo0['#plantilla'][dia]
+                  && todo0['#plantilla'][dia]['#span'] && todo0['#plantilla'][dia]['#span'][key + '|' + sec]);
+    horAplicar(iso, ambito, capa=>{
+      const k = key + '|' + sec;
+      if(capa['#span'] && (k in capa['#span'])) delete capa['#span'][k];
+      // Si la combinación venía de la plantilla, este día la anula.
+      if(ambito === 'dia' && enPla){ capa['#span'] = capa['#span'] || {}; capa['#span'][k] = { c:1, r:1 }; }
+    });
+  });
+}
+function horBorrarFila(iso, key){
+  const filas = horDelDia(iso) || [];
+  const f = filas.find(x => String(x.key) === String(key));
+  const que = f ? (f.h || f.hdr || '') : '';
+  horAmbito(iso, '🗑️ Eliminar la fila' + (que ? ' de ' + horEsc(que) : ''),
+    'La fila deja de mostrarse. Se repone con "Volver a la plantilla".', ambito=>{
+    horAplicar(iso, ambito, capa=>{
+      const add = capa['#add'] || [];
+      const i = add.findIndex(e => String(e.id) === String(key));
+      if(i >= 0){ add.splice(i, 1); capa['#add'] = add; return; }   // era una fila agregada acá
+      capa['#del'] = capa['#del'] || [];
+      if(capa['#del'].map(String).indexOf(String(key)) < 0) capa['#del'].push(String(key));
+    });
+  });
+}
+function horAgregarFila(iso, key){
+  horAmbito(iso, '➕ Agregar una fila debajo', '', ambito=>{
+    const h = prompt('¿Qué horario lleva la fila nueva?\n(por ejemplo: 15:50 a 17:10)', '');
+    if(h === null) return;
+    horAplicar(iso, ambito, capa=>{
+      capa['#add'] = capa['#add'] || [];
+      capa['#add'].push({ id: 'e' + Date.now().toString(36) + Math.floor(Math.random() * 90 + 10),
+                          tras: String(key), h: (h || '').trim(), c: ['','','','',''] });
+    });
+  });
+}
+function horEditarHora(iso, key){
+  const filas = horDelDia(iso) || [];
+  const f = filas.find(x => String(x.key) === String(key));
+  horAmbito(iso, '🕐 Cambiar el horario de la fila', '', ambito=>{
+    const txt = prompt('Horario de la fila\n(por ejemplo: 08:10 a 09:30)', (f && f.h) || '');
+    if(txt === null) return;
+    horAplicar(iso, ambito, capa => { capa[key + '|H'] = txt.trim(); });
+  });
+}
+// Menú de un casillero
+function horMenuCel(iso, key, sec){
+  if(!horPuedeEditar()) return;
+  const filas = horDelDia(iso) || [];
+  const idx = filas.findIndex(x => String(x.key) === String(key));
+  const f = filas[idx]; if(!f) return;
+  const esComun = (String(sec) === 'T');
+  const cel = esComun ? { v:f.t, tocado:f.tocado } : (((f.cel || [])[Number(sec)]) || { v:'' });
+  const c  = Number(sec);
+  const sp = esComun ? { c:1, r:1 } : horSpanDe(iso, key, c);
+  const b = (txt, fn, cls) => '<button class="hrm-bt' + (cls || '') + '" onclick="horCerrarMenu();' + fn + '">' + txt + '</button>';
+  let h = '<div class="hrm-nota">' + horEsc(f.h || '') + (esComun ? ' · todas las secciones' : ' · sección ' + (c + 1)) + '</div>';
+  h += b('✏️ Cambiar el texto', "horEditar('" + iso + "','" + key + "','" + sec + "')");
+  if(!esComun){
+    if(c + sp.c <= 4) h += b('➡️ Combinar con la de la derecha', "horCombinar('" + iso + "','" + key + "'," + c + ",'der')");
+    if(filas[idx + sp.r] && filas[idx + sp.r].tipo === 'cel')
+      h += b('⬇️ Combinar con la de abajo', "horCombinar('" + iso + "','" + key + "'," + c + ",'abajo')");
+    if(sp.c > 1 || sp.r > 1) h += b('✂️ Separar este casillero', "horSeparar('" + iso + "','" + key + "'," + c + ")");
+  }
+  if(cel.tocado) h += b('↺ Volver a la plantilla', "horVolverBase('" + iso + "','" + key + "','" + sec + "')");
+  h += b('Cancelar', '', ' hrm-gris');
+  horPanel('Casillero', h);
+}
+// Menú de una fila (se abre tocando el horario de la izquierda)
+function horMenuFila(iso, key){
+  if(!horPuedeEditar()) return;
+  const filas = horDelDia(iso) || [];
+  const f = filas.find(x => String(x.key) === String(key)); if(!f) return;
+  const b = (txt, fn, cls) => '<button class="hrm-bt' + (cls || '') + '" onclick="horCerrarMenu();' + fn + '">' + txt + '</button>';
+  let h = '<div class="hrm-nota">' + horEsc(f.h || f.hdr || '') + '</div>';
+  if(f.tipo !== 'hdr') h += b('🕐 Cambiar el horario de la fila', "horEditarHora('" + iso + "','" + key + "')");
+  h += b('➕ Agregar una fila debajo', "horAgregarFila('" + iso + "','" + key + "')");
+  h += b('🗑️ Eliminar esta fila', "horBorrarFila('" + iso + "','" + key + "')", ' hrm-rojo');
+  h += b('Cancelar', '', ' hrm-gris');
+  horPanel('Fila del horario', h);
+}
 function horVerDia(iso){ HOR_DIA = iso; horRefrescar(); }
 function horSemana(delta){
   HOR_SEM = horSumar(HOR_SEM || horLunesDe(horHoy()), delta * 7);
@@ -7611,34 +7886,64 @@ function horRefrescar(){
   if(b){ b.innerHTML = horBloqueHTML(); }
 }
 
-// ─── La grilla de la semana (la pestaña) ───
-// v1.5.97 — Se muestra UN día a la vez, elegido en la fila de arriba. Antes
-// estaban los cinco días uno abajo del otro y había que bajar mucho para
-// encontrar el que se buscaba.
+// ─── La grilla de un día ────────────────────────────────────────────────
+// Dibuja fila por fila teniendo en cuenta los casilleros combinados: uno que
+// ocupa 2 columnas o 2 filas tapa a los de al lado, que no se vuelven a dibujar.
 function horFilasHTML(iso, puede, chica){
   const filas = horDelDia(iso) || [];
-  return filas.map(f=>{
-    if(f.hdr) return `<tr class="hr-hdr"><td colspan="6">${horEsc(f.hdr)}</td></tr>`;
-    if(f.comun){
-      const cel = (puede && !chica)
-        ? `<td colspan="5" class="hr-comun${f.tocado?' hr-toc':''}"
-             onclick="horEditar('${iso}',${f.fila},'T')" title="Tocá para cambiarlo">${horEsc(f.t)||'—'}
-             ${f.tocado?`<button class="hr-x" title="Volver a la plantilla"
-               onclick="event.stopPropagation();horVolverBase('${iso}',${f.fila},'T')">↺</button>`:''}</td>`
-        : `<td colspan="5" class="hr-comun${f.tocado?' hr-toc':''}">${horEsc(f.t)||'—'}</td>`;
-      return `<tr><td class="hr-hora">${horEsc(f.h)}</td>${cel}</tr>`;
+  const spans = filas.spans || {};
+  const edita = puede && !chica;
+  const modo  = edita && HOR_EDIT;
+  const ocupado = {};
+  const volver = (key, sec) => '<button class="hr-x" title="Volver a la plantilla" onclick="event.stopPropagation();horVolverBase(\''
+    + iso + '\',\'' + key + '\',\'' + sec + '\')">↺</button>';
+  const out = [];
+  filas.forEach((f, r)=>{
+    if(f.tipo === 'hdr'){
+      out.push('<tr class="hr-hdr">' + (modo
+        ? '<td colspan="6" class="hr-ed" onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')">' + horEsc(f.hdr) + ' <span class="hr-pt">⋯</span></td>'
+        : '<td colspan="6">' + horEsc(f.hdr) + '</td>') + '</tr>');
+      return;
     }
-    const tds = f.cel.map(c=>{
-      // v1.5.98 — s1…s5: la clase del color de cada sección.
-      const clase = 'hr-cel s'+(c.sec+1) + (c.tocado?' hr-toc':'') + (!c.v?' hr-vacio':'');
-      if(!puede || chica) return `<td class="${clase}">${horEsc(c.v)||'—'}</td>`;
-      return `<td class="${clase}" onclick="horEditar('${iso}',${c.fila},'${c.sec}')" title="Tocá para cambiarlo">
-        ${horEsc(c.v)||'—'}
-        ${c.tocado?`<button class="hr-x" title="Volver a la plantilla"
-          onclick="event.stopPropagation();horVolverBase('${iso}',${c.fila},'${c.sec}')">↺</button>`:''}</td>`;
-    }).join('');
-    return `<tr><td class="hr-hora">${horEsc(f.h)}</td>${tds}</tr>`;
-  }).join('');
+    const hora = modo
+      ? '<td class="hr-hora hr-ed" title="Opciones de la fila" onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')">'
+        + (horEsc(f.h) || '—') + ' <span class="hr-pt">⋯</span></td>'
+      : '<td class="hr-hora">' + (horEsc(f.h) || '—') + '</td>';
+
+    if(f.tipo === 'comun'){
+      const cls = 'hr-comun' + (f.tocado ? ' hr-toc' : '');
+      const cel = !edita
+        ? '<td colspan="5" class="' + cls + '">' + (horEsc(f.t) || '—') + '</td>'
+        : '<td colspan="5" class="' + cls + '" title="Tocá para cambiarlo" onclick="' + (modo
+            ? 'horMenuCel(\'' + iso + '\',\'' + f.key + '\',\'T\')'
+            : 'horEditar(\'' + iso + '\',\'' + f.key + '\',\'T\')') + '">'
+          + (horEsc(f.t) || '—') + ((f.tocado && !modo) ? volver(f.key, 'T') : '') + '</td>';
+      out.push('<tr>' + hora + cel + '</tr>');
+      return;
+    }
+
+    let tds = '';
+    for(let c = 0; c < 5; c++){
+      if(ocupado[r + ',' + c]) continue;
+      const sp = spans[f.key + '|' + c] || {};
+      const cn = Math.max(1, Math.min(Number(sp.c) || 1, 5 - c));
+      let tope = 1;
+      for(let k = r + 1; k < filas.length && filas[k].tipo === 'cel'; k++) tope++;
+      const rn = Math.min(Math.max(1, Number(sp.r) || 1), tope);
+      for(let i = 0; i < rn; i++) for(let j = 0; j < cn; j++){ if(i || j) ocupado[(r + i) + ',' + (c + j)] = true; }
+      const cel = ((f.cel || [])[c]) || { v:'' };
+      const clase = 'hr-cel s' + (c + 1) + (cel.tocado ? ' hr-toc' : '') + (!cel.v ? ' hr-vacio' : '')
+                  + ((cn > 1 || rn > 1) ? ' hr-mrg' : '');
+      const attrs = (cn > 1 ? ' colspan="' + cn + '"' : '') + (rn > 1 ? ' rowspan="' + rn + '"' : '');
+      if(!edita){ tds += '<td class="' + clase + '"' + attrs + '>' + (horEsc(cel.v) || '—') + '</td>'; continue; }
+      tds += '<td class="' + clase + '"' + attrs + ' title="Tocá para cambiarlo" onclick="' + (modo
+          ? 'horMenuCel(\'' + iso + '\',\'' + f.key + '\',' + c + ')'
+          : 'horEditar(\'' + iso + '\',\'' + f.key + '\',' + c + ')') + '">'
+        + (horEsc(cel.v) || '—') + ((cel.tocado && !modo) ? volver(f.key, c) : '') + '</td>';
+    }
+    out.push('<tr>' + hora + tds + '</tr>');
+  });
+  return out.join('');
 }
 function horTablaHTML(){
   const hoy = horHoy();
@@ -7684,11 +7989,15 @@ function horTablaHTML(){
         <span class="hr-dia-nom">${horEsc(lab)}${HOR_DIA===hoy?' <b class="hr-chip">HOY</b>':''}</span>
         <span class="hr-dia-der">
           ${cambios?`<span class="hr-mod">${cambios} ${cambios===1?'cambio':'cambios'} a mano</span>`:''}
+          ${puede?`<button class="hr-reset${HOR_EDIT?' on':''}" onclick="horModo()">${HOR_EDIT?'✅ Listo':'🛠️ Modo edición'}</button>`:''}
           ${(puede&&cambios)?`<button class="hr-reset" onclick="horVolverDia('${HOR_DIA}')">↺ Volver a la plantilla</button>`:''}
         </span>
       </div>
-      ${puede?'<div class="hr-aviso">✏️ Tocá cualquier casillero para cambiarlo. El cambio queda solo en esa fecha y lo ven todos.</div>'
-             :'<div class="hr-aviso hr-solo">👁️ Estás viendo el horario. Lo cambian la Secretaría Académica y las administradoras.</div>'}
+      ${!puede
+        ? '<div class="hr-aviso hr-solo">👁️ Estás viendo el horario. Lo cambian la Secretaría Académica y las administradoras.</div>'
+        : (HOR_EDIT
+          ? '<div class="hr-aviso hr-edit">🛠️ Modo edición. Tocá el <b>horario</b> de la izquierda para eliminar o agregar una fila, y un <b>casillero</b> para combinarlo, separarlo o cambiarle el texto. Cada cambio te pregunta si vale solo para ese día o para todos los días iguales.</div>'
+          : '<div class="hr-aviso">✏️ Tocá cualquier casillero para cambiarle el texto (queda solo en esa fecha). Para eliminar filas o combinar casilleros, entrá en <b>🛠️ Modo edición</b>.</div>')}
       <div class="hr-scroll"><table class="hr-tabla hr-grande">
         <thead><tr><th>HORARIO</th><th class="s1">Sección 1</th><th class="s2">Sección 2</th>
           <th class="s3">Sección 3</th><th class="s4">Sección 4</th><th class="s5">Sección 5</th></tr></thead>
@@ -7745,6 +8054,11 @@ function horBloqueHTML(){
 window.horVerDia = horVerDia;
 window.horEditar = horEditar; window.horVolverBase = horVolverBase;
 window.horVolverDia = horVolverDia; window.horSemana = horSemana;
+window.horModo = horModo; window.horCerrarMenu = horCerrarMenu;
+window.horMenuCel = horMenuCel; window.horMenuFila = horMenuFila;
+window.horCombinar = horCombinar; window.horSeparar = horSeparar;
+window.horBorrarFila = horBorrarFila; window.horAgregarFila = horAgregarFila;
+window.horEditarHora = horEditarHora; window.horElegirAmbito = horElegirAmbito;
 
 // ══════════════════════════════════════════════════════════════════════════
 // v1.5.96 — ARCHIVO (solo administradoras)
@@ -11267,9 +11581,33 @@ function switchPadmTab(tab){
   else if(tab === 'nuevo') renderPadmNuevo(null);
 }
 
+// v1.6.5 — Eliminar un usuario de verdad. Como los usuarios base están
+// escritos en el código, no se borran del archivo: se marcan como eliminados,
+// desaparecen del listado y del login, y siempre se pueden reponer.
+var padmVerElim = false;
+function eliminarUsuario(usuarioId){
+  const u = getAllUsers().find(x => x.usuario === usuarioId);
+  if(!u) return;
+  if(u.usuario === CU.usuario){ alert('No podés eliminar tu propio usuario.'); return; }
+  if(!confirm('¿Eliminar a ' + u.nombre + '?\n\n'
+    + 'Deja de aparecer en el listado y no puede volver a entrar al sistema.\n'
+    + 'Sus datos cargados no se tocan y lo podés reponer cuando quieras.')) return;
+  saveDynUser(usuarioId, { eliminado: true });
+  renderPadmUsuarios();
+}
+function reponerUsuario(usuarioId){
+  const u = getAllUsers().find(x => x.usuario === usuarioId);
+  if(!u) return;
+  if(!confirm('¿Reponer a ' + u.nombre + '? Vuelve al listado y puede entrar de nuevo.')) return;
+  saveDynUser(usuarioId, { eliminado: false });
+  renderPadmUsuarios();
+}
+function padmToggleElim(){ padmVerElim = !padmVerElim; renderPadmUsuarios(); }
+
 function renderPadmUsuarios(filtro){
   const body = document.getElementById('padmBody');
-  const todos = getAllUsers();
+  const todos = getAllUsers().filter(u => !u.eliminado);
+  const borrados = getAllUsers().filter(u => !!u.eliminado);
   const _normP = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const palabras = _normP(filtro).split(/\s+/).filter(Boolean);
   const lista = palabras.length ? todos.filter(u => {
@@ -11300,12 +11638,31 @@ function renderPadmUsuarios(filtro){
         <div class="ua-actions">
           <button class="ua-btn" onclick="abrirEdicion('${u.usuario}')">✏️ Editar</button>
           ${u.usuario !== CU.usuario
-            ? `<button class="ua-btn ua-btn-danger" onclick="toggleUserActivo('${u.usuario}')">${desact?'✅ Reactivar':'🚫 Desactivar'}</button>`
+            ? `<button class="ua-btn ua-btn-danger" onclick="toggleUserActivo('${u.usuario}')">${desact?'✅ Reactivar':'🚫 Bloquear'}</button>
+               <button class="ua-btn ua-btn-danger" onclick="eliminarUsuario('${u.usuario}')">🗑️ Eliminar</button>`
             : '<span style="font-size:10px;color:#3a5a7a">Sos vos</span>'
           }
         </div>
       </div>`;
     }).join('')}
+    ${borrados.length ? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(122,175,212,.16)">
+        <button class="padm-mini-btn" onclick="padmToggleElim()">
+          ${padmVerElim?'▾':'▸'} ${borrados.length} usuario${borrados.length!==1?'s':''} eliminado${borrados.length!==1?'s':''}
+        </button>
+        ${padmVerElim ? borrados.map(u => `
+          <div class="ua-card" style="opacity:.6;margin-top:9px">
+            <div class="ua-avatar" style="background:rgba(248,113,113,.12);border:2px solid rgba(248,113,113,.3);color:#f87171">
+              ${avatarInitial(u.nombre)}</div>
+            <div class="ua-info">
+              <div class="ua-name">${u.nombre}</div>
+              <div class="ua-meta">@${u.usuario} · ${u.rol||'—'} · eliminado</div>
+            </div>
+            <div class="ua-actions">
+              <button class="ua-btn" onclick="reponerUsuario('${u.usuario}')">↩️ Reponer</button>
+            </div>
+          </div>`).join('') : ''}
+      </div>` : ''}
   `;
 }
 
