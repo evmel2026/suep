@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.5">
+<meta name="app-version" content="1.6.6">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -7416,6 +7416,35 @@ function _hrEditEstilos(){
   st.id = 'estilos-hr-edit';
   st.textContent = [
     '.hr-tabla td.hr-mrg{box-shadow:inset 0 0 0 1px rgba(90,166,221,.55)}',
+    /* El recuadro del horario se ve claro siempre, esté la app en oscuro o en claro. */
+    '.hr-claro{background:#fff;border:1px solid #dbe6f1;border-radius:13px;padding:5px;',
+    '  box-shadow:0 2px 8px rgba(10,25,45,.18)}',
+    '.hr-claro .hr-tabla th,.hr-claro .hr-tabla td{border-color:#e2eaf3}',
+    '.hr-claro .hr-tabla thead th{background:#eaf1f8;color:#14568f}',
+    '.hr-claro .hr-tabla td.hr-hora{color:#14568f;background:#f3f8fc}',
+    '.hr-claro .hr-tabla td.hr-cel{color:#22405c;background:#fff}',
+    '.hr-claro .hr-tabla td.hr-comun{color:#1c3b58;background:#f0f7fd}',
+    '.hr-claro .hr-tabla td.hr-vacio{color:#7d97ad}',
+    '.hr-claro .hr-tabla tr.hr-hdr td{color:#7a4a02;background:#fdf3dd}',
+    '.hr-claro .hr-tabla th.s1,.hr-claro .hr-tabla td.s1{--sc:#1f6fb8}',
+    '.hr-claro .hr-tabla th.s2,.hr-claro .hr-tabla td.s2{--sc:#15803d}',
+    '.hr-claro .hr-tabla th.s3,.hr-claro .hr-tabla td.s3{--sc:#6d28d9}',
+    '.hr-claro .hr-tabla th.s4,.hr-claro .hr-tabla td.s4{--sc:#a5761c}',
+    '.hr-claro .hr-tabla th.s5,.hr-claro .hr-tabla td.s5{--sc:#be185d}',
+    '.hr-claro .hr-tabla td.s1{background-color:rgba(31,111,184,.06)}',
+    '.hr-claro .hr-tabla td.s2{background-color:rgba(21,128,61,.06)}',
+    '.hr-claro .hr-tabla td.s3{background-color:rgba(109,40,217,.06)}',
+    '.hr-claro .hr-tabla td.s4{background-color:rgba(165,118,28,.07)}',
+    '.hr-claro .hr-tabla td.s5{background-color:rgba(190,24,93,.06)}',
+    '.hr-claro .hr-tabla td.hr-toc{background:#fdf3dd;color:#6b4a08;box-shadow:inset 3px 0 0 #c79a3a}',
+    '.hr-claro .hr-tabla td.hr-mrg{box-shadow:inset 0 0 0 1px rgba(31,111,184,.45)}',
+    '.hr-claro .hr-x{background:rgba(0,0,0,.10);color:#7a4a02}',
+    '.hr-claro [onclick].hr-cel:hover,.hr-claro [onclick].hr-comun:hover{background:#e6f1fc}',
+    '.hr-claro .hr-ed{outline-color:rgba(165,118,28,.75)}',
+    /* Dónde tiene clases cada sección */
+    '.hr-aula{display:block;font-size:9.5px;font-weight:700;letter-spacing:.2px;',
+    '  text-transform:none;margin-top:3px;white-space:nowrap}',
+    '.hr-aula-v{opacity:.55;font-style:italic;font-weight:600}',
     '.hr-ed{cursor:pointer;outline:1px dashed rgba(232,190,98,.6);outline-offset:-3px}',
     '.hr-pt{opacity:.75;font-weight:800}',
     '.hr-reset.on{background:rgba(232,190,98,.22);border-color:rgba(232,190,98,.6);color:#ffe6b8}',
@@ -7621,9 +7650,9 @@ function horCapaVacia(o){
   if(!o) return true;
   return !Object.keys(o).some(k=>{
     const v = o[k];
-    if(k === '#del' || k === '#add') return Array.isArray(v) && v.length;
-    if(k === '#span') return v && Object.keys(v).length;
-    return true;
+    if(k.charAt(0) !== '#') return true;
+    if(Array.isArray(v)) return v.length > 0;
+    return !!(v && Object.keys(v).length);
   });
 }
 function horLimpiar(todo, iso){
@@ -7653,6 +7682,7 @@ function horDelDia(iso){
   const camb = todo[iso] || {};
   const del    = new Set([].concat(pla['#del'] || [], camb['#del'] || []).map(String));
   const spans  = Object.assign({}, pla['#span'] || {}, camb['#span'] || {});
+  const modos  = Object.assign({}, pla['#modo'] || {}, camb['#modo'] || {});
   const extras = [].concat(pla['#add'] || [], camb['#add'] || []);
   const val = k => (k in camb) ? camb[k] : (k in pla ? pla[k] : undefined);
   const toc = k => (k in camb) || (k in pla);
@@ -7661,17 +7691,26 @@ function horDelDia(iso){
     if(def.hdr) return { tipo:'hdr', hdr:def.hdr, key:key };
     const kh = key + '|H';
     const h  = val(kh) !== undefined ? val(kh) : (def.h || '');
-    if(typeof def.t === 'string'){
+    // De fábrica la fila viene junta (una sola casilla para las 5 secciones) o
+    // separada; con #modo se la puede dar vuelta cuando haga falta.
+    const natural = (typeof def.t === 'string') ? 'comun' : 'cel';
+    const tipo = modos[key] === 'sec' ? 'cel' : (modos[key] === 'comun' ? 'comun' : natural);
+    const cambiada = !!modos[key] && modos[key] !== (natural === 'comun' ? 'comun' : 'sec');
+    if(tipo === 'comun'){
       const k = key + '|T';
       const v = val(k);
-      return { tipo:'comun', h:h, t:(v !== undefined ? v : def.t), tocado:toc(k), key:key };
+      const porDefecto = (typeof def.t === 'string')
+        ? def.t
+        : ((def.c || []).find(x => x && String(x).trim()) || '');
+      return { tipo:'comun', h:h, t:(v !== undefined ? v : porDefecto), tocado:toc(k),
+               key:key, natural:natural, cambiada:cambiada };
     }
     const cel = (def.c || ['','','','','']).map((v0, sec)=>{
       const k = key + '|' + sec;
       const v = val(k);
-      return { v:(v !== undefined ? v : v0), tocado:toc(k), sec:sec };
+      return { v:(v !== undefined ? v : (v0 || '')), tocado:toc(k), sec:sec };
     });
-    return { tipo:'cel', h:h, cel:cel, key:key };
+    return { tipo:'cel', h:h, cel:cel, key:key, natural:natural, cambiada:cambiada };
   };
 
   const filas = [];
@@ -7688,9 +7727,9 @@ function horContar(o){
   if(!o) return 0;
   let n = 0;
   Object.keys(o).forEach(k=>{
-    if(k === '#del' || k === '#add') n += (o[k] || []).length;
-    else if(k === '#span') n += Object.keys(o[k] || {}).length;
-    else n++;
+    if(k.charAt(0) !== '#'){ n++; return; }
+    const v = o[k];
+    n += Array.isArray(v) ? v.length : Object.keys(v || {}).length;
   });
   return n;
 }
@@ -7802,6 +7841,118 @@ function horSeparar(iso, key, sec){
     });
   });
 }
+// Separar una fila que viene junta: el texto que hay se copia en las cinco.
+function horSepararFila(iso, key){
+  horAmbito(iso, '✂️ Separar la fila en las 5 secciones',
+    'El texto que hay ahora queda copiado en las cinco secciones; después cambiás el que sea distinto.', ambito=>{
+    const filas = horDelDia(iso) || [];
+    const f = filas.find(x => String(x.key) === String(key));
+    // Si la fila de la plantilla YA tiene un texto por sección, no se copia nada:
+    // al separarla vuelve a aparecer lo que dice el Excel para cada una.
+    const txt = (f && f.natural === 'comun') ? (f.t || '') : '';
+    const todo = horGuardado();
+    const dia = horDiaCod(iso);
+    const pla = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
+    const cd  = todo[iso] || {};
+    horAplicar(iso, ambito, capa=>{
+      capa['#modo'] = capa['#modo'] || {};
+      capa['#modo'][key] = 'sec';
+      delete capa[key + '|T'];              // el texto de cuando estaba junta ya no va
+      for(let i = 0; i < 5; i++){
+        const k = key + '|' + i;
+        if(!(k in cd) && !(k in pla) && txt) capa[k] = txt;   // no pisa lo ya cargado
+      }
+    });
+  });
+}
+// Juntar toda una fila en una sola casilla para las 5 secciones.
+function horJuntarFila(iso, key){
+  horAmbito(iso, '🔗 Juntar toda la fila en una sola',
+    'Las cinco secciones pasan a compartir una sola casilla.', ambito=>{
+    const filas = horDelDia(iso) || [];
+    const f = filas.find(x => String(x.key) === String(key));
+    const prim = (f && f.natural === 'cel' && f.cel)
+      ? ((f.cel.map(c => c.v).find(v => v && String(v).trim())) || '') : '';
+    const todo = horGuardado();
+    const dia = horDiaCod(iso);
+    const pla = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
+    const cd  = todo[iso] || {};
+    horAplicar(iso, ambito, capa=>{
+      capa['#modo'] = capa['#modo'] || {};
+      capa['#modo'][key] = 'comun';
+      for(let i = 0; i < 5; i++) delete capa[key + '|' + i];   // los de cada sección ya no van
+      const k = key + '|T';
+      if(!(k in cd) && !(k in pla) && prim) capa[k] = prim;
+    });
+  });
+}
+// La fila vuelve a estar junta o separada como en la plantilla del Excel.
+function horModoBase(iso, key){
+  if(!horPuedeEditar()) return;
+  const filas = horDelDia(iso) || [];
+  const f = filas.find(x => String(x.key) === String(key));
+  const todo = horGuardado();
+  const dia = horDiaCod(iso);
+  // Se borran también los textos que habían quedado del otro formato, así el
+  // contador de cambios no muestra cosas que no se ven.
+  const sobra = (f && f.natural === 'comun') ? ['0','1','2','3','4'] : ['T'];
+  [todo[iso], (dia && todo['#plantilla']) ? todo['#plantilla'][dia] : null].forEach(capa=>{
+    if(!capa) return;
+    sobra.forEach(x => { delete capa[key + '|' + x]; });
+  });
+  if(todo[iso] && todo[iso]['#modo']) delete todo[iso]['#modo'][key];
+  if(dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia]['#modo'])
+    delete todo['#plantilla'][dia]['#modo'][key];
+  ['#modo'].forEach(k=>{
+    if(todo[iso] && todo[iso][k] && !Object.keys(todo[iso][k]).length) delete todo[iso][k];
+    if(dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia][k]
+       && !Object.keys(todo['#plantilla'][dia][k]).length) delete todo['#plantilla'][dia][k];
+  });
+  horLimpiar(todo, iso);
+  horGrabar(todo);
+  horRefrescar();
+}
+
+// ─── Dónde tiene clases cada sección (aula, taller, playón…) ───────────
+function horAulas(iso){
+  const todo = horGuardado();
+  const dia  = horDiaCod(iso);
+  const pla = (dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia]['#aula']) || {};
+  const cd  = (todo[iso] && todo[iso]['#aula']) || {};
+  return Object.assign({}, pla, cd);
+}
+function horAula(iso, sec){
+  if(!horPuedeEditar()) return;
+  horAmbito(iso, '📍 Lugar de la sección ' + (sec + 1),
+    'Dónde tiene clases esa sección: aula, taller, playón, gimnasio…', ambito=>{
+    const a = horAulas(iso);
+    const txt = prompt('¿Dónde tiene clases la sección ' + (sec + 1) + '?\n'
+      + '(por ejemplo: Aula 3. Dejalo vacío para sacarlo)', a[sec] || '');
+    if(txt === null) return;
+    horAplicar(iso, ambito, capa=>{
+      capa['#aula'] = capa['#aula'] || {};
+      if(!txt.trim()) delete capa['#aula'][sec];
+      else capa['#aula'][sec] = txt.trim();
+      if(!Object.keys(capa['#aula']).length) delete capa['#aula'];
+    });
+  });
+}
+// El encabezado de la tabla, con el lugar de cada sección abajo del nombre.
+function horCabezaHTML(iso, puede, chica){
+  const a = horAulas(iso);
+  const modo = puede && !chica && HOR_EDIT;
+  let th = '<th>HORARIO</th>';
+  for(let i = 0; i < 5; i++){
+    const nom = chica ? ('Sec. ' + (i + 1)) : ('Sección ' + (i + 1));
+    const lug = a[i] ? '<span class="hr-aula">📍 ' + horEsc(a[i]) + '</span>'
+              : (modo ? '<span class="hr-aula hr-aula-v">＋ lugar</span>' : '');
+    th += '<th class="s' + (i + 1) + (modo ? ' hr-ed' : '') + '"'
+        + (modo ? ' title="Poner dónde tiene clases" onclick="horAula(\'' + iso + '\',' + i + ')"' : '')
+        + '>' + nom + lug + '</th>';
+  }
+  return '<thead><tr>' + th + '</tr></thead>';
+}
+
 function horBorrarFila(iso, key){
   const filas = horDelDia(iso) || [];
   const f = filas.find(x => String(x.key) === String(key));
@@ -7850,13 +8001,16 @@ function horMenuCel(iso, key, sec){
   const b = (txt, fn, cls) => '<button class="hrm-bt' + (cls || '') + '" onclick="horCerrarMenu();' + fn + '">' + txt + '</button>';
   let h = '<div class="hrm-nota">' + horEsc(f.h || '') + (esComun ? ' · todas las secciones' : ' · sección ' + (c + 1)) + '</div>';
   h += b('✏️ Cambiar el texto', "horEditar('" + iso + "','" + key + "','" + sec + "')");
+  if(esComun) h += b('✂️ Separar en las 5 secciones', "horSepararFila('" + iso + "','" + key + "')");
   if(!esComun){
+    h += b('🔗 Juntar toda la fila en una sola', "horJuntarFila('" + iso + "','" + key + "')");
     if(c + sp.c <= 4) h += b('➡️ Combinar con la de la derecha', "horCombinar('" + iso + "','" + key + "'," + c + ",'der')");
     if(filas[idx + sp.r] && filas[idx + sp.r].tipo === 'cel')
       h += b('⬇️ Combinar con la de abajo', "horCombinar('" + iso + "','" + key + "'," + c + ",'abajo')");
     if(sp.c > 1 || sp.r > 1) h += b('✂️ Separar este casillero', "horSeparar('" + iso + "','" + key + "'," + c + ")");
   }
-  if(cel.tocado) h += b('↺ Volver a la plantilla', "horVolverBase('" + iso + "','" + key + "','" + sec + "')");
+  if(f.cambiada) h += b('↺ Volver la fila como en la plantilla', "horModoBase('" + iso + "','" + key + "')");
+  if(cel.tocado) h += b('↺ Volver el texto a la plantilla', "horVolverBase('" + iso + "','" + key + "','" + sec + "')");
   h += b('Cancelar', '', ' hrm-gris');
   horPanel('Casillero', h);
 }
@@ -7868,6 +8022,9 @@ function horMenuFila(iso, key){
   const b = (txt, fn, cls) => '<button class="hrm-bt' + (cls || '') + '" onclick="horCerrarMenu();' + fn + '">' + txt + '</button>';
   let h = '<div class="hrm-nota">' + horEsc(f.h || f.hdr || '') + '</div>';
   if(f.tipo !== 'hdr') h += b('🕐 Cambiar el horario de la fila', "horEditarHora('" + iso + "','" + key + "')");
+  if(f.tipo === 'comun') h += b('✂️ Separar en las 5 secciones', "horSepararFila('" + iso + "','" + key + "')");
+  if(f.tipo === 'cel')   h += b('🔗 Juntar toda la fila en una sola', "horJuntarFila('" + iso + "','" + key + "')");
+  if(f.cambiada)         h += b('↺ Volver la fila como en la plantilla', "horModoBase('" + iso + "','" + key + "')");
   h += b('➕ Agregar una fila debajo', "horAgregarFila('" + iso + "','" + key + "')");
   h += b('🗑️ Eliminar esta fila', "horBorrarFila('" + iso + "','" + key + "')", ' hrm-rojo');
   h += b('Cancelar', '', ' hrm-gris');
@@ -7996,11 +8153,10 @@ function horTablaHTML(){
       ${!puede
         ? '<div class="hr-aviso hr-solo">👁️ Estás viendo el horario. Lo cambian la Secretaría Académica y las administradoras.</div>'
         : (HOR_EDIT
-          ? '<div class="hr-aviso hr-edit">🛠️ Modo edición. Tocá el <b>horario</b> de la izquierda para eliminar o agregar una fila, y un <b>casillero</b> para combinarlo, separarlo o cambiarle el texto. Cada cambio te pregunta si vale solo para ese día o para todos los días iguales.</div>'
+          ? '<div class="hr-aviso hr-edit">🛠️ Modo edición. Tocá el <b>horario</b> de la izquierda para eliminar o agregar una fila, un <b>casillero</b> para separarlo, juntarlo, combinarlo o cambiarle el texto, y el <b>título de una sección</b> para poner dónde tiene clases. Cada cambio te pregunta si vale solo para ese día o para todos los días iguales.</div>'
           : '<div class="hr-aviso">✏️ Tocá cualquier casillero para cambiarle el texto (queda solo en esa fecha). Para eliminar filas o combinar casilleros, entrá en <b>🛠️ Modo edición</b>.</div>')}
-      <div class="hr-scroll"><table class="hr-tabla hr-grande">
-        <thead><tr><th>HORARIO</th><th class="s1">Sección 1</th><th class="s2">Sección 2</th>
-          <th class="s3">Sección 3</th><th class="s4">Sección 4</th><th class="s5">Sección 5</th></tr></thead>
+      <div class="hr-scroll hr-claro"><table class="hr-tabla hr-grande">
+        ${horCabezaHTML(HOR_DIA, puede, false)}
         <tbody>${horFilasHTML(HOR_DIA, puede, false)}</tbody></table></div>
     </div>`;
 }
@@ -8045,9 +8201,8 @@ function horBloqueHTML(){
       <button class="hr-ver" onclick="selectSector('HORARIO_DIARIO')">Ver la semana completa ›</button>
     </div>
     ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto de la plantilla.</div>`:''}
-    <div class="hr-scroll"><table class="hr-tabla hr-chica">
-      <thead><tr><th>HORARIO</th><th class="s1">Sec. 1</th><th class="s2">Sec. 2</th>
-        <th class="s3">Sec. 3</th><th class="s4">Sec. 4</th><th class="s5">Sec. 5</th></tr></thead>
+    <div class="hr-scroll hr-claro"><table class="hr-tabla hr-chica">
+      ${horCabezaHTML(iso, false, true)}
       <tbody>${cuerpo}</tbody></table></div>`;
 }
 
@@ -8059,6 +8214,8 @@ window.horMenuCel = horMenuCel; window.horMenuFila = horMenuFila;
 window.horCombinar = horCombinar; window.horSeparar = horSeparar;
 window.horBorrarFila = horBorrarFila; window.horAgregarFila = horAgregarFila;
 window.horEditarHora = horEditarHora; window.horElegirAmbito = horElegirAmbito;
+window.horSepararFila = horSepararFila; window.horJuntarFila = horJuntarFila;
+window.horModoBase = horModoBase; window.horAula = horAula;
 
 // ══════════════════════════════════════════════════════════════════════════
 // v1.5.96 — ARCHIVO (solo administradoras)
