@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.6">
+<meta name="app-version" content="1.6.7">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4213,23 +4213,86 @@ function migratePanol(){
 }
 
 // ══════════════════════════════════════════════
-// SEED del Organigrama (se ejecuta solo si está vacío)
+// SEED del Organigrama
 // ══════════════════════════════════════════════
-function seedOrganigrama(){
-  const existing = S.get('ORGANIGRAMA','ORGANIGRAMA');
-  if(existing.length > 0) return; // ya hay datos, no tocar
-  ORGANIGRAMA_SEED.forEach(p => {
-    const rec = {
-      ...p,
-      _id: Date.now().toString(36)+Math.random().toString(36).slice(2),
-      _por: 'Sistema (carga inicial)',
-      _sector: 'ORGANIGRAMA',
-      _mod: 'ORGANIGRAMA',
-      _ts: new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'})
-    };
-    existing.push(rec);
-  });
-  S.set('ORGANIGRAMA','ORGANIGRAMA',existing);
+// v1.6.7 — POR QUÉ SE TOCÓ ESTO
+// El 10/09/2026 aparecieron 39 notificaciones "Sistema (carga inicial) cargó un
+// registro en Organigrama" sin que nadie tocara nada. Causa: esta función corría
+// al iniciar sesión y, si el Organigrama estaba vacío EN ESE EQUIPO (celular
+// nuevo, app recién instalada, datos borrados) y la descarga de la nube había
+// fallado, cargaba los 39 del código con fecha de ese momento y los SUBÍA,
+// reemplazando el Organigrama de la nube. Después la reconstrucción de
+// notificaciones veía 39 registros "nuevos" y le avisaba a todos.
+// AHORA:
+//  • Antes de cargar nada se le pregunta a la nube. Si la nube tiene el
+//    Organigrama, se usa ese (solo en el equipo, sin volver a subirlo).
+//  • Si la nube no contesta, NO se carga nada: se reintenta en un rato.
+//  • Solo si la nube confirma que no existe el Organigrama se carga el del
+//    código, con _id FIJOS (dos equipos a la vez no pueden duplicarlo) y la
+//    marca _seed para que no cuente como "cargado hoy" ni genere avisos.
+function _esCargaSistema(r){
+  return !!(r && (r._seed === true || String(r._por||'') === 'Sistema (carga inicial)'));
+}
+function _orgSeedRegistros(){
+  const ts = new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',hour12:false,minute:'2-digit'});
+  return ORGANIGRAMA_SEED.map((p, i) => ({
+    ...p,
+    _id: 'orgseed' + String(i+1).padStart(2,'0'),
+    _por: 'Sistema (carga inicial)',
+    _seed: true,
+    _sector: 'ORGANIGRAMA',
+    _mod: 'ORGANIGRAMA',
+    _ts: ts
+  }));
+}
+// Pregunta a la nube por el Organigrama.
+// Devuelve: { estado:'hay', filas } | { estado:'vacio' } | { estado:'sin-respuesta' }
+async function _orgConsultarNube(){
+  try{
+    if(typeof clienteS === 'undefined' || !clienteS) return { estado:'sin-respuesta' };
+    if(navigator.onLine === false) return { estado:'sin-respuesta' };
+    const key = S.key('ORGANIGRAMA','ORGANIGRAMA');
+    const consulta = clienteS.from('app_data').select('value').eq('key', key).maybeSingle();
+    const resp = await Promise.race([
+      consulta,
+      new Promise(res => setTimeout(() => res(null), 8000))   // si tarda, cuenta como sin respuesta
+    ]);
+    if(!resp || resp.error) return { estado:'sin-respuesta' };
+    const data = resp.data;
+    if(data && Array.isArray(data.value) && data.value.length) return { estado:'hay', filas:data.value };
+    return { estado:'vacio' };
+  }catch(_){ return { estado:'sin-respuesta' }; }
+}
+var _orgSeedIntentos = 0, _orgSeedEnCurso = false;
+async function seedOrganigrama(){
+  if(_orgSeedEnCurso) return;
+  if(S.get('ORGANIGRAMA','ORGANIGRAMA').length > 0) return; // ya hay datos, no tocar
+  _orgSeedEnCurso = true;
+  try{
+    const r = await _orgConsultarNube();
+    // Mientras se consultaba pudo llegar el Organigrama por la sincronización normal
+    if(S.get('ORGANIGRAMA','ORGANIGRAMA').length > 0) return;
+    if(r.estado === 'hay'){
+      // La nube ya lo tiene: se guarda SOLO en este equipo (no se vuelve a subir)
+      _S_set_local('ORGANIGRAMA','ORGANIGRAMA', r.filas);
+      try{ if(typeof _refrescarSiVisible==='function') _refrescarSiVisible(S.key('ORGANIGRAMA','ORGANIGRAMA')); }catch(_){}
+      return;
+    }
+    if(r.estado === 'sin-respuesta'){
+      // Sin nube no se decide nada: se vuelve a probar en un rato (hasta 5 veces)
+      if(_orgSeedIntentos < 5){
+        _orgSeedIntentos++;
+        setTimeout(() => { try{ seedOrganigrama(); }catch(_){} }, 30000);
+      }
+      return;
+    }
+    // La nube confirmó que NO existe el Organigrama: recién ahí se carga el del código
+    S.set('ORGANIGRAMA','ORGANIGRAMA', _orgSeedRegistros());
+    try{ if(typeof _refrescarSiVisible==='function') _refrescarSiVisible(S.key('ORGANIGRAMA','ORGANIGRAMA')); }catch(_){}
+    console.log('✅ Organigrama: la nube confirmó que estaba vacío, se cargaron los ' + ORGANIGRAMA_SEED.length + ' del código.');
+  }finally{
+    _orgSeedEnCurso = false;
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -4285,6 +4348,12 @@ function _nombresVisor(){
   try{ return USERS.filter(u=>u.permiso==='visor').map(u=>u.nombre).filter(Boolean); }
   catch(_){ return []; }
 }
+// v1.6.7 — Avisos generados por las cargas automáticas del sistema (las 39 del
+// Organigrama del 10/09/2026). No se muestran, no se cuentan y no vuelven de la nube.
+function _esNotifSistema(n){
+  return String((n && n.txt) || '').indexOf('Sistema (carga inicial)') !== -1;
+}
+function _esNotifOculta(n){ return _esNotifVisor(n) || _esNotifSistema(n); }
 function _esNotifVisor(n){
   const t = String((n && n.txt) || '');
   if(!t) return false;
@@ -4294,7 +4363,7 @@ function _esNotifVisor(n){
 function _purgarNotifsVisor(){
   try{
     const todas = S.gn();
-    const limpias = todas.filter(n => !_esNotifVisor(n));
+    const limpias = todas.filter(n => !_esNotifOculta(n));
     if(limpias.length !== todas.length) S.sn(limpias);
   }catch(_){}
 }
@@ -4440,7 +4509,7 @@ function _fusionarNotifs(remotas, locales){
   return Array.from(porKey.values())
     // 🔒 v1.5.48: si alguna notificación de la cuenta visor vuelve de la nube,
     // acá se cae. No se sincroniza ni se muestra en ningún equipo.
-    .filter(n => !_esNotifVisor(n))
+    .filter(n => !_esNotifOculta(n))
     // 🗑️ v1.5.49: lo que la administradora borró no revive aunque otro
     // dispositivo lo suba de nuevo.
     .filter(n => !borradas.has(_notifKey(n)))
@@ -4451,13 +4520,13 @@ function _fusionarNotifs(remotas, locales){
 function _notifsOrdenadas(){
   const borradas = _keysBorradas();
   return S.gn()
-    .filter(n => !_esNotifVisor(n) && !borradas.has(_notifKey(n)))
+    .filter(n => !_esNotifOculta(n) && !borradas.has(_notifKey(n)))
     .slice()
     .sort((a,b)=> _notifMs(b) - _notifMs(a));
 }
 function refreshBadge(){
   const borradas = _keysBorradas();
-  const n=S.gn().filter(x=>!_esNotifVisor(x) && !borradas.has(_notifKey(x)) && !_notifLeida(x)).length;
+  const n=S.gn().filter(x=>!_esNotifOculta(x) && !borradas.has(_notifKey(x)) && !_notifLeida(x)).length;
   const el=document.getElementById('notifBadge');
   if(n>0){el.textContent=n; el.classList.add('show')}
   else el.classList.remove('show');
@@ -6318,6 +6387,7 @@ function iniCalcular(){
     total += p.rows.length;
     let n7 = 0;
     p.rows.forEach(r=>{
+      if(_esCargaSistema(r)) return;   // v1.6.7: la carga automática no es actividad de nadie
       const ms = recCargaMs(r);
       if(!ms) return;
       const iso = _isoDeFecha(new Date(ms));
@@ -8493,9 +8563,11 @@ function orgToggleHTML(total){
 }
 function setOrgView(v){ ORG_VIEW = v; renderTable(); }
 function reloadOrganigrama(){
-  if(!confirm('Esto va a borrar el Organigrama actual y volver a cargar los 39 efectivos desde el código (con las últimas correcciones). ¿Continuar?')) return;
-  S.set('ORGANIGRAMA','ORGANIGRAMA',[]);
-  seedOrganigrama();
+  // v1.6.7 — Doble confirmación: esto pisa el Organigrama en TODOS los equipos,
+  // y cualquier cambio hecho a mano (altas, cargos corregidos) se pierde.
+  if(!confirm('Esto va a BORRAR el Organigrama actual y volver a cargar los ' + ORGANIGRAMA_SEED.length + ' efectivos que vienen en el código.\n\nCualquier cambio hecho a mano en el Organigrama (altas, cargos corregidos) se pierde, en todos los equipos.\n\n¿Continuar?')) return;
+  if(!confirm('¿Segura? Esta acción no se puede deshacer.')) return;
+  S.set('ORGANIGRAMA','ORGANIGRAMA', _orgSeedRegistros());
   renderTable();
   alert('✅ Organigrama recargado con éxito.');
 }
@@ -13698,6 +13770,9 @@ function reconstruirNotifsFaltantes(){
         const rows = S.get(sec.id, t.id);
         rows.forEach(r=>{
           if(!r._id) return;
+          // v1.6.7 — Las cargas automáticas del sistema no son una carga de nadie:
+          // no generan aviso.
+          if(_esCargaSistema(r)) return;
           // ¿ya hay una notificación para este registro (real o reconstruida)?
           if(clavesConNotif.has('r:'+sec.id+':'+t.id+':'+r._id)) return;
           const tsMs = parseTs(r._ts);
