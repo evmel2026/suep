@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.7">
+<meta name="app-version" content="1.6.8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2082,6 +2082,12 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 .pz-nota.pz-evento{border-left-color:#a78bfa}
 .pz-nota.pz-evento .pz-rot{color:#bda8f5}
 .pz-nota.pz-evento .pz-pin{background:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.16)}
+.pz-chip.pz-licencia{color:#5fe0b0;background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.32)}
+.pz-nota.pz-licencia{border-left-color:#10b981}
+.pz-nota.pz-licencia .pz-rot{color:#5fe0b0}
+.pz-nota.pz-licencia .pz-pin{background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.16)}
+.light-mode .pz-chip.pz-licencia{color:#047857;background:#e7f8f1;border-color:#bfe9d7}
+.light-mode .pz-nota.pz-licencia .pz-rot{color:#047857}
 .pz-nota.pz-ok{border-left-color:#4ade80}
 .pz-nota.pz-ok .pz-rot{color:#6ee7a0}
 .pz-nota.pz-ok .pz-pin{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.16)}
@@ -2917,7 +2923,18 @@ async function _forzarRecargaLimpia(destino){
       await Promise.all(ks.map(k=>caches.delete(k)));
     }
   }catch(_){}
-  // 3) Recargar pidiendo la dirección con un dato distinto al final
+  // 3) v1.6.8 — Refrescar la copia que el navegador guarda de la dirección de
+  // SIEMPRE (sin nada al final). La app instalada abre esa dirección: si solo
+  // se bajaba la de "?v=…", la próxima vez que se abría desde el ícono volvía
+  // a aparecer la versión vieja. Con tope de 4 segundos por si no hay señal.
+  try{
+    const base0 = location.href.split('#')[0].split('?')[0];
+    await Promise.race([
+      fetch(base0, { cache:'reload', credentials:'same-origin' }).then(r=>r.text()).catch(()=>null),
+      new Promise(r=>setTimeout(r, 4000))
+    ]);
+  }catch(_){}
+  // 4) Recargar pidiendo la dirección con un dato distinto al final
   try{
     const base = location.href.split('#')[0].split('?')[0];
     const hash = location.hash || '';
@@ -2984,7 +3001,10 @@ function _leerIntentosUpdate(){ try{ return JSON.parse(localStorage.getItem('sue
 function _puedeAutoActualizar(remota){
   const t = _leerIntentosUpdate();
   if(!t || t.ver !== remota) return true;             // primera vez para esta versión
-  if((t.n||0) >= 2) return false;                     // ya se intentó 2 veces: no insistir solo
+  // v1.6.8 — Antes, después de 2 intentos no se volvía a probar NUNCA más con
+  // esa versión, y el celular quedaba atrasado hasta la versión siguiente.
+  // Ahora, pasada media hora, se vuelve a intentar.
+  if((t.n||0) >= 2) return (Date.now() - (t.ts||0)) > 30*60*1000;
   if(Date.now() - (t.ts||0) < 90*1000) return false;  // recién se intentó: esperar (evita rebote)
   return true;
 }
@@ -3036,7 +3056,12 @@ function _autoAplicarUpdate(remota){
   try{ localStorage.setItem('suep_upd_try', JSON.stringify({ ver:remota, n, ts:Date.now() })); }catch(_){}
   try{ if(typeof syncStatus==='function') syncStatus('⬇️ Actualizando a la versión '+remota+'…', '#7aafd4'); }catch(_){}
   localStorage.setItem('suep_app_version', remota);
-  _updCuentaRegresiva(remota, UPD_ESPERA);
+  // v1.6.8 — Si todavía nadie ingresó (está el splash o la pantalla de
+  // ingreso) no hay nada que se pueda perder: se actualiza enseguida, así la
+  // persona entra directamente a la versión nueva en vez de ingresar a la vieja
+  // y que a los segundos se le recargue la app en la cara.
+  const sinSesion = (typeof CU === 'undefined' || !CU);
+  _updCuentaRegresiva(remota, sinSesion ? 2 : UPD_ESPERA);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4649,7 +4674,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Bajamos datos frescos de la nube en segundo plano mientras se ve el splash.
   try{
     if(typeof pullAllFromSupabase==='function'){
-      Promise.race([pullAllFromSupabase(), new Promise(r=>setTimeout(r,6000))])
+      Promise.race([pullAllFromSupabase({ full: (typeof _pullNecesitaFull==='function') && _pullNecesitaFull() }), new Promise(r=>setTimeout(r,6000))])
         .then(()=>{ try{ if(typeof _mergeAllDynUsers==='function') _mergeAllDynUsers(); }catch(_){ } })
         .catch(()=>{});
     }
@@ -6524,6 +6549,32 @@ function iniPintar(){
           'autorizado', autClave(x.r));
       });
     }catch(e){ console.warn('Panel de inicio · autorizados vigentes:', e); }
+    // v1.6.8 — DE LICENCIA HOY (y las que arrancan en los próximos días).
+    // Antes una licencia solo aparecía acá cuando le faltaban pocos días para
+    // terminar, y encima al personal común le salía solo la suya. Así, una
+    // licencia por razón de salud recién cargada no la veía nadie. Ahora se
+    // muestra a TODOS desde el día que se carga: quién está de licencia, de qué
+    // tipo, hasta cuándo y qué día se presenta. Va en UNA sola nota (no se
+    // repite abajo como "se presenta").
+    const licYaPuestas = new Set();
+    const licClave = r => 'lic:' + (r ? (r._id || ((r.lp||'') + '|' + (r.hasta||''))) : '?');
+    try{
+      _licVigentesPanel(3).slice(0,16).forEach(x=>{
+        const nom = x.p
+          ? ((x.p.jerarquia ? x.p.jerarquia + ' ' : '') + x.p.nombre)
+          : (x.r._nombreViejo || x.r.nombre || ('LP ' + (x.r.lp || '—')));
+        let t = 'Licencia';
+        try{ t = _licTipoCorto(x.r.tipo) || 'Licencia'; }catch(_){}
+        let per;
+        if(x.empieza > 0) per = 'Arranca el ' + _licDDMM(x.desde) + (x.hasta ? ' · hasta el ' + _licDDMM(x.hasta) : '');
+        else per = x.hasta ? ((x.diff === 0 ? 'Termina HOY' : 'Hasta el ' + _licDDMM(x.hasta))) : 'Sin fecha de fin';
+        const pres = x.presenta ? ' · se presenta el ' + _licDDMM(x.presenta) : '';
+        licYaPuestas.add(licClave(x.r));
+        fila(x.empieza > 0 ? '📅' : '🏥', esc(nom), esc(t + ' · ' + per + pres),
+          iniPuedeVer('LICENCIAS') ? 'LICENCIAS' : null,
+          'licencia', licClave(x.r));
+      });
+    }catch(e){ console.warn('Panel de inicio · licencias vigentes:', e); }
     // v1.5.78 — PRESENTACIONES. Antes esto salía solo dentro de Licencias y de
     // Autorizaciones, y como ahí es información de administradoras, había gente
     // que no se enteraba de que tenía que presentarse. Ahora sale también acá:
@@ -6538,10 +6589,11 @@ function iniPintar(){
         ? ('Termina HOY · se presenta mañana ' + _licDDMM(x.presenta))
         : ('Termina el ' + _licDDMM(x.hasta) + ' · se presenta el ' + _licDDMM(x.presenta));
       filtrarLic(_licProximosAPresentarse(null, INI_PRESENTA_DIAS)).slice(0,6).forEach(x=>{
+        if(licYaPuestas.has(licClave(x.r))) return;   // v1.6.8: ya está arriba como "de licencia"
         let t = 'Licencia'; try{ t = _licTipoLabel(x.r.tipo) || 'Licencia'; }catch(_){}
         fila('🏖️', esc(x.p.nombre), esc(t + ' · ' + cuando(x)),
           iniPuedeVer('LICENCIAS') ? 'LICENCIAS' : null,
-          'presenta', 'lic:' + (x.r._id || (x.r.lp + '|' + x.r.hasta)));
+          'presenta', licClave(x.r));
       });
       filtrar(_licProximosAPresentarse(_autRows(), INI_PRESENTA_DIAS)).slice(0,6).forEach(x=>{
         if(autYaPuestas.has(autClave(x.r))) return;   // ya está arriba como "autorizado hoy"
@@ -6564,7 +6616,7 @@ function iniPintar(){
     // hoy sin tener que contar renglones. El tablero se muestra SIEMPRE, aunque
     // no haya nada: si desaparece, nadie sabe si está vacío o si se rompió.
     // ═══════════════════════════════════════════════════════════════
-    const ROT = { autorizado:'Autorizado hoy', presenta:'Se presenta', aviso:'Aviso', evento:'Evento' };
+    const ROT = { autorizado:'Autorizado hoy', licencia:'De licencia', presenta:'Se presenta', aviso:'Aviso', evento:'Evento' };
     const nota = n => {
       const cuerpo = `<span class="pz-pin"></span>` +
         `<span class="pz-rot">${n.ico} ${ROT[n.tipo]||'Nota'}</span>` +
@@ -6576,6 +6628,7 @@ function iniPintar(){
         : `<div class="pz-nota pz-${n.tipo} pz-fija">${cuerpo}</div>`;
     };
     const chips = [['autorizado','autorizado hoy','autorizados hoy'],
+                   ['licencia','de licencia','de licencia'],
                    ['presenta','presentación','presentaciones'],
                    ['aviso','aviso','avisos'],
                    ['evento','evento','eventos']]
@@ -6595,7 +6648,7 @@ function iniPintar(){
         : `<div class="pz-nota pz-ok pz-fija"><span class="pz-pin"></span>
              <span class="pz-rot">✅ Sin novedades</span>
              <span class="pz-nom">Hoy no hay nada anotado</span>
-             <span class="pz-det">Acá salen quiénes están autorizados hoy, las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</span>
+             <span class="pz-det">Acá salen quiénes están autorizados o de licencia, las presentaciones de licencias y autorizaciones, los avisos vigentes y los eventos próximos</span>
            </div>`}</div>
     </div>`;
   }catch(e){ console.warn('Panel de inicio · avisos/eventos:', e); }
@@ -7478,7 +7531,188 @@ function _n96Estilos(){
 ';
   document.head.appendChild(st);
 }
-function horEnsureEstilos(){ _n96Estilos(); _hrEditEstilos(); }
+// v1.6.8 — Estilos de la pizarra de horario nueva (tarjetas en grilla)
+function _hzEstilos(){
+  if(document.getElementById('estilos-hz')) return;
+  const st = document.createElement('style');
+  st.id = 'estilos-hz';
+  st.textContent = `
+/* ══ v1.6.8 · PIZARRA DE HORARIO: TARJETAS ══════════════════════════════
+   Oscuro por defecto, con su par para modo claro. Cada regla de letra va
+   también con .light-mode adelante para que no la pise nada. */
+.hz-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:2px 2px 6px}
+.hz{display:grid;grid-template-columns:78px repeat(var(--cols,5),minmax(138px,1fr));gap:6px;
+  min-width:calc(78px + var(--cols,5) * 144px);grid-auto-rows:minmax(56px,auto)}
+.hz.hz-una{min-width:0;grid-template-columns:78px 1fr}
+.hz.hz-chica{grid-template-columns:66px repeat(var(--cols,5),minmax(118px,1fr));
+  min-width:calc(66px + var(--cols,5) * 124px);gap:5px;grid-auto-rows:minmax(48px,auto)}
+.hz.hz-chica.hz-una{min-width:0;grid-template-columns:66px 1fr}
+.hz > div{min-width:0}
+/* Encabezado de secciones */
+.hz-h{display:flex;flex-direction:column;justify-content:center;border-radius:11px;padding:7px 10px;
+  background-color:#12253c;border-top:3px solid var(--sc,#5aa6dd);min-height:40px}
+.hz-h0{align-items:center;border-top-color:#2a4a6b;font-size:15px}
+.hz-hn{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--sc,#8fc6ee)}
+.hz-aula{font-size:10px;font-weight:700;color:#cfe0ee;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hz-aula-v{opacity:.7;font-style:italic}
+/* Pastilla de la hora */
+.hz-hora{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:12px;
+  background-color:#10223a;border:1px solid rgba(122,175,212,.18);padding:6px 4px;text-align:center;position:relative}
+.hz-hora b{font-size:14px;font-weight:800;color:#eaf4fc;letter-spacing:.3px;line-height:1.1}
+.hz-hora small{font-size:10.5px;font-weight:700;color:#8fb0cb}
+.hz-hora i{font-style:normal;font-size:8px;font-weight:900;letter-spacing:.8px;color:#08131f;
+  background-color:#f87171;border-radius:5px;padding:1px 5px;margin-top:3px}
+.hz-hora.ahora{background-color:#3b1320;border-color:#f87171;box-shadow:0 0 0 2px rgba(248,113,113,.28),0 0 16px rgba(248,113,113,.25)}
+.hz-hora.paso b{color:#a9c1d6}
+.hz-chica .hz-hora b{font-size:12.5px}
+/* Separador (inicio del horario académico) */
+.hz-sep{display:flex;align-items:center;justify-content:center;gap:8px;min-height:30px;border-radius:10px;
+  background-color:rgba(199,154,58,.12);border:1px dashed rgba(232,190,98,.45);
+  font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;color:#e8be62}
+/* Franja común (todas las secciones) */
+.hz-com{position:relative;display:flex;align-items:center;gap:10px;border-radius:12px;padding:9px 14px;
+  background-color:#132a44;border:1px solid rgba(122,175,212,.22);border-left:4px solid #5aa6dd}
+.hz-com .hz-ic{font-size:20px;line-height:1;flex:none}
+.hz-ct{font-size:13px;font-weight:800;color:#eef6fc;letter-spacing:.4px;line-height:1.3}
+.hz-com.k-comida{background-color:#2e2412;border-color:rgba(232,190,98,.35);border-left-color:#e8be62}
+.hz-com.k-pausa{background-color:#1a2432;border-color:rgba(148,163,184,.3);border-left-color:#94a3b8}
+.hz-com.k-estudio{background-color:#14264a;border-color:rgba(96,165,250,.35);border-left-color:#60a5fa}
+.hz-com.k-orden{background-color:#0f2c2a;border-color:rgba(45,212,191,.35);border-left-color:#2dd4bf}
+.hz-com.k-clase{background-color:#231a42;border-color:rgba(167,139,250,.35);border-left-color:#a78bfa}
+/* Tarjeta de clase */
+.hz-c{position:relative;display:flex;align-items:flex-start;gap:8px;border-radius:12px;padding:9px 10px 9px 11px;
+  background-color:#11233a;border:1px solid rgba(122,175,212,.16);border-left:4px solid var(--sc,#5aa6dd)}
+.hz-c .hz-ic{font-size:17px;line-height:1.1;flex:none;margin-top:1px}
+.hz-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hz-tx b{font-size:12px;font-weight:800;color:#f1f7fc;line-height:1.28;letter-spacing:.2px;word-break:break-word}
+.hz-tx small{font-size:10.5px;font-weight:600;color:#b9d0e3;line-height:1.3;word-break:break-word}
+.hz-vac{font-size:11.5px;font-style:italic;color:#8fb0cb}
+.hz-c.vac{background-color:#0d1b2d;border-style:dashed}
+.hz-chica .hz-tx b{font-size:11px}
+.hz-chica .hz-tx small{font-size:9.8px}
+.hz-c.mrg{box-shadow:inset 0 0 0 1px rgba(122,175,212,.35)}
+.hz-junta{position:absolute;bottom:5px;right:8px;font-size:8.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#8fb0cb}
+.hz-c.ahora,.hz-com.ahora{box-shadow:0 0 0 2px rgba(248,113,113,.55),0 6px 18px rgba(248,113,113,.18)}
+/* Colores de las 5 secciones */
+.hz .s1{--sc:#5aa6dd} .hz .s2{--sc:#34d399} .hz .s3{--sc:#a78bfa} .hz .s4{--sc:#e8be62} .hz .s5{--sc:#f472b6}
+.hz-c.s1{background-color:#11263f} .hz-c.s2{background-color:#0f2a2a} .hz-c.s3{background-color:#1c1f40}
+.hz-c.s4{background-color:#28240f} .hz-c.s5{background-color:#2a1830}
+/* Cambiado a mano */
+.hz-tag{position:absolute;top:-7px;right:8px;font-size:8.5px;font-weight:800;letter-spacing:.3px;color:#2a1a02;
+  background-color:#e8be62;border-radius:20px;padding:1px 7px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.hz-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background-color:#e8be62;
+  box-shadow:0 0 6px rgba(232,190,98,.8)}
+.hz-c.toc,.hz-com.toc{border-color:rgba(232,190,98,.55)}
+.hz-x{position:absolute;bottom:4px;right:5px;background-color:rgba(0,0,0,.35);border:none;color:#ffd9a1;
+  border-radius:6px;font-size:11px;line-height:1;padding:3px 5px;cursor:pointer;font-family:inherit}
+.hz-x:hover{background-color:rgba(0,0,0,.6);color:#fff}
+/* Se puede tocar */
+.hz-click{cursor:pointer;transition:transform .12s,box-shadow .12s,filter .12s}
+.hz-click:hover{transform:translateY(-1px);filter:brightness(1.12);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.hz-ed{cursor:pointer;outline:1px dashed rgba(232,190,98,.65);outline-offset:-3px}
+.hz-pt{font-weight:900;opacity:.8;color:#e8be62}
+/* Selector de sección */
+.hz-sfs{display:flex;gap:6px;overflow-x:auto;padding:2px 1px 10px;scrollbar-width:none}
+.hz-sfs::-webkit-scrollbar{display:none}
+.hz-sf{flex:none;font-family:inherit;font-size:11.5px;font-weight:800;border-radius:20px;padding:6px 13px;cursor:pointer;
+  background-color:#12253c;border:1px solid rgba(122,175,212,.28);color:#cfe0ee;border-bottom:3px solid var(--sc,#7aafd4)}
+.hz-sf.s1{--sc:#5aa6dd}.hz-sf.s2{--sc:#34d399}.hz-sf.s3{--sc:#a78bfa}.hz-sf.s4{--sc:#e8be62}.hz-sf.s5{--sc:#f472b6}
+.hz-sf.on{background-color:#2563b8;border-color:#8fd0ff;color:#fff}
+/* Ahora / Después */
+.hz-nows{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.hz-now{border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:3px;
+  background-color:#10223a;border:1px solid rgba(122,175,212,.2)}
+.hz-now.n-ya{background-color:#2c1320;border-color:rgba(248,113,113,.5)}
+.hz-now-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:#fca5a5}
+.hz-now.n-sig .hz-now-l{color:#8fc6ee}
+.hz-now-t{font-size:12.5px;font-weight:700;color:#eef6fc;line-height:1.35}
+.hz-panel{padding:0 12px 12px}
+/* Ventana de edición */
+.hre-cab{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.hre-hora,.hre-dia{font-size:11.5px;font-weight:800;border-radius:20px;padding:4px 10px;color:#cfe6f8;background-color:rgba(122,175,212,.14)}
+.hre-lbl{display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#8fc6ee;margin:8px 0 4px}
+.hre-lbl small{text-transform:none;letter-spacing:0;font-weight:600;color:#8fb0cb}
+.hre-in{width:100%;box-sizing:border-box;font-family:inherit;font-size:14px;padding:11px 12px;border-radius:11px;
+  background-color:#0a1728;border:1px solid rgba(122,175,212,.35);color:#f1f7fc;outline:none}
+.hre-in:focus{border-color:#5aa6dd;box-shadow:0 0 0 3px rgba(90,166,221,.25)}
+.hre-rap{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.hre-chip{font-family:inherit;font-size:11.5px;font-weight:700;border-radius:20px;padding:6px 11px;cursor:pointer;
+  background-color:rgba(122,175,212,.12);border:1px solid rgba(122,175,212,.3);color:#d7e9f7}
+.hre-chip:hover{background-color:rgba(122,175,212,.25)}
+.hre-vista{display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 12px;margin-bottom:12px;
+  background-color:#11263f;border:1px solid rgba(122,175,212,.2);border-left:4px solid #5aa6dd;min-height:44px}
+.hre-v-ic{font-size:20px}
+.hre-vista b{display:block;font-size:12.5px;color:#f1f7fc}
+.hre-vista small{display:block;font-size:11px;color:#b9d0e3}
+.hre-v-vac{font-size:12px;font-style:italic;color:#8fb0cb}
+.hrm-bt small{display:block;font-size:11px;font-weight:500;opacity:.85;margin-top:2px}
+.hrm-bt.hre-ok{background-color:#2563b8;background-image:linear-gradient(135deg,#3f8fd4,#2563b8);border-color:#8fd0ff;color:#fff}
+.hrm-bt.hre-ok:hover{filter:brightness(1.08)}
+/* ─── Modo claro ─── */
+.light-mode .hz-h{background-color:#eef4fa}
+.light-mode .hz-h0{border-top-color:#c9d9ea}
+.light-mode .hz .s1{--sc:#1f6fb8} .light-mode .hz .s2{--sc:#15803d} .light-mode .hz .s3{--sc:#6d28d9}
+.light-mode .hz .s4{--sc:#a5761c} .light-mode .hz .s5{--sc:#be185d}
+.light-mode .hz-aula{color:#33526f}
+.light-mode .hz-hora{background-color:#f3f8fc;border-color:#dbe6f1}
+.light-mode .hz-hora b{color:#15314f}
+.light-mode .hz-hora small{color:#4a6a88}
+.light-mode .hz-hora i{background-color:#dc2626;color:#fff}
+.light-mode .hz-hora.ahora{background-color:#fdecec;border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.2)}
+.light-mode .hz-hora.paso b{color:#4a6a88}
+.light-mode .hz-sep{background-color:#fdf5e4;border-color:#e6d2a4;color:#7a4a02}
+.light-mode .hz-com{background-color:#eaf3fc;border-color:#cbe0f4;border-left-color:#1f6fb8}
+.light-mode .hz-ct{color:#15314f}
+.light-mode .hz-com.k-comida{background-color:#fdf5e4;border-color:#eddcb4;border-left-color:#a5761c}
+.light-mode .hz-com.k-pausa{background-color:#f1f5f9;border-color:#dbe3ec;border-left-color:#64748b}
+.light-mode .hz-com.k-estudio{background-color:#e8f1fd;border-color:#c8dcf6;border-left-color:#2563eb}
+.light-mode .hz-com.k-orden{background-color:#e6f7f5;border-color:#bfe7e1;border-left-color:#0f766e}
+.light-mode .hz-com.k-clase{background-color:#f1ecfe;border-color:#ddd2f7;border-left-color:#6d28d9}
+.light-mode .hz-c{background-color:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.06)}
+.light-mode .hz-c.s1{background-color:#f2f8fe} .light-mode .hz-c.s2{background-color:#f0faf4}
+.light-mode .hz-c.s3{background-color:#f6f2fe} .light-mode .hz-c.s4{background-color:#fdf8ec}
+.light-mode .hz-c.s5{background-color:#fdf1f6}
+.light-mode .hz-c.vac{background-color:#fafcfe}
+.light-mode .hz-tx b{color:#15314f}
+.light-mode .hz-tx small{color:#4a6a88}
+.light-mode .hz-vac{color:#5b7997}
+.light-mode .hz-junta{color:#5b7997}
+.light-mode .hz-tag{background-color:#a5761c;color:#fff}
+.light-mode .hz-dot{background-color:#a5761c;box-shadow:none}
+.light-mode .hz-c.toc,.light-mode .hz-com.toc{border-color:#e6c982}
+.light-mode .hz-x{background-color:rgba(0,0,0,.08);color:#7a4a02}
+.light-mode .hz-click:hover{filter:none;box-shadow:0 6px 16px rgba(21,49,79,.14)}
+.light-mode .hz-sf{background-color:#fff;border-color:#dbe6f1;color:#22405c}
+.light-mode .hz-sf.s1{--sc:#1f6fb8}.light-mode .hz-sf.s2{--sc:#15803d}.light-mode .hz-sf.s3{--sc:#6d28d9}
+.light-mode .hz-sf.s4{--sc:#a5761c}.light-mode .hz-sf.s5{--sc:#be185d}
+.light-mode .hz-sf.on{background-color:#1a6199;border-color:#1f6fb8;color:#fff}
+.light-mode .hz-now{background-color:#f3f8fc;border-color:#dbe6f1}
+.light-mode .hz-now.n-ya{background-color:#fdecec;border-color:#f3c9c9}
+.light-mode .hz-now-l{color:#b91c1c}
+.light-mode .hz-now.n-sig .hz-now-l{color:#14568f}
+.light-mode .hz-now-t{color:#15314f}
+.light-mode .hre-hora,.light-mode .hre-dia{background-color:#eaf3fc;color:#14568f}
+.light-mode .hre-lbl{color:#14568f}
+.light-mode .hre-lbl small{color:#4a6a88}
+.light-mode .hre-in{background-color:#fff;border-color:#cbe0f4;color:#15314f}
+.light-mode .hre-chip{background-color:#eaf3fc;border-color:#cbe0f4;color:#14568f}
+.light-mode .hre-vista{background-color:#f2f8fe;border-color:#dbe6f1;border-left-color:#1f6fb8}
+.light-mode .hre-vista b{color:#15314f}
+.light-mode .hre-vista small{color:#4a6a88}
+.light-mode .hre-v-vac{color:#5b7997}
+.light-mode .hrm-bt.hre-ok{background-color:#1a6199;background-image:linear-gradient(135deg,#1f6fb8,#155a94);border-color:#1f6fb8;color:#fff}
+@media(max-width:640px){
+  .hz-nows{grid-template-columns:1fr}
+  .hz{grid-template-columns:62px repeat(var(--cols,5),minmax(132px,1fr));min-width:calc(62px + var(--cols,5) * 138px)}
+  .hz.hz-una,.hz.hz-chica.hz-una{grid-template-columns:62px 1fr;min-width:0}
+  .hz-hora b{font-size:12.5px}
+  .hz-panel{padding:0 8px 10px}
+}
+@media(prefers-reduced-motion:reduce){.hz-click{transition:none}.hz-click:hover{transform:none}}
+`;
+  document.head.appendChild(st);
+}
+function horEnsureEstilos(){ _n96Estilos(); _hrEditEstilos(); _hzEstilos(); }
 // v1.6.5 — Estilos del modo edición de la pizarra (menús y casilleros combinados)
 function _hrEditEstilos(){
   if(document.getElementById('estilos-hr-edit')) return;
@@ -7648,7 +7882,9 @@ const HOR_DESDE  = '2026-08-24';        // primer lunes del horario
 const HOR_DIAS   = ['LUN','MAR','MIE','JUE','VIE'];
 const HOR_NOM    = { LUN:'Lunes', MAR:'Martes', MIE:'Miércoles', JUE:'Jueves', VIE:'Viernes' };
 // Quiénes pueden editar, además de las administradoras.
-const HOR_EDITAN = ['melina.lafuente','eliana.velazquez','sergio.bascur'];
+// v1.6.8 — Se suma Nahuel Calderón (pasó a la Secretaría Académica), con los mismos
+// permisos sobre la pizarra que el Sgto. Bascur.
+const HOR_EDITAN = ['melina.lafuente','eliana.velazquez','sergio.bascur','nahuel.calderon'];
 
 let HOR_SEM = null;   // ISO del lunes de la semana que se está mirando
 let HOR_DIA = null;   // v1.5.97 — ISO del día que se está mirando
@@ -7682,21 +7918,60 @@ function horPuedeEditar(){
 function horVigente(){ return horHoy() >= HOR_DESDE; }
 
 // ─── Lo guardado ────────────────────────────────────────────────────────
-// { 'YYYY-MM-DD': capa, '#plantilla': { LUN: capa, MAR: capa, … } }
+// { 'YYYY-MM-DD': capa,                         ← cambios de UN solo día
+//   '#desde': { LUN: { 'YYYY-MM-DD': capa } },  ← v1.6.8: cambios que valen
+//                                                  desde esa fecha en adelante
+//   '#plantilla': { LUN: capa, … } }            ← (viejo) valía para todos los lunes
 // Cada CAPA guarda:
 //   'fila|seccion' : el texto de un casillero
 //                    ('fila|T' = fila común a las 5 secciones, 'fila|H' = el horario)
-//   '#del'   : filas que se sacaron
-//   '#add'   : filas agregadas  [{id, tras, h, c:[…]}]
-//   '#span'  : casilleros combinados  { 'fila|seccion': {c:columnas, r:filas} }
-// La capa del DÍA pisa a la de la PLANTILLA (la que vale para todos los lunes,
-// todos los martes, etc.). Por eso cada cambio pregunta para cuándo vale.
+//   '#del' / '#add' / '#span' / '#modo' / '#aula' : estructura de la grilla
+//   '#base'  : true = de acá en adelante se vuelve al Excel (borra lo de antes)
+//
+// ═══════════════════════════════════════════════════════════════════════
+// v1.6.8 — POR QUÉ SE TOCÓ ESTO
+// ───────────────────────────────────────────────────────────────────────
+// ANTES: cambiar el texto de un casillero valía SOLO para esa fecha. A la
+// semana siguiente ese mismo día volvía a salir lo del Excel, y había que
+// cargar todo otra vez. Y "Todos los lunes de acá en más" en realidad
+// cambiaba TODOS los lunes, también los que ya habían pasado.
+// AHORA: lo que se carga QUEDA FIJO de ese día en adelante (el lunes 28/09
+// vale para el 05/10, el 12/10…) hasta que se lo vuelva a cambiar. Los días
+// que ya pasaron no se tocan. Para una excepción de un solo día (un docente
+// que falta) está el botón «Solo este día».
+// Además, antes de cada cambio se trae de la nube la última versión del
+// horario: así, si Sergio cambió algo desde su celular hace un minuto, el
+// cambio de Mely no le pisa el suyo.
+// ═══════════════════════════════════════════════════════════════════════
 function horGuardado(){
   try{ return JSON.parse(localStorage.getItem(HOR_KEY) || '{}') || {}; }catch(_){ return {}; }
 }
 function horGrabar(todo){
   try{ localStorage.setItem(HOR_KEY, JSON.stringify(todo)); }catch(_){}
   try{ if(typeof syncToSupabase === 'function') syncToSupabase(HOR_KEY, todo); }catch(_){}
+}
+// Trae de la nube la versión más nueva del horario (con tope de tiempo).
+// Si en este equipo hay cambios del horario que todavía no subieron, NO se
+// pisan: quedan los de acá.
+var _horNubeTs = 0;
+async function horTraerNube(forzar){
+  try{
+    if(typeof clienteS === 'undefined' || !clienteS) return false;
+    if(!forzar && Date.now() - _horNubeTs < 8000) return false;   // recién se trajo
+    if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) return false;
+    if(typeof _getPendientes === 'function' && _getPendientes().includes(HOR_KEY)) return false;
+    const q = clienteS.from('app_data').select('value').eq('key', HOR_KEY).maybeSingle();
+    const r = (typeof _conTimeout === 'function') ? await _conTimeout(q, 3500) : await q;
+    _horNubeTs = Date.now();
+    const v = r && r.data ? r.data.value : null;
+    if(!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) return false;
+    const antes = localStorage.getItem(HOR_KEY) || '';
+    const ahora = JSON.stringify(v);
+    if(antes === ahora) return false;
+    localStorage.setItem(HOR_KEY, ahora);
+    return true;
+  }catch(_){ return false; }
 }
 function horDiaCod(iso){
   const d = horParse(iso); if(!d) return null;
@@ -7706,21 +7981,64 @@ function horNombreDia(iso){
   const c = horDiaCod(iso);
   return c ? HOR_NOM[c].toLowerCase() : '';
 }
+function horFechaCorta(iso){
+  const d = horParse(iso);
+  return d ? String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') : iso;
+}
+// La capa donde se escribe: la del día solo, o la "de acá en adelante".
 function horCapa(todo, iso, ambito){
-  if(ambito === 'plantilla'){
+  if(ambito === 'plantilla' || ambito === 'desde'){
     const dia = horDiaCod(iso); if(!dia) return null;
-    todo['#plantilla'] = todo['#plantilla'] || {};
-    todo['#plantilla'][dia] = todo['#plantilla'][dia] || {};
-    return todo['#plantilla'][dia];
+    todo['#desde'] = todo['#desde'] || {};
+    todo['#desde'][dia] = todo['#desde'][dia] || {};
+    todo['#desde'][dia][iso] = todo['#desde'][dia][iso] || {};
+    return todo['#desde'][dia][iso];
   }
   todo[iso] = todo[iso] || {};
   return todo[iso];
+}
+// Las capas que valen para una fecha, en orden (la última manda).
+// ambito 'dia'  → sin la capa del día (lo que había antes de este cambio)
+// ambito 'desde'→ sin la capa del día ni la "desde" de esta misma fecha
+function horCapasDe(todo, iso, sinDesde){
+  const dia = horDiaCod(iso); if(!dia) return [];
+  const out = [];
+  if(todo['#plantilla'] && todo['#plantilla'][dia]) out.push({ c:todo['#plantilla'][dia], tag:'pla' });
+  const des = (todo['#desde'] && todo['#desde'][dia]) || {};
+  Object.keys(des).filter(d => sinDesde === 'desde' ? d < iso : d <= iso).sort()
+    .forEach(d => out.push({ c:des[d], tag:'desde:' + d }));
+  if(!sinDesde && todo[iso]) out.push({ c:todo[iso], tag:'dia' });
+  return out;
+}
+function horMezclar(capas){
+  const nuevo = () => ({ v:{}, org:{}, del:new Set(), span:{}, modo:{}, aula:{}, add:[] });
+  let m = nuevo();
+  capas.forEach(x=>{
+    const c = x && x.c; if(!c) return;
+    if(c['#base']) m = nuevo();
+    Object.keys(c).forEach(k=>{ if(k.charAt(0) !== '#'){ m.v[k] = c[k]; m.org[k] = x.tag; } });
+    (c['#del'] || []).forEach(k => m.del.add(String(k)));
+    (c['#undel'] || []).forEach(k => m.del.delete(String(k)));
+    Object.assign(m.span, c['#span'] || {});
+    Object.keys(c['#modo'] || {}).forEach(k=>{ m.modo[k] = c['#modo'][k]; m.org['#modo|' + k] = x.tag; });
+    Object.assign(m.aula, c['#aula'] || {});
+    (c['#add'] || []).forEach(e=>{
+      if(!e || !e.id) return;
+      m.add = m.add.filter(z => z.id !== e.id);
+      m.add.push(e);
+    });
+  });
+  return m;
+}
+function horPrevio(todo, iso, ambito){
+  return horMezclar(horCapasDe(todo, iso, (ambito === 'dia') ? 'dia' : 'desde'));
 }
 function horCapaVacia(o){
   if(!o) return true;
   return !Object.keys(o).some(k=>{
     const v = o[k];
     if(k.charAt(0) !== '#') return true;
+    if(k === '#base') return !!v;
     if(Array.isArray(v)) return v.length > 0;
     return !!(v && Object.keys(v).length);
   });
@@ -7728,121 +8046,281 @@ function horCapaVacia(o){
 function horLimpiar(todo, iso){
   if(horCapaVacia(todo[iso])) delete todo[iso];
   const dia = horDiaCod(iso);
+  if(dia && todo['#desde'] && todo['#desde'][dia]){
+    if(horCapaVacia(todo['#desde'][dia][iso])) delete todo['#desde'][dia][iso];
+    if(!Object.keys(todo['#desde'][dia]).length) delete todo['#desde'][dia];
+  }
+  if(todo['#desde'] && !Object.keys(todo['#desde']).length) delete todo['#desde'];
   if(dia && todo['#plantilla'] && horCapaVacia(todo['#plantilla'][dia])) delete todo['#plantilla'][dia];
   if(todo['#plantilla'] && !Object.keys(todo['#plantilla']).length) delete todo['#plantilla'];
 }
 // Escribe un cambio en la capa que corresponda y vuelve a dibujar.
 function horAplicar(iso, ambito, fn){
-  if(!horPuedeEditar()){ alert('Solo Mely, Eliana y Sergio pueden cambiar el horario.'); return; }
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Nahuel pueden cambiar el horario.'); return; }
   const todo = horGuardado();
+  const previo = horPrevio(todo, iso, ambito);
   const capa = horCapa(todo, iso, ambito);
   if(!capa) return;
-  fn(capa);
+  fn(capa, previo);
   horLimpiar(todo, iso);
   horGrabar(todo);
   horRefrescar();
+  try{ if(typeof syncStatus === 'function') syncStatus('✓ Horario guardado', '#34d399'); }catch(_){}
 }
 
-// El horario de un día concreto: plantilla del Excel + lo que se cambió.
+// El horario de un día concreto: plantilla del Excel + todo lo que se fue cambiando.
 function horDelDia(iso){
   const dia = horDiaCod(iso); if(!dia) return null;   // sábado y domingo no tienen clases
   const base = HOR_BASE[dia] || [];
-  const todo = horGuardado();
-  const pla  = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
-  const camb = todo[iso] || {};
-  const del    = new Set([].concat(pla['#del'] || [], camb['#del'] || []).map(String));
-  const spans  = Object.assign({}, pla['#span'] || {}, camb['#span'] || {});
-  const modos  = Object.assign({}, pla['#modo'] || {}, camb['#modo'] || {});
-  const extras = [].concat(pla['#add'] || [], camb['#add'] || []);
-  const val = k => (k in camb) ? camb[k] : (k in pla ? pla[k] : undefined);
-  const toc = k => (k in camb) || (k in pla);
+  const m = horMezclar(horCapasDe(horGuardado(), iso));
+  const val = k => (k in m.v) ? m.v[k] : undefined;
+  let nCambios = 0;
 
-  const armar = (def, key) => {
+  const armar = (def, key, esExtra) => {
     if(def.hdr) return { tipo:'hdr', hdr:def.hdr, key:key };
     const kh = key + '|H';
     const h  = val(kh) !== undefined ? val(kh) : (def.h || '');
-    // De fábrica la fila viene junta (una sola casilla para las 5 secciones) o
-    // separada; con #modo se la puede dar vuelta cuando haga falta.
+    if(!esExtra && val(kh) !== undefined && String(val(kh)) !== String(def.h || '')) nCambios++;
     const natural = (typeof def.t === 'string') ? 'comun' : 'cel';
-    const tipo = modos[key] === 'sec' ? 'cel' : (modos[key] === 'comun' ? 'comun' : natural);
-    const cambiada = !!modos[key] && modos[key] !== (natural === 'comun' ? 'comun' : 'sec');
+    const tipo = m.modo[key] === 'sec' ? 'cel' : (m.modo[key] === 'comun' ? 'comun' : natural);
+    const cambiada = !!m.modo[key] && m.modo[key] !== (natural === 'comun' ? 'comun' : 'sec');
+    if(cambiada) nCambios++;
     if(tipo === 'comun'){
       const k = key + '|T';
       const v = val(k);
       const porDefecto = (typeof def.t === 'string')
         ? def.t
         : ((def.c || []).find(x => x && String(x).trim()) || '');
-      return { tipo:'comun', h:h, t:(v !== undefined ? v : porDefecto), tocado:toc(k),
-               key:key, natural:natural, cambiada:cambiada };
+      const t = (v !== undefined ? v : porDefecto);
+      const tocado = v !== undefined && String(v) !== String(porDefecto);
+      if(tocado && !esExtra) nCambios++;
+      return { tipo:'comun', h:h, t:t, tocado:tocado, org:m.org[k], key:key, natural:natural, cambiada:cambiada, extra:!!esExtra };
     }
     const cel = (def.c || ['','','','','']).map((v0, sec)=>{
       const k = key + '|' + sec;
       const v = val(k);
-      return { v:(v !== undefined ? v : (v0 || '')), tocado:toc(k), sec:sec };
+      const tocado = v !== undefined && String(v) !== String(v0 || '');
+      if(tocado && !esExtra) nCambios++;
+      return { v:(v !== undefined ? v : (v0 || '')), tocado:tocado, org:m.org[k], sec:sec };
     });
-    return { tipo:'cel', h:h, cel:cel, key:key, natural:natural, cambiada:cambiada };
+    return { tipo:'cel', h:h, cel:cel, key:key, natural:natural, cambiada:cambiada, extra:!!esExtra };
   };
 
   const filas = [];
-  const tras = pos => extras.filter(e => e && e.id && String(e.tras) === String(pos) && !del.has(String(e.id)));
-  tras('-1').forEach(e => filas.push(armar(e, e.id)));
+  const tras = pos => m.add.filter(e => e && e.id && String(e.tras) === String(pos) && !m.del.has(String(e.id)));
+  const conExtras = pos => tras(pos).forEach(e => { nCambios++; filas.push(armar(e, e.id, true)); });
+  conExtras('-1');
   base.forEach((def, i)=>{
-    if(!del.has(String(i))) filas.push(armar(def, String(i)));
-    tras(String(i)).forEach(e => filas.push(armar(e, e.id)));
+    if(!m.del.has(String(i))) filas.push(armar(def, String(i), false));
+    else nCambios++;
+    conExtras(String(i));
   });
-  filas.spans = spans;
+  // Las filas agregadas debajo de otra fila agregada
+  let guarda = 0, hubo = true;
+  while(hubo && guarda++ < 20){
+    hubo = false;
+    m.add.forEach(e=>{
+      if(!e || !e.id || m.del.has(String(e.id))) return;
+      if(filas.some(f => String(f.key) === String(e.id))) return;
+      const i = filas.findIndex(f => String(f.key) === String(e.tras));
+      if(i >= 0){ filas.splice(i + 1, 0, armar(e, e.id, true)); nCambios++; hubo = true; }
+    });
+  }
+  Object.keys(m.span).forEach(k=>{ const s = m.span[k] || {}; if((+s.c||1) > 1 || (+s.r||1) > 1) nCambios++; });
+  filas.spans = m.span;
+  filas.aulas = {};
+  Object.keys(m.aula).forEach(k=>{ if(m.aula[k]) filas.aulas[k] = m.aula[k]; });
+  filas.nCambios = nCambios;
   return filas;
 }
-function horContar(o){
-  if(!o) return 0;
-  let n = 0;
-  Object.keys(o).forEach(k=>{
-    if(k.charAt(0) !== '#'){ n++; return; }
-    const v = o[k];
-    n += Array.isArray(v) ? v.length : Object.keys(v || {}).length;
-  });
-  return n;
-}
 function horCuantosCambios(iso){
-  const todo = horGuardado();
-  const dia = horDiaCod(iso);
-  const pla = (dia && todo['#plantilla']) ? todo['#plantilla'][dia] : null;
-  return horContar(todo[iso]) + horContar(pla);
+  const f = horDelDia(iso);
+  return f ? (f.nCambios || 0) : 0;
+}
+// De qué capa viene un cambio, en palabras cortas para la etiqueta.
+function horOrigenTxt(org){
+  if(!org) return '';
+  if(org === 'dia') return 'solo este día';
+  if(org === 'pla') return 'fijo';
+  if(org.indexOf('desde:') === 0) return 'desde el ' + horFechaCorta(org.slice(6));
+  return '';
 }
 
-// ─── Editar el texto de un casillero (lo de siempre: un toque y listo) ───
-function horEditar(iso, key, sec){
-  if(!horPuedeEditar()){ alert('Solo Mely, Eliana y Sergio pueden cambiar el horario.'); return; }
+// ─── Materia y docente ─────────────────────────────────────────────────
+// El Excel escribe todo junto: "ARMA Y TIRO- OF INSPECTOR CALDERON". Para la
+// pizarra se separa en materia (grande) y docente (abajo, más chico).
+function horPartir(txt){
+  const s = String(txt == null ? '' : txt).replace(/\s+/g, ' ').trim();
+  const m = s.match(/^(.*?[^\s-])\s*-+\s*(.+)$/);
+  if(m && m[1].length >= 3) return { mat:m[1].trim(), doc:m[2].trim() };
+  return { mat:s, doc:'' };
+}
+function horUnir(mat, doc){
+  mat = String(mat || '').replace(/\s+/g, ' ').trim();
+  doc = String(doc || '').replace(/\s+/g, ' ').trim();
+  if(mat && doc) return mat + '-' + doc;
+  return mat || doc;
+}
+// Un dibujito según de qué se trate, para que se lea de un vistazo.
+function horIcono(txt){
+  const s = String(txt || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const T = [
+    [/ALMUERZO|CENA/, '🍽️'], [/REFRIGERIO|MERIENDA|DESAYUNO/, '☕'], [/RECREO/, '⏸️'],
+    [/ESTUDIO/, '📚'], [/ORDEN CERRADO/, '🎖️'], [/ORDEN INTERNO/, '📋'], [/RELEVO|GUARDIA/, '🛡️'],
+    [/ARMA|TIRO/, '🎯'], [/EDUCACION FISICA|ED\. FISICA/, '🏃'], [/DEFENSA/, '🥋'], [/BASTON/, '🦯'],
+    [/PRIMEROS AUXILIOS|RCP/, '⛑️'], [/TRANSITO|VIAL/, '🚦'], [/DERECHOS HUMANOS|DDHH/, '🕊️'],
+    [/LEGISLACION|DERECHO/, '⚖️'], [/INVESTIGACION|CRIMINAL/, '🔎'], [/PROCEDIMIENTO/, '🚓'],
+    [/EMOCION/, '🧠'], [/ALFABETIZACION/, '✍️'], [/DOCTRINA/, '🏛️'], [/MICAELA/, '💜'],
+    [/TALLER|ANTINARC/, '🛠️'], [/ALISTAMIENTO|FRANCO/, '🎒'], [/ACTO|CEREMONI/, '🇦🇷'],
+    [/LIBRE|SIN CLASE/, '🟢']
+  ];
+  for(const [re, ic] of T){ if(re.test(s)) return ic; }
+  return '📘';
+}
+function horClaseComun(txt){
+  const s = String(txt || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if(/ALMUERZO|CENA|REFRIGERIO|MERIENDA|DESAYUNO/.test(s)) return 'k-comida';
+  if(/RECREO|FRANCO|ALISTAMIENTO/.test(s)) return 'k-pausa';
+  if(/ESTUDIO/.test(s)) return 'k-estudio';
+  if(/ORDEN/.test(s)) return 'k-orden';
+  return 'k-clase';
+}
+// "08:10 a 09:30" → { ini:'08:10', fin:'09:30', a:490, b:570 }
+function horRango(h){
+  const m = String(h || '').match(/(\d{1,2})[:.](\d{2})\s*(?:a|A|-|hs?\.?\s*a)?\s*(\d{1,2})[:.](\d{2})/);
+  if(!m) return null;
+  const p = x => String(x).padStart(2, '0');
+  return { ini:p(m[1]) + ':' + m[2], fin:p(m[3]) + ':' + m[4],
+           a:(+m[1]) * 60 + (+m[2]), b:(+m[3]) * 60 + (+m[4]) };
+}
+function horAhoraMin(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+
+// ─── Editar el texto de un casillero ────────────────────────────────────
+// v1.6.8 — Antes era un cartelito del navegador para escribir todo junto y
+// valía solo para esa fecha. Ahora es una ventana con MATERIA y DOCENTE por
+// separado (con sugerencias de lo que ya está en el horario) y dos botones:
+// «Guardar de acá en adelante» (lo normal) o «Solo este día».
+var HOR_ED = null;
+async function horEditar(iso, key, sec){
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Nahuel pueden cambiar el horario.'); return; }
+  try{ if(await horTraerNube()) horRefrescar(); }catch(_){}
   const filas = horDelDia(iso); if(!filas) return;
   const f = filas.find(x => String(x.key) === String(key)); if(!f) return;
-  const actual = (String(sec) === 'T') ? f.t : (((f.cel || [])[Number(sec)] || {}).v);
-  const donde  = (String(sec) === 'T') ? 'todas las secciones' : ('la sección ' + (Number(sec) + 1));
-  const txt = prompt('Horario de ' + (f.h || '—') + ' · ' + donde + '\n\n'
-    + 'Escribí la materia y el docente. Si ese casillero queda libre, borralo todo y aceptá.', actual || '');
-  if(txt === null) return;
-  horAplicar(iso, 'dia', capa => { capa[key + '|' + sec] = txt.trim(); });
+  const esT = (String(sec) === 'T');
+  const actual = esT ? f.t : (((f.cel || [])[Number(sec)] || {}).v);
+  const pz = horPartir(actual);
+  HOR_ED = { iso:iso, key:String(key), sec:String(sec) };
+  const donde = esT ? 'Todas las secciones' : ('Sección ' + (Number(sec) + 1));
+  // Sugerencias: todas las materias y docentes que ya aparecen en el horario.
+  const mats = new Set(), docs = new Set();
+  Object.keys(HOR_BASE).forEach(d => (HOR_BASE[d] || []).forEach(r=>{
+    [].concat(r.c || [], r.t ? [r.t] : []).forEach(t=>{ const p = horPartir(t); if(p.mat) mats.add(p.mat); if(p.doc) docs.add(p.doc); });
+  }));
+  try{
+    const junta = o => { if(!o || typeof o !== 'object') return;
+      Object.keys(o).forEach(k=>{
+        const v = o[k];
+        if(typeof v === 'string' && /\|(\d|T)$/.test(k)){ const p = horPartir(v); if(p.mat) mats.add(p.mat); if(p.doc) docs.add(p.doc); }
+        else if(v && typeof v === 'object' && !Array.isArray(v)) junta(v);
+      }); };
+    junta(horGuardado());
+  }catch(_){}
+  const opt = s => Array.from(s).sort().map(x => '<option value="' + horEsc(x) + '"></option>').join('');
+  const nom = horNombreDia(iso), fc = horFechaCorta(iso);
+  horPanel('✏️ ' + donde,
+    '<div class="hre-cab"><span class="hre-hora">🕐 ' + (horEsc(f.h) || '—') + '</span>'
+    + '<span class="hre-dia">' + horEsc(nom.charAt(0).toUpperCase() + nom.slice(1)) + ' ' + fc + '</span></div>'
+    + '<label class="hre-lbl">Materia / actividad</label>'
+    + '<input id="hreMat" class="hre-in" list="hreMats" autocomplete="off" value="' + horEsc(pz.mat) + '" placeholder="Ej.: ARMA Y TIRO">'
+    + '<datalist id="hreMats">' + opt(mats) + '</datalist>'
+    + '<label class="hre-lbl">Docente <small>(opcional)</small></label>'
+    + '<input id="hreDoc" class="hre-in" list="hreDocs" autocomplete="off" value="' + horEsc(pz.doc) + '" placeholder="Ej.: OF INSPECTOR CALDERON">'
+    + '<datalist id="hreDocs">' + opt(docs) + '</datalist>'
+    + '<div class="hre-rap">'
+    + '<button type="button" class="hre-chip" onclick="horEdRapido(\'\')">🟢 Libre</button>'
+    + '<button type="button" class="hre-chip" onclick="horEdRapido(\'ORDEN CERRADO\')">🎖️ Orden cerrado</button>'
+    + '<button type="button" class="hre-chip" onclick="horEdRapido(\'EDUCACIÓN FISICA\')">🏃 Ed. Física</button>'
+    + '<button type="button" class="hre-chip" onclick="horEdRapido(\'HORA DE ESTUDIO\')">📚 Estudio</button>'
+    + '</div>'
+    + '<div class="hre-vista" id="hreVista"></div>'
+    + '<button class="hrm-bt hre-ok" onclick="horEdGuardar(\'desde\')">💾 Guardar <b>desde el ' + horEsc(nom) + ' ' + fc + ' en adelante</b>'
+    + '<small>Queda fijo todas las semanas hasta que lo vuelvas a cambiar</small></button>'
+    + '<button class="hrm-bt" onclick="horEdGuardar(\'dia\')">📅 Solo el ' + horEsc(nom) + ' ' + fc
+    + '<small>Excepción de un día (por ejemplo, un docente que falta)</small></button>'
+    + '<button class="hrm-bt hrm-gris" onclick="horCerrarMenu()">Cancelar</button>');
+  const pint = () => {
+    const v = document.getElementById('hreVista'); if(!v) return;
+    const mat = (document.getElementById('hreMat') || {}).value || '';
+    const doc = (document.getElementById('hreDoc') || {}).value || '';
+    v.innerHTML = (mat || doc)
+      ? '<span class="hre-v-ic">' + horIcono(mat) + '</span><span><b>' + horEsc(mat || '—') + '</b>'
+        + (doc ? '<small>' + horEsc(doc) + '</small>' : '') + '</span>'
+      : '<span class="hre-v-vac">Queda vacío (sin clase)</span>';
+  };
+  ['hreMat','hreDoc'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.addEventListener('input', pint);
+      el.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); horEdGuardar('desde'); } }); }
+  });
+  pint();
+  setTimeout(()=>{ try{ const el = document.getElementById('hreMat'); el.focus(); el.select(); }catch(_){} }, 60);
 }
-// Volver un casillero a lo que dice la plantilla del Excel.
+function horEdRapido(t){
+  const a = document.getElementById('hreMat'), b = document.getElementById('hreDoc');
+  if(a) a.value = t; if(b) b.value = '';
+  if(a) a.dispatchEvent(new Event('input'));
+}
+function horEdGuardar(ambito){
+  const e = HOR_ED; if(!e) return;
+  const mat = (document.getElementById('hreMat') || {}).value || '';
+  const doc = (document.getElementById('hreDoc') || {}).value || '';
+  const txt = horUnir(mat, doc);
+  HOR_ED = null;
+  horCerrarMenu();
+  horAplicar(e.iso, ambito, capa => { capa[e.key + '|' + e.sec] = txt; });
+}
+// Volver un casillero a lo que dice el Excel.
 function horVolverBase(iso, key, sec){
   if(!horPuedeEditar()) return;
   const k = key + '|' + sec;
   const todo = horGuardado();
-  const dia = horDiaCod(iso);
-  if(todo[iso] && (k in todo[iso])) delete todo[iso][k];
-  else if(dia && todo['#plantilla'] && todo['#plantilla'][dia]) delete todo['#plantilla'][dia][k];
-  horLimpiar(todo, iso);
-  horGrabar(todo);
-  horRefrescar();
+  // Si el cambio es de ese día solo, se saca y listo: vuelve lo que venía.
+  if(todo[iso] && (k in todo[iso])){
+    delete todo[iso][k];
+    horLimpiar(todo, iso); horGrabar(todo); horRefrescar();
+    return;
+  }
+  // Si viene de un cambio "de acá en adelante", se pregunta desde cuándo.
+  const filas = horDelDia(iso) || [];
+  const base = HOR_BASE[horDiaCod(iso)] || [];
+  const def = base[Number(key)] || {};
+  let v0 = '';
+  if(String(sec) === 'T') v0 = (typeof def.t === 'string') ? def.t : ((def.c || []).find(x => x && String(x).trim()) || '');
+  else v0 = (def.c || [])[Number(sec)] || '';
+  if(!filas.length) return;
+  horAmbito(iso, '↺ Volver al Excel', 'Ese casillero vuelve a decir lo del Excel' + (v0 ? ': <b>' + horEsc(v0) + '</b>' : '') + '.', ambito=>{
+    horAplicar(iso, ambito, capa => { capa[k] = v0; });
+  });
 }
-// Volver TODO un día (o todos los días iguales) a la plantilla.
+// Volver TODO un día (o de acá en adelante) al Excel.
 function horVolverDia(iso){
   if(!horPuedeEditar()) return;
-  horAmbito(iso, '↺ Volver a la plantilla del Excel',
+  horAmbito(iso, '↺ Volver al Excel',
     'Se deshacen los cambios hechos a mano y el horario vuelve a quedar como el Excel.', ambito=>{
     const todo = horGuardado();
     const dia = horDiaCod(iso);
-    if(ambito === 'plantilla'){ if(todo['#plantilla']) delete todo['#plantilla'][dia]; }
-    else delete todo[iso];
+    if(ambito === 'dia'){
+      // Ese día solo: se descarta lo cargado para ese día y se pisa todo lo que venía
+      todo[iso] = { '#base': true };
+    }else{
+      // De acá en adelante: se borran los cambios de esta fecha y de las que siguen
+      if(todo['#desde'] && todo['#desde'][dia]){
+        Object.keys(todo['#desde'][dia]).forEach(d=>{ if(d >= iso) delete todo['#desde'][dia][d]; });
+      }
+      Object.keys(todo).forEach(d=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= iso && horDiaCod(d) === dia) delete todo[d]; });
+      const hayAntes = horCapasDe(todo, iso, 'desde').length > 0;
+      if(hayAntes){ horCapa(todo, iso, 'desde')['#base'] = true; }
+    }
     horLimpiar(todo, iso);
     horGrabar(todo);
     horRefrescar();
@@ -7853,7 +8331,10 @@ function horVolverDia(iso){
 var HOR_EDIT = false;                 // el modo edición está prendido o no
 var HOR_CB   = null;                  // qué hacer cuando eligen para cuándo vale
 
-function horModo(){ HOR_EDIT = !HOR_EDIT; horRefrescar(); }
+function horModo(){
+  HOR_EDIT = !HOR_EDIT; horRefrescar();
+  if(HOR_EDIT) horTraerNube(true).then(c=>{ if(c) horRefrescar(); }).catch(()=>{});
+}
 function horCerrarMenu(){ const o = document.getElementById('horMenuOv'); if(o) o.remove(); }
 function horPanel(titulo, cuerpo){
   horCerrarMenu();
@@ -7864,17 +8345,17 @@ function horPanel(titulo, cuerpo){
   ov.innerHTML = '<div class="hrm-box" data-cc-no><div class="hrm-tit">' + titulo + '</div>' + cuerpo + '</div>';
   document.body.appendChild(ov);
 }
-// Pregunta si el cambio vale para esa fecha sola o para todos los días iguales.
+// Pregunta si el cambio vale de acá en adelante o para esa fecha sola.
 function horAmbito(iso, titulo, nota, cb){
   HOR_CB = cb;
-  const d = horParse(iso);
-  const fecha = d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : iso;
+  const fecha = horFechaCorta(iso);
   const nom = horNombreDia(iso);
   horPanel(titulo,
     (nota ? '<div class="hrm-nota">' + nota + '</div>' : '')
     + '<div class="hrm-sub">¿Para cuándo vale el cambio?</div>'
+    + '<button class="hrm-bt hre-ok" onclick="horElegirAmbito(\'desde\')">🔁 Desde el ' + nom + ' ' + fecha + ' en adelante'
+    + '<small>Todos los ' + nom + ' que vienen, hasta que lo vuelvas a cambiar</small></button>'
     + '<button class="hrm-bt" onclick="horElegirAmbito(\'dia\')">📅 Solo el ' + nom + ' ' + fecha + '</button>'
-    + '<button class="hrm-bt" onclick="horElegirAmbito(\'plantilla\')">🔁 Todos los ' + nom + ' de acá en más</button>'
     + '<button class="hrm-bt hrm-gris" onclick="horCerrarMenu()">Cancelar</button>');
 }
 function horElegirAmbito(a){
@@ -7899,15 +8380,11 @@ function horCombinar(iso, key, sec, dir){
 }
 function horSeparar(iso, key, sec){
   horAmbito(iso, '✂️ Separar el casillero', 'Vuelven a quedar los casilleros sueltos, con su texto de antes.', ambito=>{
-    const todo0 = horGuardado();
-    const dia = horDiaCod(iso);
-    const enPla = !!(dia && todo0['#plantilla'] && todo0['#plantilla'][dia]
-                  && todo0['#plantilla'][dia]['#span'] && todo0['#plantilla'][dia]['#span'][key + '|' + sec]);
-    horAplicar(iso, ambito, capa=>{
+    horAplicar(iso, ambito, (capa, previo)=>{
       const k = key + '|' + sec;
       if(capa['#span'] && (k in capa['#span'])) delete capa['#span'][k];
-      // Si la combinación venía de la plantilla, este día la anula.
-      if(ambito === 'dia' && enPla){ capa['#span'] = capa['#span'] || {}; capa['#span'][k] = { c:1, r:1 }; }
+      // Si la combinación venía de antes, esta capa la anula.
+      if(previo && previo.span[k]){ capa['#span'] = capa['#span'] || {}; capa['#span'][k] = { c:1, r:1 }; }
     });
   });
 }
@@ -7917,20 +8394,14 @@ function horSepararFila(iso, key){
     'El texto que hay ahora queda copiado en las cinco secciones; después cambiás el que sea distinto.', ambito=>{
     const filas = horDelDia(iso) || [];
     const f = filas.find(x => String(x.key) === String(key));
-    // Si la fila de la plantilla YA tiene un texto por sección, no se copia nada:
-    // al separarla vuelve a aparecer lo que dice el Excel para cada una.
     const txt = (f && f.natural === 'comun') ? (f.t || '') : '';
-    const todo = horGuardado();
-    const dia = horDiaCod(iso);
-    const pla = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
-    const cd  = todo[iso] || {};
-    horAplicar(iso, ambito, capa=>{
+    horAplicar(iso, ambito, (capa, previo)=>{
       capa['#modo'] = capa['#modo'] || {};
       capa['#modo'][key] = 'sec';
-      delete capa[key + '|T'];              // el texto de cuando estaba junta ya no va
+      delete capa[key + '|T'];
       for(let i = 0; i < 5; i++){
         const k = key + '|' + i;
-        if(!(k in cd) && !(k in pla) && txt) capa[k] = txt;   // no pisa lo ya cargado
+        if(!(k in capa) && !(k in previo.v) && txt) capa[k] = txt;   // no pisa lo ya cargado
       }
     });
   });
@@ -7941,55 +8412,36 @@ function horJuntarFila(iso, key){
     'Las cinco secciones pasan a compartir una sola casilla.', ambito=>{
     const filas = horDelDia(iso) || [];
     const f = filas.find(x => String(x.key) === String(key));
-    const prim = (f && f.natural === 'cel' && f.cel)
-      ? ((f.cel.map(c => c.v).find(v => v && String(v).trim())) || '') : '';
-    const todo = horGuardado();
-    const dia = horDiaCod(iso);
-    const pla = (todo['#plantilla'] && todo['#plantilla'][dia]) || {};
-    const cd  = todo[iso] || {};
-    horAplicar(iso, ambito, capa=>{
+    const prim = (f && f.cel) ? ((f.cel.map(c => c.v).find(v => v && String(v).trim())) || '') : '';
+    horAplicar(iso, ambito, (capa, previo)=>{
       capa['#modo'] = capa['#modo'] || {};
       capa['#modo'][key] = 'comun';
-      for(let i = 0; i < 5; i++) delete capa[key + '|' + i];   // los de cada sección ya no van
+      for(let i = 0; i < 5; i++) delete capa[key + '|' + i];
       const k = key + '|T';
-      if(!(k in cd) && !(k in pla) && prim) capa[k] = prim;
+      if(!(k in capa) && !(k in previo.v) && prim) capa[k] = prim;
     });
   });
 }
-// La fila vuelve a estar junta o separada como en la plantilla del Excel.
+// La fila vuelve a estar junta o separada como en el Excel.
 function horModoBase(iso, key){
   if(!horPuedeEditar()) return;
+  const todo = horGuardado();
+  if(todo[iso] && todo[iso]['#modo'] && (key in todo[iso]['#modo'])){
+    delete todo[iso]['#modo'][key];
+    if(!Object.keys(todo[iso]['#modo']).length) delete todo[iso]['#modo'];
+    horLimpiar(todo, iso); horGrabar(todo); horRefrescar();
+    return;
+  }
   const filas = horDelDia(iso) || [];
   const f = filas.find(x => String(x.key) === String(key));
-  const todo = horGuardado();
-  const dia = horDiaCod(iso);
-  // Se borran también los textos que habían quedado del otro formato, así el
-  // contador de cambios no muestra cosas que no se ven.
-  const sobra = (f && f.natural === 'comun') ? ['0','1','2','3','4'] : ['T'];
-  [todo[iso], (dia && todo['#plantilla']) ? todo['#plantilla'][dia] : null].forEach(capa=>{
-    if(!capa) return;
-    sobra.forEach(x => { delete capa[key + '|' + x]; });
-  });
-  if(todo[iso] && todo[iso]['#modo']) delete todo[iso]['#modo'][key];
-  if(dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia]['#modo'])
-    delete todo['#plantilla'][dia]['#modo'][key];
-  ['#modo'].forEach(k=>{
-    if(todo[iso] && todo[iso][k] && !Object.keys(todo[iso][k]).length) delete todo[iso][k];
-    if(dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia][k]
-       && !Object.keys(todo['#plantilla'][dia][k]).length) delete todo['#plantilla'][dia][k];
-  });
-  horLimpiar(todo, iso);
-  horGrabar(todo);
-  horRefrescar();
+  const nat = (f && f.natural === 'comun') ? 'comun' : 'sec';
+  horAplicar(iso, 'desde', capa=>{ capa['#modo'] = capa['#modo'] || {}; capa['#modo'][key] = nat; });
 }
 
 // ─── Dónde tiene clases cada sección (aula, taller, playón…) ───────────
 function horAulas(iso){
-  const todo = horGuardado();
-  const dia  = horDiaCod(iso);
-  const pla = (dia && todo['#plantilla'] && todo['#plantilla'][dia] && todo['#plantilla'][dia]['#aula']) || {};
-  const cd  = (todo[iso] && todo[iso]['#aula']) || {};
-  return Object.assign({}, pla, cd);
+  const f = horDelDia(iso);
+  return (f && f.aulas) || {};
 }
 function horAula(iso, sec){
   if(!horPuedeEditar()) return;
@@ -7999,28 +8451,14 @@ function horAula(iso, sec){
     const txt = prompt('¿Dónde tiene clases la sección ' + (sec + 1) + '?\n'
       + '(por ejemplo: Aula 3. Dejalo vacío para sacarlo)', a[sec] || '');
     if(txt === null) return;
-    horAplicar(iso, ambito, capa=>{
+    horAplicar(iso, ambito, (capa, previo)=>{
       capa['#aula'] = capa['#aula'] || {};
-      if(!txt.trim()) delete capa['#aula'][sec];
-      else capa['#aula'][sec] = txt.trim();
+      if(txt.trim()) capa['#aula'][sec] = txt.trim();
+      else if(previo && previo.aula[sec]) capa['#aula'][sec] = '';   // lo saca aunque venga de antes
+      else delete capa['#aula'][sec];
       if(!Object.keys(capa['#aula']).length) delete capa['#aula'];
     });
   });
-}
-// El encabezado de la tabla, con el lugar de cada sección abajo del nombre.
-function horCabezaHTML(iso, puede, chica){
-  const a = horAulas(iso);
-  const modo = puede && !chica && HOR_EDIT;
-  let th = '<th>HORARIO</th>';
-  for(let i = 0; i < 5; i++){
-    const nom = chica ? ('Sec. ' + (i + 1)) : ('Sección ' + (i + 1));
-    const lug = a[i] ? '<span class="hr-aula">📍 ' + horEsc(a[i]) + '</span>'
-              : (modo ? '<span class="hr-aula hr-aula-v">＋ lugar</span>' : '');
-    th += '<th class="s' + (i + 1) + (modo ? ' hr-ed' : '') + '"'
-        + (modo ? ' title="Poner dónde tiene clases" onclick="horAula(\'' + iso + '\',' + i + ')"' : '')
-        + '>' + nom + lug + '</th>';
-  }
-  return '<thead><tr>' + th + '</tr></thead>';
 }
 
 function horBorrarFila(iso, key){
@@ -8028,11 +8466,11 @@ function horBorrarFila(iso, key){
   const f = filas.find(x => String(x.key) === String(key));
   const que = f ? (f.h || f.hdr || '') : '';
   horAmbito(iso, '🗑️ Eliminar la fila' + (que ? ' de ' + horEsc(que) : ''),
-    'La fila deja de mostrarse. Se repone con "Volver a la plantilla".', ambito=>{
+    'La fila deja de mostrarse. Se repone con "Volver al Excel".', ambito=>{
     horAplicar(iso, ambito, capa=>{
       const add = capa['#add'] || [];
       const i = add.findIndex(e => String(e.id) === String(key));
-      if(i >= 0){ add.splice(i, 1); capa['#add'] = add; return; }   // era una fila agregada acá
+      if(i >= 0){ add.splice(i, 1); capa['#add'] = add; if(!add.length) delete capa['#add']; return; }
       capa['#del'] = capa['#del'] || [];
       if(capa['#del'].map(String).indexOf(String(key)) < 0) capa['#del'].push(String(key));
     });
@@ -8079,8 +8517,8 @@ function horMenuCel(iso, key, sec){
       h += b('⬇️ Combinar con la de abajo', "horCombinar('" + iso + "','" + key + "'," + c + ",'abajo')");
     if(sp.c > 1 || sp.r > 1) h += b('✂️ Separar este casillero', "horSeparar('" + iso + "','" + key + "'," + c + ")");
   }
-  if(f.cambiada) h += b('↺ Volver la fila como en la plantilla', "horModoBase('" + iso + "','" + key + "')");
-  if(cel.tocado) h += b('↺ Volver el texto a la plantilla', "horVolverBase('" + iso + "','" + key + "','" + sec + "')");
+  if(f.cambiada) h += b('↺ Volver la fila como en el Excel', "horModoBase('" + iso + "','" + key + "')");
+  if(cel.tocado) h += b('↺ Volver el texto al Excel', "horVolverBase('" + iso + "','" + key + "','" + sec + "')");
   h += b('Cancelar', '', ' hrm-gris');
   horPanel('Casillero', h);
 }
@@ -8094,7 +8532,7 @@ function horMenuFila(iso, key){
   if(f.tipo !== 'hdr') h += b('🕐 Cambiar el horario de la fila', "horEditarHora('" + iso + "','" + key + "')");
   if(f.tipo === 'comun') h += b('✂️ Separar en las 5 secciones', "horSepararFila('" + iso + "','" + key + "')");
   if(f.tipo === 'cel')   h += b('🔗 Juntar toda la fila en una sola', "horJuntarFila('" + iso + "','" + key + "')");
-  if(f.cambiada)         h += b('↺ Volver la fila como en la plantilla', "horModoBase('" + iso + "','" + key + "')");
+  if(f.cambiada)         h += b('↺ Volver la fila como en el Excel', "horModoBase('" + iso + "','" + key + "')");
   h += b('➕ Agregar una fila debajo', "horAgregarFila('" + iso + "','" + key + "')");
   h += b('🗑️ Eliminar esta fila', "horBorrarFila('" + iso + "','" + key + "')", ' hrm-rojo');
   h += b('Cancelar', '', ' hrm-gris');
@@ -8113,64 +8551,161 @@ function horRefrescar(){
   if(b){ b.innerHTML = horBloqueHTML(); }
 }
 
-// ─── La grilla de un día ────────────────────────────────────────────────
-// Dibuja fila por fila teniendo en cuenta los casilleros combinados: uno que
-// ocupa 2 columnas o 2 filas tapa a los de al lado, que no se vuelven a dibujar.
-function horFilasHTML(iso, puede, chica){
+// ─── Qué sección se está mirando (Todas o una sola) ─────────────────────
+// Se recuerda en cada equipo: el instructor de la Sección 3 la elige una vez
+// y la pizarra le queda siempre en su sección, en la pestaña y en el Panel.
+var HOR_SECF = (function(){
+  try{ const v = localStorage.getItem('suep_hor_seccion'); return (v === null || v === '') ? -1 : Number(v); }catch(_){ return -1; }
+})();
+function horVerSeccion(n){
+  HOR_SECF = (typeof n === 'number' && n >= 0 && n <= 4) ? n : -1;
+  try{ localStorage.setItem('suep_hor_seccion', String(HOR_SECF)); }catch(_){}
+  horRefrescar();
+}
+function horChipsSec(){
+  const b = (n, txt) => '<button class="hz-sf' + (n === HOR_SECF ? ' on' : '') + (n >= 0 ? ' s' + (n + 1) : '')
+    + '" onclick="horVerSeccion(' + n + ')">' + txt + '</button>';
+  let h = b(-1, 'Todas');
+  for(let i = 0; i < 5; i++) h += b(i, 'Sección ' + (i + 1));
+  return '<div class="hz-sfs">' + h + '</div>';
+}
+
+// ─── v1.6.8 · LA GRILLA NUEVA ───────────────────────────────────────────
+// Deja de ser una tabla: cada clase es una TARJETA con su color de sección,
+// su dibujito, la materia grande y el docente abajo. Las filas comunes
+// (almuerzo, estudio, orden interno…) son una franja de punta a punta. La
+// hora va en una pastilla a la izquierda y, si es hoy, la franja que está
+// corriendo en este momento se marca "EN CURSO".
+// Se arma con CSS grid, así los casilleros combinados (de dos columnas o de
+// dos filas) se siguen viendo combinados.
+function horGrillaHTML(iso, puede, chica){
   const filas = horDelDia(iso) || [];
   const spans = filas.spans || {};
+  const aulas = filas.aulas || {};
   const edita = puede && !chica;
   const modo  = edita && HOR_EDIT;
-  const ocupado = {};
-  const volver = (key, sec) => '<button class="hr-x" title="Volver a la plantilla" onclick="event.stopPropagation();horVolverBase(\''
-    + iso + '\',\'' + key + '\',\'' + sec + '\')">↺</button>';
-  const out = [];
+  const sf = HOR_SECF;                      // -1 = todas
+  const esHoy = iso === horHoy();
+  const ahora = horAhoraMin();
+  const cols = sf >= 0 ? 1 : 5;
+
+  // Qué casillero de origen tapa cada lugar (por los combinados)
+  const tapa = {};
+  const origen = {};
   filas.forEach((f, r)=>{
-    if(f.tipo === 'hdr'){
-      out.push('<tr class="hr-hdr">' + (modo
-        ? '<td colspan="6" class="hr-ed" onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')">' + horEsc(f.hdr) + ' <span class="hr-pt">⋯</span></td>'
-        : '<td colspan="6">' + horEsc(f.hdr) + '</td>') + '</tr>');
-      return;
-    }
-    const hora = modo
-      ? '<td class="hr-hora hr-ed" title="Opciones de la fila" onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')">'
-        + (horEsc(f.h) || '—') + ' <span class="hr-pt">⋯</span></td>'
-      : '<td class="hr-hora">' + (horEsc(f.h) || '—') + '</td>';
-
-    if(f.tipo === 'comun'){
-      const cls = 'hr-comun' + (f.tocado ? ' hr-toc' : '');
-      const cel = !edita
-        ? '<td colspan="5" class="' + cls + '">' + (horEsc(f.t) || '—') + '</td>'
-        : '<td colspan="5" class="' + cls + '" title="Tocá para cambiarlo" onclick="' + (modo
-            ? 'horMenuCel(\'' + iso + '\',\'' + f.key + '\',\'T\')'
-            : 'horEditar(\'' + iso + '\',\'' + f.key + '\',\'T\')') + '">'
-          + (horEsc(f.t) || '—') + ((f.tocado && !modo) ? volver(f.key, 'T') : '') + '</td>';
-      out.push('<tr>' + hora + cel + '</tr>');
-      return;
-    }
-
-    let tds = '';
+    if(f.tipo !== 'cel') return;
     for(let c = 0; c < 5; c++){
-      if(ocupado[r + ',' + c]) continue;
+      if(tapa[r + ',' + c]) continue;
       const sp = spans[f.key + '|' + c] || {};
       const cn = Math.max(1, Math.min(Number(sp.c) || 1, 5 - c));
       let tope = 1;
       for(let k = r + 1; k < filas.length && filas[k].tipo === 'cel'; k++) tope++;
       const rn = Math.min(Math.max(1, Number(sp.r) || 1), tope);
-      for(let i = 0; i < rn; i++) for(let j = 0; j < cn; j++){ if(i || j) ocupado[(r + i) + ',' + (c + j)] = true; }
-      const cel = ((f.cel || [])[c]) || { v:'' };
-      const clase = 'hr-cel s' + (c + 1) + (cel.tocado ? ' hr-toc' : '') + (!cel.v ? ' hr-vacio' : '')
-                  + ((cn > 1 || rn > 1) ? ' hr-mrg' : '');
-      const attrs = (cn > 1 ? ' colspan="' + cn + '"' : '') + (rn > 1 ? ' rowspan="' + rn + '"' : '');
-      if(!edita){ tds += '<td class="' + clase + '"' + attrs + '>' + (horEsc(cel.v) || '—') + '</td>'; continue; }
-      tds += '<td class="' + clase + '"' + attrs + ' title="Tocá para cambiarlo" onclick="' + (modo
-          ? 'horMenuCel(\'' + iso + '\',\'' + f.key + '\',' + c + ')'
-          : 'horEditar(\'' + iso + '\',\'' + f.key + '\',' + c + ')') + '">'
-        + (horEsc(cel.v) || '—') + ((cel.tocado && !modo) ? volver(f.key, c) : '') + '</td>';
+      origen[r + ',' + c] = { cn, rn };
+      for(let i = 0; i < rn; i++) for(let j = 0; j < cn; j++){ if(i || j) tapa[(r + i) + ',' + (c + j)] = r + ',' + c; }
     }
-    out.push('<tr>' + hora + tds + '</tr>');
   });
-  return out.join('');
+
+  const out = [];
+  // Encabezado de secciones
+  out.push('<div class="hz-h hz-h0" style="grid-row:1;grid-column:1">🕐</div>');
+  const secs = sf >= 0 ? [sf] : [0,1,2,3,4];
+  secs.forEach((s, i)=>{
+    const lug = aulas[s] ? '<span class="hz-aula">📍 ' + horEsc(aulas[s]) + '</span>'
+              : (modo ? '<span class="hz-aula hz-aula-v">＋ lugar</span>' : '');
+    out.push('<div class="hz-h s' + (s + 1) + (modo ? ' hz-ed' : '') + '" style="grid-row:1;grid-column:' + (i + 2) + '"'
+      + (modo ? ' title="Poner dónde tiene clases" onclick="horAula(\'' + iso + '\',' + s + ')"' : '') + '>'
+      + '<span class="hz-hn">' + (chica ? 'Sec. ' : 'Sección ') + (s + 1) + '</span>' + lug + '</div>');
+  });
+
+  const etiqueta = (tocado, org) => (tocado && edita) ? '<span class="hz-tag" title="Cambiado a mano">✏️ ' + horEsc(horOrigenTxt(org) || 'cambiado') + '</span>'
+                                   : (tocado ? '<span class="hz-dot" title="Cambiado a mano"></span>' : '');
+  const volver = (key, sec) => '<button class="hz-x" title="Volver al Excel" onclick="event.stopPropagation();horVolverBase(\''
+    + iso + '\',\'' + key + '\',\'' + sec + '\')">↺</button>';
+  const cuerpo = txt => {
+    const p = horPartir(txt);
+    if(!p.mat && !p.doc) return '<span class="hz-vac">Libre</span>';
+    return '<span class="hz-ic">' + horIcono(p.mat) + '</span><span class="hz-tx"><b>' + horEsc(p.mat) + '</b>'
+      + (p.doc ? '<small>' + horEsc(p.doc) + '</small>' : '') + '</span>';
+  };
+
+  filas.forEach((f, r)=>{
+    const R = r + 2;
+    if(f.tipo === 'hdr'){
+      out.push('<div class="hz-sep' + (modo ? ' hz-ed' : '') + '" style="grid-row:' + R + ';grid-column:1/-1"'
+        + (modo ? ' onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')"' : '') + '><span>' + horEsc(f.hdr) + '</span>'
+        + (modo ? ' <b class="hz-pt">⋯</b>' : '') + '</div>');
+      return;
+    }
+    const rg = horRango(f.h);
+    const enCurso = esHoy && rg && ahora >= rg.a && ahora < rg.b;
+    const paso = esHoy && rg && ahora >= rg.b;
+    const hora = rg ? '<b>' + rg.ini + '</b><small>' + rg.fin + '</small>' : '<b>' + (horEsc(f.h) || '—') + '</b>';
+    out.push('<div class="hz-hora' + (enCurso ? ' ahora' : '') + (paso ? ' paso' : '') + (modo ? ' hz-ed' : '')
+      + '" style="grid-row:' + R + ';grid-column:1"'
+      + (modo ? ' title="Opciones de la fila" onclick="horMenuFila(\'' + iso + '\',\'' + f.key + '\')"' : '') + '>'
+      + hora + (enCurso ? '<i>EN CURSO</i>' : '') + (modo ? '<b class="hz-pt">⋯</b>' : '') + '</div>');
+
+    if(f.tipo === 'comun'){
+      const cls = 'hz-com ' + horClaseComun(f.t) + (f.tocado ? ' toc' : '') + (enCurso ? ' ahora' : '') + (edita ? ' hz-click' : '');
+      const click = edita ? ' onclick="' + (modo ? 'horMenuCel' : 'horEditar') + '(\'' + iso + '\',\'' + f.key + '\',\'T\')"' : '';
+      out.push('<div class="' + cls + '" style="grid-row:' + R + ';grid-column:2/-1"' + click + '>'
+        + '<span class="hz-ic">' + horIcono(f.t) + '</span><span class="hz-ct">' + (horEsc(f.t) || '—') + '</span>'
+        + etiqueta(f.tocado, f.org) + ((f.tocado && edita && !modo) ? volver(f.key, 'T') : '') + '</div>');
+      return;
+    }
+    secs.forEach((c, i)=>{
+      let rr = r, cc = c, o = origen[r + ',' + c];
+      if(!o){
+        const t = tapa[r + ',' + c];
+        if(!t) return;
+        const [r0, c0] = t.split(',').map(Number);
+        if(sf < 0) return;                        // en la vista completa ya se dibujó desde su origen
+        if(r0 !== r) return;                      // tapado desde arriba: ya se dibujó
+        rr = r0; cc = c0; o = origen[t];
+      }
+      const ff = filas[rr];
+      const cel = ((ff.cel || [])[cc]) || { v:'' };
+      const colIni = sf >= 0 ? 2 : (cc + 2);
+      const colSpan = sf >= 0 ? 1 : o.cn;
+      const cls = 'hz-c s' + (cc + 1) + (cel.tocado ? ' toc' : '') + (!cel.v ? ' vac' : '') + (enCurso ? ' ahora' : '')
+        + ((o.cn > 1 || o.rn > 1) ? ' mrg' : '') + (edita ? ' hz-click' : '');
+      const click = edita ? ' onclick="' + (modo ? 'horMenuCel' : 'horEditar') + '(\'' + iso + '\',\'' + ff.key + '\',' + cc + ')"' : '';
+      const junta = (sf < 0 && o.cn > 1) ? '<span class="hz-junta">Secciones ' + (cc + 1) + ' a ' + (cc + o.cn) + '</span>' : '';
+      out.push('<div class="' + cls + '" style="grid-row:' + (rr + 2) + ' / span ' + o.rn + ';grid-column:' + colIni + ' / span ' + colSpan + '"' + click + '>'
+        + cuerpo(cel.v) + junta + etiqueta(cel.tocado, cel.org) + ((cel.tocado && edita && !modo) ? volver(ff.key, cc) : '') + '</div>');
+    });
+  });
+  return '<div class="hz' + (chica ? ' hz-chica' : '') + (sf >= 0 ? ' hz-una' : '') + '" data-cc-no style="--cols:' + cols + '">' + out.join('') + '</div>';
+}
+// "Ahora" y "Lo que sigue": para el Panel de inicio, solo si es hoy y hay clases.
+function horAhoraHTML(iso){
+  if(iso !== horHoy()) return '';
+  const filas = horDelDia(iso) || [];
+  const ahora = horAhoraMin();
+  let act = -1, sig = -1;
+  filas.forEach((f, i)=>{
+    if(f.tipo === 'hdr') return;
+    const rg = horRango(f.h); if(!rg) return;
+    if(act < 0 && ahora >= rg.a && ahora < rg.b) act = i;
+    if(sig < 0 && rg.a > ahora) sig = i;
+  });
+  if(act < 0 && sig < 0) return '';
+  const resumen = (f) => {
+    if(!f) return '';
+    if(f.tipo === 'comun') return horIcono(f.t) + ' ' + horEsc(f.t);
+    const txts = (f.cel || []).map(c => horPartir(c.v).mat).filter(Boolean);
+    if(HOR_SECF >= 0){ const p = horPartir(((f.cel || [])[HOR_SECF] || {}).v); return horIcono(p.mat) + ' Sección ' + (HOR_SECF + 1) + ': ' + horEsc(p.mat || 'Libre'); }
+    const uniq = Array.from(new Set(txts));
+    return uniq.length === 1 ? horIcono(uniq[0]) + ' ' + horEsc(uniq[0]) + ' (todas)' : '📚 Clases por sección';
+  };
+  const bloque = (lab, cls, i) => {
+    if(i < 0) return '';
+    const f = filas[i]; const rg = horRango(f.h);
+    return '<div class="hz-now ' + cls + '"><span class="hz-now-l">' + lab + (rg ? ' · ' + rg.ini + ' a ' + rg.fin : '') + '</span>'
+      + '<span class="hz-now-t">' + resumen(f) + '</span></div>';
+  };
+  return '<div class="hz-nows">' + bloque('🔴 Ahora', 'n-ya', act) + bloque('⏭️ Después', 'n-sig', sig) + '</div>';
 }
 function horTablaHTML(){
   const hoy = horHoy();
@@ -8178,7 +8713,6 @@ function horTablaHTML(){
   if(lunes < HOR_DESDE) lunes = HOR_DESDE;
   HOR_SEM = lunes;
   const viernes = horSumar(lunes, 4);
-  // El día elegido tiene que ser de esta semana; si no, se toma hoy o el lunes.
   if(!HOR_DIA || HOR_DIA < lunes || HOR_DIA > viernes){
     HOR_DIA = (hoy >= lunes && hoy <= viernes) ? hoy : lunes;
   }
@@ -8186,7 +8720,6 @@ function horTablaHTML(){
     return d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'long'}) : iso; };
   const puede = horPuedeEditar();
 
-  // Fila de días, con la cantidad de cambios de cada uno
   const chips = HOR_DIAS.map((dia, i)=>{
     const iso = horSumar(lunes, i);
     const n = horCuantosCambios(iso);
@@ -8196,7 +8729,7 @@ function horTablaHTML(){
         <span class="hr-tab-dia">${HOR_NOM[dia]}</span>
         <span class="hr-tab-num">${d?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'):''}</span>
         ${iso===hoy?'<span class="hr-tab-hoy">HOY</span>':''}
-        ${n?`<span class="hr-tab-pto" title="${n} ${n===1?'cambio':'cambios'} a mano"></span>`:''}
+        ${n?`<span class="hr-tab-pto" title="${n} ${n===1?'cambio':'cambios'} respecto del Excel"></span>`:''}
       </button>`;
   }).join('');
 
@@ -8211,29 +8744,31 @@ function horTablaHTML(){
       <button class="hr-b" onclick="horSemana(1)">Semana siguiente ›</button>
     </div>
     <div class="hr-tabs">${chips}</div>
-    <div class="hr-dia hr-uno${HOR_DIA===hoy?' hr-es-hoy':''}">
+    <div class="hr-dia hr-uno${HOR_DIA===hoy?' hr-es-hoy':''}" data-cc-no>
       <div class="hr-dia-cab">
         <span class="hr-dia-nom">${horEsc(lab)}${HOR_DIA===hoy?' <b class="hr-chip">HOY</b>':''}</span>
         <span class="hr-dia-der">
-          ${cambios?`<span class="hr-mod">${cambios} ${cambios===1?'cambio':'cambios'} a mano</span>`:''}
+          ${cambios?`<span class="hr-mod">✏️ ${cambios} ${cambios===1?'cambio':'cambios'} respecto del Excel</span>`:''}
           ${puede?`<button class="hr-reset${HOR_EDIT?' on':''}" onclick="horModo()">${HOR_EDIT?'✅ Listo':'🛠️ Modo edición'}</button>`:''}
-          ${(puede&&cambios)?`<button class="hr-reset" onclick="horVolverDia('${HOR_DIA}')">↺ Volver a la plantilla</button>`:''}
+          ${(puede&&cambios)?`<button class="hr-reset" onclick="horVolverDia('${HOR_DIA}')">↺ Volver al Excel</button>`:''}
         </span>
       </div>
       ${!puede
         ? '<div class="hr-aviso hr-solo">👁️ Estás viendo el horario. Lo cambian la Secretaría Académica y las administradoras.</div>'
         : (HOR_EDIT
-          ? '<div class="hr-aviso hr-edit">🛠️ Modo edición. Tocá el <b>horario</b> de la izquierda para eliminar o agregar una fila, un <b>casillero</b> para separarlo, juntarlo, combinarlo o cambiarle el texto, y el <b>título de una sección</b> para poner dónde tiene clases. Cada cambio te pregunta si vale solo para ese día o para todos los días iguales.</div>'
-          : '<div class="hr-aviso">✏️ Tocá cualquier casillero para cambiarle el texto (queda solo en esa fecha). Para eliminar filas o combinar casilleros, entrá en <b>🛠️ Modo edición</b>.</div>')}
-      <div class="hr-scroll hr-claro"><table class="hr-tabla hr-grande">
-        ${horCabezaHTML(HOR_DIA, puede, false)}
-        <tbody>${horFilasHTML(HOR_DIA, puede, false)}</tbody></table></div>
+          ? '<div class="hr-aviso hr-edit">🛠️ <b>Modo edición.</b> Tocá la <b>hora</b> de la izquierda para eliminar o agregar una fila, una <b>tarjeta</b> para separarla, juntarla, combinarla o cambiarle el texto, y el <b>título de una sección</b> para poner dónde tiene clases.</div>'
+          : '<div class="hr-aviso">✏️ <b>Tocá cualquier tarjeta para cambiarla.</b> Lo que cargás queda <b>fijo de ese día en adelante</b> (todas las semanas) hasta que lo vuelvas a cambiar. Si es algo de un solo día, elegí «Solo este día». Para eliminar filas o combinar, entrá en <b>🛠️ Modo edición</b>.</div>')}
+      ${horChipsSec()}
+      ${horAhoraHTML(HOR_DIA)}
+      <div class="hz-scroll">${horGrillaHTML(HOR_DIA, puede, false)}</div>
     </div>`;
 }
 
 // ─── La pestaña completa ───
 function renderHorario(){
   horEnsureEstilos();
+  // Al entrar, se trae de la nube lo último (por si alguien lo cambió recién).
+  setTimeout(()=>{ horTraerNube(true).then(c=>{ if(c) horRefrescar(); }).catch(()=>{}); }, 50);
   return `<div class="hr-wrap">
     <div class="hr-head">
       <div><h3>🕐 Pizarra Digital de Horario de Clases</h3>
@@ -8247,34 +8782,44 @@ function renderHorario(){
 function horBloqueHTML(){
   if(!horVigente()) return '';
   const hoy = horHoy();
-  // Si hoy es sábado o domingo, se muestra el lunes que viene.
   let iso = hoy, filas = horDelDia(iso), aclara = '';
   if(!filas){
     for(let i = 1; i <= 3; i++){
       const p = horSumar(hoy, i);
       const f = horDelDia(p);
-      if(f){ iso = p; filas = f; aclara = ' (el próximo día de clases)'; break; }
+      if(f){ iso = p; filas = f; aclara = ' · próximo día de clases'; break; }
     }
   }
   if(!filas) return '';
   const d = horParse(iso);
   let lab = d.toLocaleDateString('es-AR',{weekday:'long', day:'2-digit', month:'long'});
   lab = lab.charAt(0).toUpperCase() + lab.slice(1);
-  const cambios = horCuantosCambios(iso);
-
-  // v1.5.97 — El Panel muestra SIEMPRE un solo día (el de hoy), no la semana.
-  const cuerpo = horFilasHTML(iso, false, true);
+  const cambios = filas.nCambios || 0;
 
   return `<div class="hr-rail">
-      <span class="hr-rail-tit">🕐 Pizarra digital de horario de clases</span>
+      <span class="hr-rail-tit">🕐 Horario de clases · ${iso===hoy?'hoy':'próximo día'}</span>
       <span class="hr-rail-sub">${horEsc(lab)}${aclara}</span>
       <button class="hr-ver" onclick="selectSector('HORARIO_DIARIO')">Ver la semana completa ›</button>
     </div>
-    ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto de la plantilla.</div>`:''}
-    <div class="hr-scroll hr-claro"><table class="hr-tabla hr-chica">
-      ${horCabezaHTML(iso, false, true)}
-      <tbody>${cuerpo}</tbody></table></div>`;
+    ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto del Excel.</div>`:''}
+    <div class="hz-panel" data-cc-no>
+      ${horChipsSec()}
+      ${horAhoraHTML(iso)}
+      <div class="hz-scroll">${horGrillaHTML(iso, false, true)}</div>
+    </div>`;
 }
+// Cada minuto se vuelve a marcar qué franja está "EN CURSO" en el Panel.
+setInterval(()=>{
+  try{
+    if(document.hidden) return;
+    if(document.getElementById('horMenuOv')) return;
+    const b = document.getElementById('horBox');
+    if(b) b.innerHTML = horBloqueHTML();
+  }catch(_){}
+}, 60 * 1000);
+
+window.horEdGuardar = horEdGuardar; window.horEdRapido = horEdRapido;
+window.horVerSeccion = horVerSeccion;
 
 window.horVerDia = horVerDia;
 window.horEditar = horEditar; window.horVolverBase = horVolverBase;
@@ -13400,7 +13945,57 @@ function _rtMarcarOk(){ try{ localStorage.removeItem('suep_rt_caido'); }catch(_)
   }catch(_){}
 })();
 
-async function pullAllFromSupabase(opts){
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.8 — UNA SOLA DESCARGA A LA VEZ (lentitud al entrar)
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA: al abrir la app arrancaban DOS descargas de la nube casi al
+// mismo tiempo (la del splash y la de "bajar al arrancar"), y al tocar
+// INGRESAR arrancaba una TERCERA, que además se esperaba sin tope de tiempo.
+// Una vez por día una de ellas es la descarga COMPLETA, así que en el celular
+// se bajaba todo dos o tres veces y el botón quedaba en "CONECTANDO..." hasta
+// que terminaba. Con señal floja eso eran muchos segundos.
+// AHORA: si ya hay una descarga en marcha, el que pide otra se engancha a esa
+// en vez de empezar de nuevo. Y al ingresar se espera como mucho unos segundos:
+// lo que falte termina de bajar con la app ya abierta y la pantalla se
+// refresca sola cuando llega.
+// ═══════════════════════════════════════════════════════════════════
+var _pullEnCurso = null, _pullEnCursoFull = false, _pullUltimoN = 0;
+function _pullNecesitaFull(){
+  try{ return (Date.now() - (+localStorage.getItem('suep_last_full') || 0)) > 24*60*60*1000; }catch(_){ return false; }
+}
+function pullAllFromSupabase(opts){
+  const quiereFull = !!(opts && opts.full) || !_getPullCursor();
+  if(_pullEnCurso && (_pullEnCursoFull || !quiereFull)) return _pullEnCurso;
+  const previa = _pullEnCurso || Promise.resolve();
+  const p = previa.catch(()=>{}).then(()=> _pullAllReal(opts)).then(ok=>{
+    try{ if(ok && _pullUltimoN > 0) _refrescarVistasVivas(); }catch(_){}
+    return ok;
+  });
+  _pullEnCurso = p; _pullEnCursoFull = quiereFull;
+  p.finally(()=>{ if(_pullEnCurso === p){ _pullEnCurso = null; _pullEnCursoFull = false; } }).catch(()=>{});
+  return p;
+}
+// Vuelve a dibujar lo que se está mirando cuando llegan datos nuevos
+// (Panel de inicio y pizarra de horario). Espera un momento para juntar
+// varios cambios en uno solo y no lo hace si alguien está escribiendo.
+var _refVivasT = null;
+function _refrescarVistasVivas(clave){
+  clearTimeout(_refVivasT);
+  _refVivasT = setTimeout(()=>{
+    try{
+      if(typeof CU === 'undefined' || !CU) return;
+      if(document.getElementById('horMenuOv')) return;          // hay una ventana del horario abierta
+      if(typeof gdEscribiendoAhora === 'function' && gdEscribiendoAhora()) return;
+      if((!clave || clave === HOR_KEY) && typeof horRefrescar === 'function'
+         && (document.getElementById('horTabla') || document.getElementById('horBox'))) horRefrescar();
+      if(document.getElementById('iniCuerpo') && typeof iniPintar === 'function'){
+        const ae = document.activeElement;
+        if(!(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) iniPintar();
+      }
+    }catch(e){ console.warn('No se pudo refrescar la pantalla:', e); }
+  }, 900);
+}
+async function _pullAllReal(opts){
   // full = bajar TODO (primera vez, o reconciliación forzada). Si no, bajar solo lo nuevo.
   const cursor = _getPullCursor();
   const full = !!(opts && opts.full) || !cursor;
@@ -13493,6 +14088,7 @@ async function pullAllFromSupabase(opts){
     }
     if(full){ localStorage.setItem('suep_last_full', String(Date.now())); _rtMarcarOk(); }
     const n = (data && data.length) || 0;
+    _pullUltimoN = n;
     syncStatus(full ? ('✓ Datos al día ('+n+' claves)') : (n ? ('✓ '+n+' cambio'+(n!==1?'s':'')) : '✓ Sin cambios'), '#34d399');
     return true;
   }catch(err){
@@ -13614,6 +14210,10 @@ function subscribeRealtime(){
           } else if(CS && CM && row.key === S.key(CS.id, CM.id)){
             renderTable();
           }
+          // v1.6.8 — La pizarra de horario y el Panel de inicio no son "la tabla
+          // que se está mirando", así que antes no se refrescaban solos: el
+          // cambio de otro equipo recién se veía al volver a entrar.
+          try{ _refrescarVistasVivas(row.key); }catch(_){}
           syncStatus('🔄 Actualizado desde otro dispositivo', '#7aafd4');
         }
     )
@@ -13629,6 +14229,22 @@ function subscribeRealtime(){
     });
 }
 
+// v1.6.8 — Solo lo que hace falta para validar el ingreso (contraseñas
+// cambiadas y usuarios dados de alta o de baja desde otro equipo).
+async function _loginClavesFrescas(){
+  try{
+    const claves = ['suep_pwd_overrides','suep_dyn_users'];
+    const prot = new Set([..._getPendientes(), ..._getReemplazos()]);
+    const q = clienteS.from('app_data').select('key,value').in('key', claves);
+    const r = await Promise.race([q, new Promise(res=>setTimeout(()=>res(null), 3500))]);
+    if(!r || r.error || !Array.isArray(r.data)) return false;
+    r.data.forEach(row=>{
+      if(prot.has(row.key)) return;
+      try{ localStorage.setItem(row.key, JSON.stringify(row.value)); }catch(_){}
+    });
+    return true;
+  }catch(_){ return false; }
+}
 // ─── Engancharse al login para sincronizar al entrar ───
 // ✅ FIX CONTRASEÑAS: Primero descargamos Supabase (contraseñas, usuarios dinámicos)
 // y DESPUÉS verificamos credenciales. Así, un cambio de contraseña hecho en otro
@@ -13642,8 +14258,15 @@ window.doLogin = async function(){
   if(btn){ btn.disabled = true; btn.textContent = '☁️ CONECTANDO...'; }
 
   // 2. Bajar datos actualizados de Supabase ANTES de verificar credenciales
+  // v1.6.8 — Con tope: se espera la descarga como mucho 4 segundos. Si no
+  // llegó, se piden SOLO las contraseñas y los usuarios (dos datos chicos) y
+  // se entra; el resto termina de bajar con la app abierta.
   try {
-    await pullAllFromSupabase();
+    const listo = await Promise.race([
+      pullAllFromSupabase().then(()=>true, ()=>false),
+      new Promise(r=>setTimeout(()=>r(false), 4000))
+    ]);
+    if(!listo) await _loginClavesFrescas();
   } catch(e) {
     console.warn('Sin conexión a Supabase, usando datos locales:', e);
   }
@@ -15538,6 +16161,33 @@ function _autVigentes(){
   });
   out.sort((a,b)=> (a.hasta - b.hasta) || (a.desde - b.desde));
   return out;
+}
+// v1.6.8 — Licencias para la pizarra del Panel de inicio: las que están
+// corriendo hoy y las que arrancan dentro de los próximos 'antes' días.
+// Las Art. 12 no van acá (tienen su propia nota de "autorizado").
+function _licVigentesPanel(antes){
+  const hoy = _licHoy0();
+  const ant = (typeof antes === 'number' && antes >= 0) ? antes : 3;
+  const out = [];
+  (Array.isArray(_licRows()) ? _licRows() : []).forEach(r=>{
+    if(!r || r.tipo === 'AUT_12') return;
+    const desde = _licParseF(r.desde);
+    const hasta = _licParseF(r.hasta);
+    const ini = desde || hasta;
+    if(!ini) return;
+    if(hasta && hoy > hasta) return;                       // ya terminó
+    const empieza = Math.round((ini - hoy) / 86400000);    // >0: todavía no arrancó
+    if(empieza > ant) return;                              // arranca más adelante
+    const diff = hasta ? Math.round((hasta - hoy) / 86400000) : null;
+    let presenta = null; try{ presenta = hasta ? _licFechaPresenta(r) : null; }catch(_){}
+    out.push({ r, p:_licPersona(r.lp), desde:ini, hasta, diff, empieza:Math.max(0, empieza), presenta });
+  });
+  out.sort((a,b)=> (a.empieza - b.empieza) || ((a.hasta||0) - (b.hasta||0)));
+  return out;
+}
+function _licTipoCorto(id){
+  for(const g of LIC_TIPOS){ const it = g.items.find(i=>i.id===id); if(it) return 'Licencia ' + it.short; }
+  return id ? String(id) : 'Licencia';
 }
 function _licCupos(){ try{ return S.get(LIC_S, LIC_CUPOS_M); }catch(_){ return []; } }
 function _licDePersona(lp){ return _licRows().filter(r=>String(r.lp)===String(lp)); }
