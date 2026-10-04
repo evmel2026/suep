@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.8">
+<meta name="app-version" content="1.6.9">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2709,6 +2709,9 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
     <div class="padm-tabs">
       <button class="padm-tab active" id="padmTab_usuarios" onclick="switchPadmTab('usuarios')">👤 Usuarios</button>
       <button class="padm-tab" id="padmTab_nuevo" onclick="switchPadmTab('nuevo')">➕ Nuevo usuario</button>
+      <button class="padm-tab" id="padmTab_pestanas" onclick="switchPadmTab('pestanas')">🗂️ Pestañas</button>
+      <button class="padm-tab" id="padmTab_respaldo" onclick="switchPadmTab('respaldo')">💾 Respaldo</button>
+      <button class="padm-tab" id="padmTab_ciclo" onclick="switchPadmTab('ciclo')">📅 Ciclo anual</button>
     </div>
     <div class="padm-body" id="padmBody"></div>
   </div>
@@ -10110,9 +10113,9 @@ function getNextAutoValue(field){
       const m = r._ts.match(/(\d{4})/);
       return m && parseInt(m[1]) === currentYear;
     });
-    if(yearRows.length === 0) return field.start || 1;
+    if(yearRows.length === 0) return _v9Start(field);
     const maxN = Math.max(...yearRows.map(r => parseInt(r[field.key]) || 0));
-    return Math.max(maxN + 1, field.start || 1);
+    return Math.max(maxN + 1, _v9Start(field));
   }
   return '';
 }
@@ -11171,7 +11174,7 @@ async function _saveRecordCore(){
           try{
             const year = new Date().getFullYear();
             const contadorKey = 'contador_' + CS.id + '_' + CM.id + '_' + year;
-            const piso = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
+            const piso = Math.max(_v9Start(autoField), usados.size ? Math.max(...usados) + 1 : _v9Start(autoField));
             const { data: numReservado, error: errNum } = await _conTimeout(
               clienteS.rpc('suep_reservar_numero', { p_contador: contadorKey, p_piso: piso }), 8000);
             if(!errNum && numReservado != null){
@@ -11184,7 +11187,7 @@ async function _saveRecordCore(){
         }
         if(!reservadoOk){
           // Fallback local (sin internet o si la RPC no existe todavía)
-          let n = Math.max(autoField.start || 1, usados.size ? Math.max(...usados) + 1 : (autoField.start || 1));
+          let n = Math.max(_v9Start(autoField), usados.size ? Math.max(...usados) + 1 : _v9Start(autoField));
           while(usados.has(n)) n++;
           data[autoField.key] = String(n);
         }
@@ -14002,6 +14005,9 @@ async function _pullAllReal(opts){
   syncStatus(full ? '☁️ Descargando datos...' : '☁️ Sincronizando...', '#fbbf24');
   try{
     let consulta = clienteS.from('app_data').select('key,value,updated_at');
+    // v1.6.9 — Los archivos de ciclos cerrados (zarch_…) quedan solo en la nube:
+    // no se bajan a los equipos (pesan y no hacen falta para trabajar).
+    consulta = consulta.not('key', 'like', 'zarch_%');
     if(!full && cursor) consulta = consulta.gt('updated_at', cursor);
     const { data, error } = await consulta;
     if(error){
@@ -14107,6 +14113,8 @@ function subscribeRealtime(){
         (payload) => {
           const row = payload.new || payload.old;
           if(!row) return;
+          // v1.6.9 — archivos de ciclos cerrados: no se guardan en el equipo
+          if(String(row.key||'').indexOf('zarch_') === 0) return;
           // ⛔ v1.5.85 — ACÁ ESTABA EL PROBLEMA. Antes, el cursor se adelantaba con
           // cualquier aviso de realtime, incluso con los que más abajo se descartan.
           // Un aviso informa que cambió UNA fila, no que ya tengamos todo hasta ese
@@ -15299,7 +15307,8 @@ async function seedExpedientes(){
   try{
     const FLAG = 'suep_exp_seed_v1';
     if(_expRows().length){ try{ localStorage.setItem(FLAG,'1'); }catch(_){} return; }
-    if(localStorage.getItem(FLAG)==='1'){
+    // v1.6.9 — Cerrado el ciclo 2026, el libro arranca vacío: nunca se vuelve a sembrar.
+    if(localStorage.getItem(FLAG)==='1' || (typeof cicloActual==='function' && cicloActual() > 2026)){
       try{
         if(typeof _fetchModuloFresco==='function'){
           const fresco = await _fetchModuloFresco(EXP_S, EXP_M);
@@ -22004,6 +22013,7 @@ async function rdCompararNube(){
     if(error) throw error;
     const mapa = {};
     (data || []).forEach(row => {
+      if(String(row.key||'').indexOf('zarch_') === 0) return;   // v1.6.9: archivos de ciclos
       mapa[row.key] = Array.isArray(row.value) ? row.value.length : (row.value == null ? 0 : 1);
     });
     RD_NUBE = mapa;
@@ -22031,6 +22041,1526 @@ async function rdBajarTodo(){
   }else{
     alert('⚠️ No se pudo conectar con la nube. Seguís viendo la copia de este equipo.');
   }
+}
+
+</script>
+<style id="v169css">
+/* ══ v1.6.9 · Respaldo / Ciclo anual / Editor de pestañas ══ */
+.padm-tabs{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.padm-tabs::-webkit-scrollbar{display:none}
+.padm-tab{white-space:nowrap;flex-shrink:0}
+.v9{--v9-tx:#dce8f4;--v9-tx2:#9fbdd6;--v9-bd:rgba(122,175,212,.18);--v9-sf:rgba(255,255,255,.035);--v9-acc:#7aafd4;--v9-ok:#10b981;--v9-in:#0d1b2e;color:var(--v9-tx);display:flex;flex-direction:column;gap:12px;font-size:13px}
+.v9-card{background:var(--v9-sf);border:1px solid var(--v9-bd);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.v9-hero{background-color:#10233b;background-image:linear-gradient(135deg,rgba(29,78,216,.28),rgba(13,148,136,.16));border-color:rgba(122,175,212,.3)}
+.v9-mal{border-color:rgba(248,113,113,.45);color:#fca5a5}
+.v9-h{font-size:16px;font-weight:800;color:var(--v9-tx);letter-spacing:.2px}
+.v9-h3{font-size:13.5px;font-weight:800;color:var(--v9-tx)}
+.v9-p{color:var(--v9-tx2);line-height:1.55;font-size:12.5px}
+.v9-p b{color:var(--v9-tx)}
+.v9-fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.v9-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.v9-grid2{grid-template-columns:1fr}}
+.v9-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:14px;border-radius:14px;border:1px solid var(--v9-bd);background-color:#0f2440;background-image:linear-gradient(160deg,rgba(122,175,212,.14),rgba(122,175,212,.02));color:var(--v9-tx);cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s,border-color .12s}
+.v9-tile:hover{transform:translateY(-2px);border-color:var(--v9-acc)}
+.v9-tile b{font-size:13.5px;color:var(--v9-tx)}
+.v9-tile small{font-size:11.5px;color:var(--v9-tx2)}
+.v9-tile-i{font-size:24px;margin-bottom:4px}
+.v9-tile-off{opacity:.55;cursor:not-allowed}
+.v9-tile-off:hover{transform:none}
+.v9-btn{align-self:flex-start;padding:9px 14px;border-radius:10px;border:1px solid var(--v9-bd);background-color:#173252;color:#e6f0fa;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+.v9-btn-ok{background-color:#0f766e;background-image:linear-gradient(135deg,#0f766e,#0a5751);color:#ffffff;border-color:#0f766e}
+.v9-btn-sec{background-color:transparent;color:var(--v9-tx2)}
+.v9-mini{padding:5px 10px;border-radius:8px;border:1px solid var(--v9-bd);background-color:rgba(122,175,212,.1);color:var(--v9-tx);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.v9-chip{display:inline-block;align-self:flex-start;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background-color:rgba(122,175,212,.14);color:var(--v9-tx)}
+.v9-chip-ok{background-color:rgba(16,185,129,.18);color:#6ee7b7}
+.v9-chip-mal{background-color:rgba(251,191,36,.16);color:#fcd34d}
+.v9-aviso{padding:10px 14px;border-radius:12px;background-color:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);color:#fde68a;font-size:12px;line-height:1.5}
+.v9-aviso b{color:inherit}
+.v9-pasos{display:grid;gap:6px;margin-top:4px}
+.v9-pasos > div{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--v9-tx2);line-height:1.45}
+.v9-pasos i{font-style:normal;font-weight:800;flex-shrink:0;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background-color:#7aafd4;color:#08131f;font-size:11px}
+.v9-lista{display:flex;flex-direction:column;gap:2px;max-height:280px;overflow:auto;border:1px solid var(--v9-bd);border-radius:10px;padding:4px}
+.v9-lista-alta{max-height:340px}
+.v9-li{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;color:var(--v9-tx)}
+.v9-li:hover{background-color:rgba(122,175,212,.08)}
+.v9-li input{accent-color:#10b981;flex-shrink:0}
+.v9-li-n{flex:1;font-size:12.5px;color:var(--v9-tx)}
+.v9-li-c{font-size:11px;color:var(--v9-tx2);white-space:nowrap}
+.v9-radio{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:10px;border:1px solid var(--v9-bd);cursor:pointer;color:var(--v9-tx2);font-size:12.5px;line-height:1.5}
+.v9-radio b{color:var(--v9-tx)}
+.v9-radio input{margin-top:3px;accent-color:#10b981}
+.v9-ciclo{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid var(--v9-bd)}
+.v9-ciclo small{display:block;color:var(--v9-tx2);font-size:11px;margin-top:2px}
+.v9-tabla{width:100%;border-collapse:collapse;font-size:12px}
+.v9-tabla th{text-align:left;color:var(--v9-tx2);font-weight:700;padding:6px;border-bottom:1px solid var(--v9-bd)}
+.v9-tabla td{padding:6px;border-bottom:1px solid var(--v9-bd);color:var(--v9-tx)}
+.v9-lab{font-size:11px;font-weight:700;color:var(--v9-tx2);text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
+.v9-in{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--v9-bd);background-color:var(--v9-in);color:var(--v9-tx);font-size:13px;font-family:inherit;outline:none}
+.v9-in:focus{border-color:var(--v9-acc)}
+.v9-prog{position:fixed;inset:0;z-index:100000;background:rgba(5,12,22,.72);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:18px}
+.v9-prog-box{width:100%;max-width:420px;background-color:#0f1c2e;border:1px solid rgba(122,175,212,.3);border-radius:16px;padding:20px;color:#dce8f4;display:flex;flex-direction:column;gap:10px;font-family:inherit}
+.light-mode .v9-prog-box{background-color:#ffffff;color:#0f2236;border-color:#c9d7e4}
+.v9-prog-t{font-size:15px;font-weight:800}
+.v9-prog-m{font-size:12.5px;color:#9fbdd6;white-space:pre-wrap;line-height:1.5}
+.light-mode .v9-prog-m{color:#3d5a74}
+.v9-prog-bar{height:8px;border-radius:6px;background-color:rgba(122,175,212,.15);overflow:hidden}
+.v9-prog-bar i{display:block;height:100%;width:5%;background-color:#10b981;transition:width .3s}
+.v9-prog-box .v9-p{color:#9fbdd6}
+.light-mode .v9-prog-box .v9-p{color:#3d5a74}
+.v9-bienv{align-items:center;text-align:center}
+.v9-bienv .v9-btn{align-self:center}
+.v9-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;display:flex;gap:8px;align-items:center;max-width:calc(100% - 32px);padding:10px 12px 10px 16px;border-radius:14px;background-color:#13263f;border:1px solid rgba(251,191,36,.45);color:#fde68a;font-size:12.5px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.light-mode .v9-toast{background-color:#fffbeb;color:#7c4a03;border-color:#f3d48a}
+.v9-toast button{border:none;border-radius:8px;padding:6px 10px;background-color:rgba(251,191,36,.2);color:inherit;font-weight:700;cursor:pointer;font-family:inherit}
+/* editor de pestañas */
+.pe-grupo{border:1px solid var(--v9-bd);border-left:4px solid var(--gc);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;background-color:var(--v9-sf)}
+.pe-sub{margin:4px 0 2px 10px}
+.pe-gh{display:flex;align-items:center;gap:8px;padding:6px 6px 8px}
+.pe-gh-i{font-size:16px;width:22px;text-align:center}
+.pe-gh-n{flex:1;font-weight:800;font-size:13px;color:var(--v9-tx)}
+.pe-gh-n small{display:block;font-weight:500;font-size:10.5px;color:var(--v9-tx2)}
+.pe-fila{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:9px;background-color:rgba(122,175,212,.05);border-left:3px solid var(--pc,transparent)}
+.pe-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.pe-nom{flex:1;min-width:0;font-size:12.5px;color:var(--v9-tx);overflow:hidden;text-overflow:ellipsis}
+.pe-nom small{color:var(--v9-tx2);font-size:11px}
+.pe-acc{display:flex;gap:3px;flex-shrink:0}
+.pe-acc button{min-width:28px;height:28px;border-radius:7px;border:1px solid var(--v9-bd);background-color:rgba(122,175,212,.08);color:var(--v9-tx);cursor:pointer;font-size:12px;padding:0 6px;font-family:inherit}
+.pe-acc button:disabled{opacity:.3;cursor:default}
+.pe-vacio{font-size:11.5px;color:var(--v9-tx2);padding:4px 8px 8px}
+.pe-papelera{border-style:dashed}
+.pe-iconos{display:flex;flex-wrap:wrap;gap:4px;max-height:118px;overflow:auto;padding:2px}
+.pe-iconos button{width:34px;height:34px;border-radius:8px;border:1px solid var(--v9-bd);background-color:transparent;font-size:17px;cursor:pointer}
+.pe-iconos button.on{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.35)}
+.pe-colores{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pe-colores button{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.pe-colores button.on{border-color:#ffffff;box-shadow:0 0 0 2px #10b981}
+.pe-colores input[type=color]{width:34px;height:30px;border:none;background:none;cursor:pointer;padding:0}
+.pe-mod{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pe-mod .v9-in{flex:1;min-width:150px}
+.pe-elim{opacity:.55}
+.pe-campo{display:flex;gap:8px;padding:8px;border-radius:10px;border:1px solid var(--v9-bd);background-color:rgba(122,175,212,.04)}
+.pe-campo-ord{display:flex;flex-direction:column;gap:3px}
+.pe-campo-ord button{width:26px;height:24px;border-radius:6px;border:1px solid var(--v9-bd);background-color:transparent;color:var(--v9-tx);cursor:pointer;font-size:10px}
+.pe-campo-ord button:disabled{opacity:.3}
+.pe-campo-b{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pe-tipo{width:auto}
+.pe-chk{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--v9-tx2);cursor:pointer}
+/* mirando un ciclo cerrado */
+.cy-banda{position:fixed;bottom:0;left:0;right:0;z-index:12000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:8px 12px;background-color:#7c2d12;background-image:linear-gradient(90deg,#7c2d12,#9a3412);color:#ffffff;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.cy-b-t b{color:#fde68a}
+.cy-b-btn{border:1px solid rgba(255,255,255,.4);background-color:rgba(255,255,255,.14);color:#ffffff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit}
+.cy-b-x{background-color:#ffffff;color:#7c2d12}
+body.cy-vista #appScreen{padding-bottom:56px}
+body.cy-vista #addBtn{display:none!important}
+.v9-prog-box{--v9-tx:#dce8f4;--v9-tx2:#9fbdd6;--v9-bd:rgba(122,175,212,.25);--v9-in:#0d1b2e;--v9-acc:#7aafd4}
+.light-mode .v9-prog-box{--v9-tx:#0f2236;--v9-tx2:#3d5a74;--v9-bd:#c9d7e4;--v9-in:#ffffff;--v9-acc:#1d5f93}
+.light-mode .v9-prog-box .v9-btn-sec{color:#3d5a74}
+</style>
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// v1.6.9 — RESPALDO TOTAL · CICLO ANUAL · EDITOR DE PESTAÑAS
+// ──────────────────────────────────────────────────────────────────────────
+// Tres herramientas nuevas para las administradoras, dentro del Panel de
+// Administración (pestañas "💾 Respaldo", "📅 Ciclo anual" y "🗂️ Pestañas"):
+//
+// 1) RESPALDO: baja TODA la base de la nube a un archivo (.json, que sirve para
+//    restaurar) y a un Excel legible (una hoja por pestaña). Y restaura desde un
+//    archivo: "sumar lo que falta" (no borra nada) o "dejar exactamente como en
+//    el respaldo". Antes de restaurar baja sola una copia del estado actual.
+//
+// 2) CICLO ANUAL: a las 00:00 del 01/01/2027 (hora argentina) la app arranca de
+//    cero. NADA se borra: cada registro de 2026 se COPIA primero a un archivo en
+//    la nube (claves zarch_2026__…), se verifica que la copia esté, y recién
+//    ahí se saca de la vista. Se conservan usuarios, contraseñas, Organigrama,
+//    Reseña y Presentación (y lo que la administradora tilde). Lo que tiene
+//    fecha 2027 en adelante (eventos, licencias que siguen, etc.) se queda.
+//    La numeración arranca del 1. El ciclo 2026 se puede MIRAR (solo lectura) y
+//    devolver entero o por pestaña.
+//
+// 3) EDITOR DE PESTAÑAS: renombrar, cambiar ícono y color, mover de carpeta,
+//    ordenar, eliminar (sale del menú; los datos quedan y se restaura), editar
+//    los campos de los formularios y crear pestañas y carpetas nuevas. Todo se
+//    guarda en la clave suep_pestanas_cfg y llega a todos los equipos.
+// ══════════════════════════════════════════════════════════════════════════
+
+const V9_ARCH_PREFIJO = 'zarch_';           // nada que empiece así se baja a los equipos
+const CICLO_KEY       = 'suep_ciclo';
+const CICLO_BASE      = 2026;
+const PE_KEY          = 'suep_pestanas_cfg';
+const V9_ULT_RESPALDO = 'suep_ult_respaldo';
+const CICLO_CONSERVAR_DEF = ['suep_ORGANIGRAMA_ORGANIGRAMA','suep_RESENA_RESENA','suep_PRESENTACION_PRESENTACION'];
+
+// ─── utilidades ──────────────────────────────────────────────────────────
+// Números correlativos: desde 2027 todos arrancan del 1 (en 2026 Números Varios
+// venía del 1094 porque se empezó a usar a mitad de año).
+function _v9Start(f){ return (new Date().getFullYear() > CICLO_BASE) ? 1 : ((f && f.start) || 1); }
+function v9Esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function v9Admin(){ try{ return !!(CU && CU.permiso==='admin'); }catch(_){ return false; } }
+function v9Nube(){ return (typeof clienteS !== 'undefined' && clienteS) ? clienteS : null; }
+function v9Dev(){ try{ return (typeof DEVICE_ID!=='undefined') ? DEVICE_ID : null; }catch(_){ return null; } }
+function v9Ahora(){ return new Date().toISOString(); }
+function v9Clon(x){ return x==null ? x : JSON.parse(JSON.stringify(x)); }
+function v9Sello(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'h'+p(d.getMinutes());
+}
+function v9Bajar(nombre, contenido, tipo){
+  const blob = contenido instanceof Blob ? contenido : new Blob([contenido], {type: tipo||'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ try{ a.remove(); URL.revokeObjectURL(url); }catch(_){} }, 1500);
+}
+// Año en la Argentina (UTC-3, sin horario de verano) para un instante dado.
+function v9AnioAR(ms){ return new Date((ms==null?Date.now():ms) - 3*3600*1000).getUTCFullYear(); }
+// Lee el valor crudo del dispositivo (aunque se esté mirando un ciclo viejo).
+const _v9GetRaw = Storage.prototype.getItem;
+function v9Local(key, def){
+  try{ const t=_v9GetRaw.call(localStorage, key); return t==null ? def : JSON.parse(t); }catch(_){ return def; }
+}
+// Trae filas de la nube, de a páginas (por si algún día hay más de 500 claves).
+async function v9Filas(filtro){
+  const nube = v9Nube(); if(!nube) throw new Error('Sin conexión con la nube');
+  const out = [];
+  for(let desde=0; desde<20000; desde+=500){
+    let q = nube.from('app_data').select('key,value,updated_at');
+    if(filtro) q = filtro(q);
+    const { data, error } = await q.order('key').range(desde, desde+499);
+    if(error) throw error;
+    out.push(...(data||[]));
+    if(!data || data.length < 500) break;
+  }
+  return out;
+}
+async function v9Leer(key){
+  const nube = v9Nube(); if(!nube) throw new Error('Sin conexión con la nube');
+  const { data, error } = await _conTimeout(nube.from('app_data').select('value').eq('key', key).maybeSingle(), 12000);
+  if(error) throw error;
+  return data ? data.value : null;
+}
+async function v9Escribir(filas){
+  const nube = v9Nube(); if(!nube) throw new Error('Sin conexión con la nube');
+  for(let i=0;i<filas.length;i+=40){
+    const lote = filas.slice(i,i+40).map(f=>({ key:f.key, value:f.value, device_id:v9Dev(), updated_at:v9Ahora() }));
+    const { error } = await _conTimeout(nube.from('app_data').upsert(lote, { onConflict:'key' }), 30000);
+    if(error) throw error;
+  }
+}
+// Todas las pestañas internas con datos propios: [{key, s, m, nombre}]
+function v9Modulos(){
+  const out = [], vistos = new Set();
+  const add = (sec, mod, nombre)=>{
+    const key = S.key(sec.id, mod.id);
+    if(vistos.has(key)) return; vistos.add(key);
+    out.push({ key, s:sec.id, m:mod.id, nombre, sec, mod });
+  };
+  (typeof SECTORS!=='undefined' ? SECTORS : []).forEach(sec=>{
+    const mods = (sec.modules||[]).concat(peModulosRetenidos(sec.id));
+    mods.forEach(m=>{
+      if(m.subTabs) (m.subTabs||[]).forEach(st=>add(sec, st, sec.name+' › '+String(st.name||'').replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+\s*/,'')));
+      else add(sec, m, (sec.modules.length>1 || m.name!==sec.name) ? sec.name+' › '+m.name : sec.name);
+    });
+  });
+  return out;
+}
+function v9NombreDeClave(key){
+  const m = v9Modulos().find(x=>x.key===key);
+  if(m) return m.nombre;
+  if(key.indexOf(V9_ARCH_PREFIJO)===0){
+    const p = key.match(/^zarch_(\d{4})__(.+)$/);
+    if(p) return 'Ciclo '+p[1]+' · '+v9NombreDeClave(p[2]);
+  }
+  return key;
+}
+function v9Cuantos(v){
+  if(Array.isArray(v)) return v.length;
+  if(v && Array.isArray(v.rows)) return v.rows.length;
+  return v==null ? 0 : 1;
+}
+// Cartelito de progreso
+function v9Progreso(titulo){
+  let ov = document.getElementById('v9Prog');
+  if(!ov){
+    ov = document.createElement('div'); ov.id='v9Prog'; ov.className='v9-prog'; ov.setAttribute('data-cc-no','');
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="v9-prog-box"><div class="v9-prog-t">'+v9Esc(titulo)+'</div><div class="v9-prog-m" id="v9ProgM">Un momento…</div><div class="v9-prog-bar"><i id="v9ProgB"></i></div></div>';
+  return {
+    msg(t){ const e=document.getElementById('v9ProgM'); if(e) e.textContent=t; },
+    pct(p){ const e=document.getElementById('v9ProgB'); if(e) e.style.width=Math.max(0,Math.min(100,p))+'%'; },
+    fin(){ try{ ov.remove(); }catch(_){} }
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 1) RESPALDO
+// ══════════════════════════════════════════════════════════════════════════
+async function rspArmarJSON(filas, nota){
+  return {
+    formato:'SUEP-respaldo', formatoVersion:1,
+    app:'SUEP', appVersion:(typeof APP_VERSION!=='undefined'?APP_VERSION:''),
+    fecha:v9Ahora(), fechaTexto:new Date().toLocaleString('es-AR'),
+    por:(CU&&CU.nombre)||'—', nota:nota||'',
+    totalClaves:filas.length,
+    totalRegistros:filas.reduce((t,f)=>t+(Array.isArray(f.value)?f.value.length:0),0),
+    filas
+  };
+}
+async function rspDescargarJSON(nota, prefijo){
+  if(!v9Admin()){ alert('Solo administradoras.'); return false; }
+  const pr = v9Progreso('💾 Armando el respaldo completo');
+  try{
+    pr.msg('Leyendo toda la base de la nube…'); pr.pct(30);
+    const filas = await v9Filas();
+    pr.pct(80);
+    const json = await rspArmarJSON(filas, nota);
+    v9Bajar((prefijo||'SUEP_respaldo_')+v9Sello()+'.json', JSON.stringify(json));
+    try{ localStorage.setItem(V9_ULT_RESPALDO, String(Date.now())); }catch(_){}
+    pr.pct(100); pr.fin();
+    return json;
+  }catch(e){
+    pr.fin();
+    alert('⚠️ No se pudo armar el respaldo: '+(e&&e.message?e.message:e)+'\n\nRevisá la conexión y probá de nuevo.');
+    return false;
+  }
+}
+function _rspCelda(v){
+  if(v==null) return '';
+  if(Array.isArray(v)){
+    if(v.length && v[0] && typeof v[0]==='object' && ('url' in v[0] || 'name' in v[0]))
+      return v.map(a=>(a.name||'archivo')+(a.url?' ('+a.url+')':'')).join(' · ');
+    return v.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(', ');
+  }
+  if(typeof v==='object') return JSON.stringify(v).slice(0, 32000);
+  const s = String(v);
+  return s.length>32000 ? s.slice(0,32000) : s;
+}
+async function rspDescargarExcel(){
+  if(!v9Admin()){ alert('Solo administradoras.'); return; }
+  if(typeof XLSX === 'undefined'){ alert('No se pudo cargar la herramienta de Excel (falta internet). Probá de nuevo con conexión.'); return; }
+  const pr = v9Progreso('📊 Armando el Excel con todo');
+  try{
+    pr.msg('Leyendo la base…'); pr.pct(20);
+    const filas = await v9Filas();
+    const porClave = {}; filas.forEach(f=>porClave[f.key]=f.value);
+    const libro = XLSX.utils.book_new();
+    const usados = new Set();
+    const nombreHoja = t=>{
+      let b = String(t).replace(/[\[\]\:\*\?\/\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,28) || 'Hoja';
+      let n = b, i = 2; while(usados.has(n.toLowerCase())){ n = b.slice(0,26)+' '+(i++); }
+      usados.add(n.toLowerCase()); return n;
+    };
+    const indice = [];
+    const hoja = (titulo, mod, rows)=>{
+      const campos = (mod && Array.isArray(mod.fields)) ? mod.fields : [];
+      const cols = [], vistos = new Set();
+      campos.forEach(f=>{ if(!vistos.has(f.key)){ vistos.add(f.key); cols.push({k:f.key, t:f.label||f.key}); } });
+      rows.forEach(r=>Object.keys(r||{}).forEach(k=>{
+        if(vistos.has(k) || k==='_sector' || k==='_mod') return;
+        if(k[0]==='_' && !['_por','_ts','_editPor','_editTs','_attachments','_ciclo'].includes(k)) return;
+        vistos.add(k); cols.push({k, t:({_por:'Cargado por',_ts:'Fecha de carga',_editPor:'Editado por',_editTs:'Fecha de edición',_attachments:'Adjuntos',_ciclo:'Ciclo'})[k]||k});
+      }));
+      const data = rows.map(r=>{ const o={}; cols.forEach(c=>o[c.t]=_rspCelda(r?r[c.k]:'')); return o; });
+      const nom = nombreHoja(titulo);
+      const ws = data.length ? XLSX.utils.json_to_sheet(data) : XLSX.utils.aoa_to_sheet([['(sin registros)']]);
+      XLSX.utils.book_append_sheet(libro, ws, nom);
+      indice.push({ 'Pestaña':titulo, 'Registros':rows.length, 'Hoja':nom });
+    };
+    const mods = v9Modulos();
+    mods.forEach(m=>{ const v=porClave[m.key]; if(Array.isArray(v) && v.length) hoja(m.nombre, m.mod, v); });
+    Object.keys(porClave).filter(k=>k.indexOf('zarch_')===0 && /__/.test(k)).sort().forEach(k=>{
+      const v = porClave[k]; if(!v || !Array.isArray(v.rows) || !v.rows.length) return;
+      const orig = v.key || k.replace(/^zarch_\d{4}__/,'');
+      const m = mods.find(x=>x.key===orig);
+      hoja('('+(v.ciclo||'arch')+') '+(m?m.nombre:(v.key||k)), m?m.mod:null, v.rows);
+    });
+    const wsI = XLSX.utils.json_to_sheet(indice.length?indice:[{'Pestaña':'(sin datos)','Registros':0,'Hoja':''}]);
+    XLSX.utils.book_append_sheet(libro, wsI, nombreHoja('ÍNDICE'));
+    // El índice va primero
+    libro.SheetNames.unshift(libro.SheetNames.pop());
+    pr.pct(90);
+    XLSX.writeFile(libro, 'SUEP_todo_'+v9Sello()+'.xlsx');
+    pr.pct(100); pr.fin();
+  }catch(e){
+    pr.fin();
+    alert('⚠️ No se pudo armar el Excel: '+(e&&e.message?e.message:e));
+  }
+}
+
+// ─── Restaurar ───
+let RSP_ARCHIVO = null;   // respaldo leído, esperando confirmación
+function rspElegirArchivo(){
+  if(!v9Admin()){ alert('Solo administradoras.'); return; }
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange = ()=>{
+    const f = inp.files && inp.files[0]; if(!f) return;
+    const lr = new FileReader();
+    lr.onload = ()=>{
+      try{
+        const j = JSON.parse(lr.result);
+        if(!j || j.formato!=='SUEP-respaldo' || !Array.isArray(j.filas)) throw new Error('formato');
+        RSP_ARCHIVO = j; rspMostrarRestaurar();
+      }catch(_){
+        alert('⚠️ Ese archivo no es un respaldo de SUEP.\n\nTiene que ser el .json que se baja con "Descargar respaldo completo".');
+      }
+    };
+    lr.readAsText(f);
+  };
+  inp.click();
+}
+async function rspMostrarRestaurar(){
+  const j = RSP_ARCHIVO; if(!j) return;
+  const body = document.getElementById('padmBody'); if(!body) return;
+  body.innerHTML = '<div class="v9" data-cc-no><div class="v9-card">Comparando el respaldo con lo que hay hoy en la nube…</div></div>';
+  let actuales = {};
+  try{ (await v9Filas()).forEach(f=>actuales[f.key]=f.value); }
+  catch(e){ body.innerHTML = '<div class="v9" data-cc-no><div class="v9-card v9-mal">⚠️ No hay conexión con la nube. Para restaurar hace falta internet.</div><button class="v9-btn" onclick="switchPadmTab(\'respaldo\')">← Volver</button></div>'; return; }
+  const noPorDefecto = k => k===VERSION_KEY || /^zarch_lock_/.test(k) || k==='suep_pending_sync';
+  const filas = j.filas.slice().sort((a,b)=>v9NombreDeClave(a.key).localeCompare(v9NombreDeClave(b.key)));
+  body.innerHTML = `<div class="v9" data-cc-no>
+    <button class="v9-btn v9-btn-sec" onclick="switchPadmTab('respaldo')">← Volver</button>
+    <div class="v9-card">
+      <div class="v9-h">♻️ Restaurar desde un respaldo</div>
+      <div class="v9-p">Respaldo del <b>${v9Esc(j.fechaTexto||j.fecha)}</b> · hecho por ${v9Esc(j.por||'—')} · versión ${v9Esc(j.appVersion||'—')}<br>
+      ${j.totalClaves} pestañas/datos · ${j.totalRegistros} registros</div>
+    </div>
+    <div class="v9-card">
+      <div class="v9-h3">¿Cómo restauro?</div>
+      <label class="v9-radio"><input type="radio" name="rspModo" value="sumar" checked> <span><b>Sumar lo que falta</b> (recomendado) — vuelven los registros que se perdieron o se borraron. No se borra nada de lo que hay hoy.</span></label>
+      <label class="v9-radio"><input type="radio" name="rspModo" value="exacto"> <span><b>Dejar exactamente como en el respaldo</b> — lo tildado vuelve a quedar igual que ese día. Lo cargado después en esas pestañas se pierde de la vista (igual queda en la copia que se baja sola antes).</span></label>
+    </div>
+    <div class="v9-card">
+      <div class="v9-fila"><div class="v9-h3" style="flex:1">¿Qué restauro?</div>
+        <button class="v9-mini" onclick="document.querySelectorAll('.rsp-chk').forEach(c=>c.checked=true)">Todo</button>
+        <button class="v9-mini" onclick="document.querySelectorAll('.rsp-chk').forEach(c=>c.checked=false)">Nada</button></div>
+      <div class="v9-lista">${filas.map((f,i)=>{
+        const hoy = actuales[f.key];
+        return `<label class="v9-li"><input type="checkbox" class="rsp-chk" data-i="${j.filas.indexOf(f)}" ${noPorDefecto(f.key)?'':'checked'}>
+          <span class="v9-li-n">${v9Esc(v9NombreDeClave(f.key))}</span>
+          <span class="v9-li-c">respaldo: ${v9Cuantos(f.value)} · hoy: ${hoy===undefined?'—':v9Cuantos(hoy)}</span></label>`;
+      }).join('')}</div>
+    </div>
+    <div class="v9-aviso">Antes de tocar nada se baja sola una copia de cómo está todo ahora, por si querés volver atrás.</div>
+    <button class="v9-btn v9-btn-ok" onclick="rspEjecutarRestaurar()">♻️ RESTAURAR LO TILDADO</button>
+  </div>`;
+}
+function _rspFusionar(hoy, resp){
+  const out = Array.isArray(hoy) ? hoy.slice() : [];
+  const ids = new Set(out.map(r=>r&&r._id).filter(Boolean));
+  const txt = new Set(out.filter(r=>!(r&&r._id)).map(r=>JSON.stringify(r)));
+  let sumados = 0;
+  (resp||[]).forEach(r=>{
+    if(r && r._id){ if(!ids.has(r._id)){ out.push(r); ids.add(r._id); sumados++; } }
+    else { const t=JSON.stringify(r); if(!txt.has(t)){ out.push(r); txt.add(t); sumados++; } }
+  });
+  return { lista:out, sumados };
+}
+async function rspEjecutarRestaurar(){
+  const j = RSP_ARCHIVO; if(!j) return;
+  const modo = (document.querySelector('input[name="rspModo"]:checked')||{}).value || 'sumar';
+  const elegidas = Array.from(document.querySelectorAll('.rsp-chk:checked')).map(c=>j.filas[+c.getAttribute('data-i')]).filter(Boolean);
+  if(!elegidas.length){ alert('No tildaste nada para restaurar.'); return; }
+  if(!confirm((modo==='exacto'?'⚠️ Vas a DEJAR EXACTAMENTE COMO EN EL RESPALDO ':'Vas a SUMAR lo que falta en ')+elegidas.length+' pestañas/datos.\n\nPrimero se baja una copia de cómo está todo ahora.\n\n¿Seguimos?')) return;
+  if(modo==='exacto' && !confirm('Última confirmación: lo tildado va a quedar igual que el '+(j.fechaTexto||j.fecha)+'. ¿Confirmás?')) return;
+  const copia = await rspDescargarJSON('Copia automática antes de restaurar', 'SUEP_ANTES_de_restaurar_');
+  if(!copia){ alert('No se pudo bajar la copia previa, así que no se tocó nada.'); return; }
+  const hoy = {}; copia.filas.forEach(f=>hoy[f.key]=f.value);
+  const pr = v9Progreso('♻️ Restaurando');
+  let tot = 0;
+  try{
+    const escribir = [];
+    elegidas.forEach(f=>{
+      if(modo==='exacto'){ escribir.push({key:f.key, value:f.value}); tot += v9Cuantos(f.value); return; }
+      if(Array.isArray(f.value)){
+        const r = _rspFusionar(hoy[f.key], f.value);
+        if(r.sumados){ escribir.push({key:f.key, value:r.lista}); tot += r.sumados; }
+      }else if(f.value && Array.isArray(f.value.rows) && hoy[f.key] && Array.isArray(hoy[f.key].rows)){
+        const r = _rspFusionar(hoy[f.key].rows, f.value.rows);
+        if(r.sumados){ escribir.push({key:f.key, value:{...hoy[f.key], rows:r.lista}}); tot += r.sumados; }
+      }else if(hoy[f.key]===undefined){
+        escribir.push({key:f.key, value:f.value}); tot += v9Cuantos(f.value);
+      }
+    });
+    pr.msg('Subiendo '+escribir.length+' pestañas a la nube…'); pr.pct(50);
+    await v9Escribir(escribir);
+    escribir.forEach(f=>{ if(f.key.indexOf(V9_ARCH_PREFIJO)!==0){ try{ localStorage.setItem(f.key, JSON.stringify(f.value)); }catch(_){} } });
+    pr.pct(100); pr.fin();
+    RSP_ARCHIVO = null;
+    alert('✅ Listo. '+(modo==='exacto' ? 'Quedó igual que en el respaldo ('+escribir.length+' pestañas).' : 'Volvieron '+tot+' registros que faltaban ('+escribir.length+' pestañas). No se borró nada.'));
+    v9Refrescar();
+    switchPadmTab('respaldo');
+  }catch(e){
+    pr.fin();
+    alert('⚠️ Se cortó la restauración: '+(e&&e.message?e.message:e)+'\n\nTenés la copia de antes descargada. Podés volver a intentarlo.');
+  }
+}
+function v9Refrescar(){
+  try{ peAplicar(); }catch(_){}
+  try{ buildSidebar(); }catch(_){}
+  try{ refreshBadge(); }catch(_){}
+  try{ if(typeof CS!=='undefined' && CS && CM) renderTable(); else if(typeof showInicio==='function' && document.getElementById('iniCuerpo')) showInicio(); }catch(_){}
+}
+function rspDiasDesdeUltimo(){
+  const t = +(v9Local(V9_ULT_RESPALDO, 0)||0);
+  return t ? Math.floor((Date.now()-t)/86400000) : null;
+}
+function renderPadmRespaldo(){
+  const body = document.getElementById('padmBody');
+  const d = rspDiasDesdeUltimo();
+  body.innerHTML = `<div class="v9" data-cc-no>
+    <div class="v9-card v9-hero">
+      <div class="v9-h">💾 Respaldo de toda la información</div>
+      <div class="v9-p">Baja a tu equipo <b>todo</b> lo que hay en la nube: todas las pestañas, usuarios, configuraciones y los ciclos archivados. Las fotos y PDF adjuntos quedan guardados en la nube y en el respaldo va el enlace de cada uno.</div>
+      <div class="v9-chip ${d===null||d>7?'v9-chip-mal':'v9-chip-ok'}">${d===null?'Desde este equipo todavía no bajaste ningún respaldo':(d===0?'Último respaldo: hoy':'Último respaldo: hace '+d+' día'+(d!==1?'s':''))}</div>
+    </div>
+    <div class="v9-grid2">
+      <button class="v9-tile" onclick="rspDescargarJSON()"><span class="v9-tile-i">🗄️</span><b>Descargar respaldo completo</b><small>Archivo .json · sirve para restaurar</small></button>
+      <button class="v9-tile" onclick="rspDescargarExcel()"><span class="v9-tile-i">📊</span><b>Descargar todo en Excel</b><small>Una hoja por pestaña · para leer e imprimir</small></button>
+    </div>
+    <div class="v9-card">
+      <div class="v9-h3">♻️ Volver algo a su lugar</div>
+      <div class="v9-p">Si algo se borró o quedó mal, elegí un respaldo que hayas bajado antes. Te muestro qué tiene y elegís qué restaurar.</div>
+      <button class="v9-btn" onclick="rspElegirArchivo()">📂 Elegir archivo de respaldo…</button>
+    </div>
+    <div class="v9-aviso">Recomendación: bajá el respaldo completo una vez por semana y siempre el <b>31/12 antes de las 23:59</b>. Guardalo en un pendrive o en tu Drive.</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 2) CICLO ANUAL
+// ══════════════════════════════════════════════════════════════════════════
+function cicloEstado(){
+  const e = v9Local(CICLO_KEY, null);
+  if(e && +e.actual) return { actual:+e.actual, cerrados:Array.isArray(e.cerrados)?e.cerrados:[], conservar:Array.isArray(e.conservar)?e.conservar:null };
+  return { actual:CICLO_BASE, cerrados:[], conservar:null };
+}
+function cicloActual(){ return cicloEstado().actual; }
+function cicloConservar(){ const c = cicloEstado().conservar; return c ? c : CICLO_CONSERVAR_DEF.slice(); }
+function cicloGrabarEstado(e){
+  try{ localStorage.setItem(CICLO_KEY, JSON.stringify(e)); }catch(_){}
+}
+// Año de un texto con fecha: "2026-05-04…" o "04/05/2026…"
+function _cyAnio(v){
+  if(typeof v!=='string') return null;
+  let m = v.match(/^\s*(\d{4})-\d{1,2}-\d{1,2}/); if(m) return +m[1];
+  m = v.match(/^\s*\d{1,2}\/\d{1,2}\/(\d{4})/); if(m) return +m[1];
+  return null;
+}
+// Libros numerados: se archivan por SU fecha, sin mirar fechas futuras, para
+// que la numeración arranque limpia del 1.
+function _cyEsLibro(key){
+  const m = v9Modulos().find(x=>x.key===key);
+  if(!m) return false;
+  if(m.sec && (m.sec.custom==='expedientes' || m.sec.custom==='disposiciones' || m.sec.id==='NUMEROS_VARIOS')) return true;
+  return !!(m.mod && Array.isArray(m.mod.fields) && m.mod.fields.some(f=>f.auto==='yearly'));
+}
+// ¿Este registro sigue en el ciclo `anio`? (true = se queda; false = va al archivo)
+function cyQuedaEn(r, anio, esLibro){
+  if(!r || typeof r!=='object') return true;
+  if(r._ciclo && +r._ciclo >= anio) return true;
+  if(esLibro){
+    const a = _cyAnio(r.fecha) || _cyAnio(r._ts||'');
+    return a ? a >= anio : true;
+  }
+  for(const k in r){
+    if(k[0]==='_') continue;
+    const v = r[k];
+    if(typeof v==='string'){ const a=_cyAnio(v); if(a && a>=anio) return true; }
+    if((k==='anio'||k==='año') && +v>=anio) return true;
+  }
+  const ta = _cyAnio(r._ts||'');
+  if(ta) return ta >= anio;
+  // sin ninguna fecha: si tiene _editTs nuevo se queda; si no, es del ciclo viejo
+  const te = _cyAnio(r._editTs||'');
+  return !!(te && te >= anio);
+}
+function cyClaveArchivo(anio, key){ return V9_ARCH_PREFIJO + anio + '__' + key; }
+
+// Hora del servidor (la del sitio de GitHub). Si no se puede saber, null.
+async function cyHoraServidor(){
+  if(!/^https?:$/.test(location.protocol)) return null;
+  try{
+    const r = await Promise.race([
+      fetch(location.href.split('#')[0].split('?')[0], { method:'HEAD', cache:'no-store' }),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('t')), 6000))
+    ]);
+    const h = r && r.headers && r.headers.get('date');
+    const t = h ? Date.parse(h) : NaN;
+    return isFinite(t) ? t : null;
+  }catch(_){ return null; }
+}
+
+// Probar si las funciones atómicas de la base están instaladas
+async function _cyRpcDisponible(){
+  if(typeof _rpcOk!=='undefined' && _rpcOk===true) return true;
+  if(typeof _rpcOk!=='undefined' && _rpcOk===false) return false;
+  try{
+    const err = await _rpcBorrarRegistro('zarch_sonda', '__nada__');
+    return !(err && _esErrorFuncionInexistente(err));
+  }catch(_){ return false; }
+}
+// Saca registros de una pestaña activa en la nube, sin pisar lo que otro esté
+// cargando en ese mismo momento (borrado atómico por registro).
+async function _cySacarDeActiva(key, sacar, conRpc){
+  const conId = sacar.filter(r=>r && r._id);
+  const sinId = sacar.filter(r=>!(r && r._id));
+  const fallaron = [];
+  if(conRpc && conId.length){
+    for(let i=0;i<conId.length;i+=6){
+      const lote = conId.slice(i,i+6);
+      const res = await Promise.all(lote.map(r=>_rpcBorrarRegistro(key, r._id).catch(e=>e)));
+      res.forEach((e,k)=>{ if(e) fallaron.push(lote[k]); });
+    }
+  }
+  const restantes = (conRpc ? fallaron : conId).concat(sinId);
+  if(restantes.length){
+    // Plan B: bajo lo fresco y escribo sin esos registros, inmediatamente.
+    const fresco = await v9Leer(key);
+    const lista = Array.isArray(fresco) ? fresco : [];
+    const ids = new Set(restantes.map(r=>r&&r._id).filter(Boolean));
+    const txt = new Set(restantes.filter(r=>!(r&&r._id)).map(r=>JSON.stringify(r)));
+    const queda = lista.filter(r=> r && r._id ? !ids.has(r._id) : !txt.has(JSON.stringify(r)));
+    await v9Escribir([{ key, value:queda }]);
+  }
+  const fin = await v9Leer(key);
+  return Array.isArray(fin) ? fin : [];
+}
+
+// EL CIERRE. Idempotente: si se corta a mitad, se vuelve a correr y termina.
+// opts: { anio, soloBarrer, simular, log(fn) }
+async function cyCerrar(opts){
+  const anio = +opts.anio, nuevo = anio + 1;
+  const log = opts.log || (()=>{});
+  const conservar = new Set(cicloConservar());
+  const mods = v9Modulos().filter(m=>!conservar.has(m.key));
+  const claves = mods.map(m=>m.key);
+  const reporte = [];
+  log('Leyendo las pestañas de la nube…', 5);
+  const filas = [];
+  for(let i=0;i<claves.length;i+=60){
+    const lote = claves.slice(i,i+60);
+    filas.push(...await v9Filas(q=>q.in('key', lote)));
+  }
+  const conRpc = opts.simular ? false : await _cyRpcDisponible();
+  let n = 0, totalArch = 0;
+  for(const fila of filas){
+    n++;
+    const lista = Array.isArray(fila.value) ? fila.value : null;
+    if(!lista || !lista.length) continue;
+    const libro = _cyEsLibro(fila.key);
+    const archivar = lista.filter(r=>!cyQuedaEn(r, nuevo, libro));
+    reporte.push({ key:fila.key, nombre:v9NombreDeClave(fila.key), total:lista.length, archivar:archivar.length, quedan:lista.length-archivar.length });
+    if(opts.simular || !archivar.length) continue;
+    log('Guardando en el archivo '+anio+': '+v9NombreDeClave(fila.key)+'…', 10 + 80*n/filas.length);
+    // 1) COPIA al archivo (fusionando con lo que ya hubiera)
+    const akey = cyClaveArchivo(anio, fila.key);
+    const prev = await v9Leer(akey);
+    const r = _rspFusionar(prev && Array.isArray(prev.rows) ? prev.rows : [], archivar);
+    await v9Escribir([{ key:akey, value:{ ciclo:anio, key:fila.key, nombre:v9NombreDeClave(fila.key), rows:r.lista, ts:v9Ahora(), por:(CU&&CU.nombre)||'—' } }]);
+    // 2) VERIFICO que la copia esté completa antes de sacar nada
+    const ver = await v9Leer(akey);
+    const idsVer = new Set((ver && Array.isArray(ver.rows) ? ver.rows : []).map(x=>x&&x._id?x._id:JSON.stringify(x)));
+    const falta = archivar.filter(x=>!idsVer.has(x&&x._id?x._id:JSON.stringify(x)));
+    if(falta.length) throw new Error('La copia de "'+v9NombreDeClave(fila.key)+'" no quedó completa. No se sacó nada de esa pestaña.');
+    // 3) recién ahora se saca de la vista activa
+    const queda = await _cySacarDeActiva(fila.key, archivar, conRpc);
+    try{ localStorage.setItem(fila.key, JSON.stringify(queda)); }catch(_){}
+    totalArch += archivar.length;
+  }
+  return { reporte, totalArch };
+}
+
+let _cyCorriendo = false;
+async function cyCerrarCicloCompleto(anio, manual){
+  if(_cyCorriendo) return false;
+  _cyCorriendo = true;
+  const pr = manual ? v9Progreso('📅 Cerrando el ciclo '+anio) : null;
+  const log = (t,p)=>{ if(pr){ pr.msg(t); if(p!=null) pr.pct(p); } else console.log('📅 Cierre '+anio+': '+t); };
+  try{
+    // ¿Ya lo cerró otro equipo?
+    const rem = await v9Leer(CICLO_KEY).catch(()=>null);
+    if(rem && +rem.actual > anio){ cicloGrabarEstado(rem); cyAlCambiarCiclo(); return true; }
+    // Candado: un solo equipo hace el cierre
+    const lockKey = V9_ARCH_PREFIJO+'lock_'+anio;
+    const nube = v9Nube();
+    const yo = { por:(CU&&CU.nombre)||'—', device:v9Dev(), ts:Date.now() };
+    const { error: eLock } = await nube.from('app_data').insert([{ key:lockKey, value:yo, device_id:v9Dev(), updated_at:v9Ahora() }]);
+    if(eLock){
+      const lock = await v9Leer(lockKey).catch(()=>null);
+      const viejo = !lock || !lock.ts || (Date.now() - lock.ts) > 15*60*1000;
+      const mio = lock && lock.device === v9Dev();
+      if(!viejo && !mio && !manual){ log('Otro equipo está haciendo el cierre.'); return false; }
+      await v9Escribir([{ key:lockKey, value:yo }]);
+    }
+    log('Arrancando…', 3);
+    const res = await cyCerrar({ anio, log });
+    const e = cicloEstado();
+    const remE = await v9Leer(CICLO_KEY).catch(()=>null) || {};
+    const cerrados = (Array.isArray(remE.cerrados)?remE.cerrados:e.cerrados).filter(c=>+c.anio!==anio);
+    cerrados.push({ anio, ts:v9Ahora(), por:(CU&&CU.nombre)||'Cierre automático', registros:res.totalArch, pestanas:res.reporte.filter(r=>r.archivar).length });
+    const nuevoE = { actual:anio+1, cerrados, conservar:(Array.isArray(remE.conservar)?remE.conservar:e.conservar) };
+    await v9Escribir([{ key:CICLO_KEY, value:nuevoE }, { key:lockKey, value:{...yo, listo:true, fin:Date.now()} }]);
+    cicloGrabarEstado(nuevoE);
+    log('¡Listo!', 100);
+    if(pr) pr.fin();
+    cyAlCambiarCiclo();
+    if(manual) alert('✅ Ciclo '+anio+' cerrado.\n\n'+res.totalArch+' registros pasaron al archivo '+anio+' (no se borró nada).\nArranca el ciclo '+(anio+1)+'.');
+    return true;
+  }catch(err){
+    if(pr) pr.fin();
+    console.error('Cierre de ciclo:', err);
+    if(manual) alert('⚠️ El cierre se cortó: '+(err&&err.message?err.message:err)+'\n\nNo se perdió nada: lo que ya pasó al archivo quedó ahí y lo demás sigue en su lugar. Volvé a apretar el botón para terminarlo.');
+    return false;
+  }finally{ _cyCorriendo = false; }
+}
+
+// Lo corre cualquier equipo con la app abierta: a las 00:00 del 1/1 (hora
+// argentina, confirmada con la hora del servidor) cierra el ciclo anterior.
+async function cyVigilar(){
+  try{
+    if(typeof CU==='undefined' || !CU || !v9Nube()) return;
+    const e = cicloEstado();
+    if(v9AnioAR() <= e.actual) return;
+    const srv = await cyHoraServidor();
+    if(!srv || v9AnioAR(srv) <= e.actual) return;
+    const rem = await v9Leer(CICLO_KEY).catch(()=>null);
+    if(rem && +rem.actual > e.actual){ cicloGrabarEstado(rem); cyAlCambiarCiclo(); if(+rem.actual >= v9AnioAR(srv)) return; }
+    const act = cicloActual();
+    if(v9AnioAR(srv) > act) await cyCerrarCicloCompleto(act, false);
+  }catch(err){ console.warn('Vigilancia de ciclo:', err); }
+}
+
+// Cuando un equipo se entera de que arrancó un ciclo nuevo
+let _cyUltimoVisto = null;
+function cyAlCambiarCiclo(){
+  const a = cicloActual();
+  if(_cyUltimoVisto === a) return;
+  const antes = _cyUltimoVisto; _cyUltimoVisto = a;
+  if(antes === null) return;  // primera lectura al entrar
+  try{ localStorage.removeItem('suep_pull_cursor'); }catch(_){}
+  try{ pullAllFromSupabase({ full:true }).then(()=>v9Refrescar()); }catch(_){ v9Refrescar(); }
+  cyBienvenida();
+}
+function cyBienvenida(){
+  const a = cicloActual(); if(a <= CICLO_BASE) return;
+  const k = 'suep_ciclo_bienvenida_'+a;
+  if(v9Local(k, null)) return;
+  try{ localStorage.setItem(k, '1'); }catch(_){}
+  const ov = document.createElement('div');
+  ov.className = 'v9-prog'; ov.setAttribute('data-cc-no','');
+  ov.onclick = ev=>{ if(ev.target===ov) ov.remove(); };
+  ov.innerHTML = `<div class="v9-prog-box v9-bienv"><div style="font-size:42px">🎉</div>
+    <div class="v9-prog-t">¡Arrancó el ciclo ${a}!</div>
+    <div class="v9-p" style="text-align:center">Todo lo que se cargó en ${a-1} quedó guardado en el archivo del ciclo ${a-1}. Las pestañas empiezan de cero y la numeración arranca del N.º 1.</div>
+    <button class="v9-btn v9-btn-ok" onclick="this.closest('.v9-prog').remove()">¡Vamos!</button></div>`;
+  document.body.appendChild(ov);
+}
+
+// Barrido: si algún equipo que estaba sin señal subió registros viejos después
+// del cierre, se pasan al archivo (no se duplican: se fusionan por _id).
+async function cyBarrer(manual){
+  const a = cicloActual(); if(a <= CICLO_BASE) { if(manual) alert('Todavía no se cerró ningún ciclo.'); return; }
+  const pr = manual ? v9Progreso('🧹 Revisando registros de '+(a-1)) : null;
+  try{
+    const res = await cyCerrar({ anio:a-1, soloBarrer:true, log:(t,p)=>{ if(pr){ pr.msg(t); if(p!=null) pr.pct(p); } } });
+    if(pr) pr.fin();
+    if(manual) alert(res.totalArch ? '🧹 Se pasaron '+res.totalArch+' registros de '+(a-1)+' que habían quedado sueltos al archivo.' : '✅ No quedó nada de '+(a-1)+' suelto en el ciclo '+a+'.');
+    if(res.totalArch) v9Refrescar();
+  }catch(e){ if(pr) pr.fin(); if(manual) alert('⚠️ No se pudo revisar: '+(e&&e.message?e.message:e)); }
+}
+
+// Suma registros a una pestaña activa sin pisar nada (los marca del ciclo actual)
+async function cyAgregarActiva(key, rows){
+  const marcar = rows.map(r=>({ ...r, _ciclo:cicloActual() }));
+  const fresco = await v9Leer(key);
+  const hoy = Array.isArray(fresco) ? fresco : [];
+  // los que ya están (por _id) se actualizan con la marca de ciclo; los que faltan se suman
+  const porId = new Map(hoy.filter(x=>x&&x._id).map(x=>[x._id,x]));
+  const sin = hoy.filter(x=>!(x&&x._id));
+  marcar.forEach(x=>{ if(x._id) porId.set(x._id, {...(porId.get(x._id)||{}), ...x}); else sin.push(x); });
+  const lista = Array.from(porId.values()).concat(sin);
+  await v9Escribir([{ key, value:lista }]);
+  try{ localStorage.setItem(key, JSON.stringify(lista)); }catch(_){}
+  return marcar.length;
+}
+
+// ─── Mirar un ciclo cerrado (solo lectura) ───
+let CY_VISTA = null;   // { anio, datos:{ key: rows } }
+async function cyVer(anio){
+  if(!v9Admin()){ alert('Solo administradoras.'); return; }
+  const pr = v9Progreso('📚 Abriendo el ciclo '+anio);
+  try{
+    const filas = await v9Filas(q=>q.like('key', V9_ARCH_PREFIJO+anio+'__%'));
+    const datos = {};
+    filas.forEach(f=>{ if(f.value && Array.isArray(f.value.rows)) datos[f.value.key || f.key.replace(V9_ARCH_PREFIJO+anio+'__','')] = f.value.rows; });
+    pr.fin();
+    CY_VISTA = { anio, datos, conservar:new Set(cicloConservar()), modulos:new Set(v9Modulos().map(m=>m.key)) };
+    _cyActivarLectura(true);
+    try{ closePanelAdmin(); }catch(_){}
+    try{ buildSidebar(); }catch(_){}
+    try{ showInicio(); }catch(_){}
+    cyPintarBanda();
+  }catch(e){ pr.fin(); alert('⚠️ No se pudo abrir el ciclo '+anio+': '+(e&&e.message?e.message:e)); }
+}
+function cySalirVista(){
+  CY_VISTA = null;
+  _cyActivarLectura(false);
+  const b = document.getElementById('cyBanda'); if(b) b.remove();
+  document.body.classList.remove('cy-vista');
+  try{ buildSidebar(); }catch(_){}
+  try{ showInicio(); }catch(_){}
+}
+function cyPintarBanda(){
+  let b = document.getElementById('cyBanda');
+  if(!CY_VISTA){ if(b) b.remove(); return; }
+  if(!b){ b = document.createElement('div'); b.id='cyBanda'; b.className='cy-banda'; b.setAttribute('data-cc-no',''); document.body.appendChild(b); }
+  document.body.classList.add('cy-vista');
+  const enPest = (typeof CS!=='undefined' && CS && CM);
+  const key = enPest ? S.key(CS.id, CM.id) : null;
+  const n = key && CY_VISTA.datos[key] ? CY_VISTA.datos[key].length : 0;
+  b.innerHTML = `<span class="cy-b-t">📚 Estás mirando el <b>CICLO ${CY_VISTA.anio}</b> · solo lectura</span>
+    ${enPest && n ? `<button class="cy-b-btn" onclick="cyTraerPestana()">↩️ Traer esta pestaña a ${cicloActual()} (${n})</button>` : ''}
+    <button class="cy-b-btn cy-b-x" onclick="cySalirVista()">✕ Volver a ${cicloActual()}</button>`;
+}
+async function cyTraerPestana(){
+  if(!CY_VISTA || !CS || !CM) return;
+  const key = S.key(CS.id, CM.id);
+  const rows = CY_VISTA.datos[key] || [];
+  if(!rows.length){ alert('Esta pestaña no tiene registros en el ciclo '+CY_VISTA.anio+'.'); return; }
+  if(!confirm('¿Traer los '+rows.length+' registros de "'+(CS.name)+(CM.name&&CM.name!==CS.name?' › '+CM.name:'')+'" del ciclo '+CY_VISTA.anio+' al ciclo '+cicloActual()+'?\n\nSe SUMAN a lo que haya cargado (no se pisa nada) y quedan también en el archivo.')) return;
+  const pr = v9Progreso('↩️ Trayendo registros');
+  try{ const k = await cyAgregarActiva(key, rows); pr.fin(); alert('✅ Volvieron '+k+' registros al ciclo '+cicloActual()+'.'); }
+  catch(e){ pr.fin(); alert('⚠️ No se pudo: '+(e&&e.message?e.message:e)); }
+}
+async function cyDevolverTodo(anio){
+  if(!v9Admin()) return;
+  if(!confirm('↩️ ¿Devolver TODO el ciclo '+anio+' a la vista actual?\n\nTodos los registros archivados vuelven a sus pestañas (se suman, no se pisa nada de lo cargado en '+cicloActual()+'). El archivo '+anio+' queda igual, como copia.')) return;
+  if(!confirm('Confirmá: las pestañas van a volver a mostrar lo de '+anio+' junto con lo nuevo. ¿Seguimos?')) return;
+  const pr = v9Progreso('↩️ Devolviendo el ciclo '+anio);
+  try{
+    const filas = await v9Filas(q=>q.like('key', V9_ARCH_PREFIJO+anio+'__%'));
+    let tot = 0, i = 0;
+    for(const f of filas){
+      i++;
+      if(!f.value || !Array.isArray(f.value.rows) || !f.value.rows.length) continue;
+      pr.msg(v9NombreDeClave(f.value.key)); pr.pct(100*i/filas.length);
+      tot += await cyAgregarActiva(f.value.key, f.value.rows);
+    }
+    pr.fin();
+    alert('✅ Volvieron '+tot+' registros del ciclo '+anio+' a sus pestañas.');
+    v9Refrescar();
+  }catch(e){ pr.fin(); alert('⚠️ Se cortó: '+(e&&e.message?e.message:e)+'\n\nVolvé a apretar el botón: lo que ya volvió no se duplica.'); }
+}
+
+// Modo solo lectura: las lecturas de pestañas salen del archivo y nada se guarda.
+const _cyOrigGet = Storage.prototype.getItem;
+function _cyActivarLectura(on){
+  if(on){
+    Storage.prototype.getItem = function(k){
+      if(CY_VISTA && this===window.localStorage && typeof k==='string' && CY_VISTA.modulos.has(k) && !CY_VISTA.conservar.has(k)){
+        return JSON.stringify(CY_VISTA.datos[k] || []);
+      }
+      return _cyOrigGet.call(this, k);
+    };
+  }else{
+    Storage.prototype.getItem = _cyOrigGet;
+  }
+}
+let _cyUltAviso = 0;
+function _cyBloqueado(){
+  if(!CY_VISTA) return false;
+  if(Date.now() - _cyUltAviso < 5000) return true;
+  _cyUltAviso = Date.now();
+  alert('📚 Estás mirando el ciclo '+CY_VISTA.anio+' (solo lectura).\n\nPara cargar o editar, tocá "Volver a '+cicloActual()+'" arriba.');
+  return true;
+}
+
+function renderPadmCiclo(){
+  const body = document.getElementById('padmBody');
+  const e = cicloEstado();
+  const cons = new Set(cicloConservar());
+  const mods = v9Modulos();
+  const hoyAR = v9AnioAR();
+  const puedeCerrar = hoyAR > e.actual;
+  const corte = new Date(Date.UTC(e.actual+1,0,1,3,0,0)); // 00:00 AR
+  const dias = Math.ceil((corte - Date.now())/86400000);
+  body.innerHTML = `<div class="v9" data-cc-no>
+    <div class="v9-card v9-hero">
+      <div class="v9-h">📅 Ciclo ${e.actual}</div>
+      <div class="v9-p">${puedeCerrar
+        ? '⚠️ Ya es '+hoyAR+' y el ciclo '+e.actual+' sigue abierto. Se cierra solo cuando alguien abre la app con internet; también lo podés cerrar vos con el botón de abajo.'
+        : 'Cierre automático: <b>01/01/'+(e.actual+1)+' a las 00:00</b> (faltan '+dias+' día'+(dias!==1?'s':'')+'). Lo hace el primer equipo que tenga la app abierta con internet a esa hora, o el primero que la abra después.'}</div>
+      <div class="v9-pasos">
+        <div><i>1</i><span>Todo lo de ${e.actual} se <b>copia</b> al archivo del ciclo ${e.actual} en la nube.</span></div>
+        <div><i>2</i><span>Se verifica que la copia esté completa.</span></div>
+        <div><i>3</i><span>Recién ahí sale de las pestañas, que arrancan de cero. Numeración desde el N.º 1.</span></div>
+        <div><i>4</i><span>Lo que tiene fecha de ${e.actual+1} en adelante (eventos, licencias que siguen, avisos) se queda.</span></div>
+      </div>
+    </div>
+    <div class="v9-card">
+      <div class="v9-fila"><div class="v9-h3" style="flex:1">¿Qué se conserva igual en ${e.actual+1}?</div><span class="v9-chip">${cons.size} tildadas</span></div>
+      <div class="v9-p">Lo tildado no se reinicia. Usuarios, contraseñas y configuraciones se conservan siempre.</div>
+      <div class="v9-lista v9-lista-alta">${mods.slice().sort((a,b)=>(cons.has(b.key)?1:0)-(cons.has(a.key)?1:0)).map(m=>`<label class="v9-li"><input type="checkbox" class="cy-cons" value="${v9Esc(m.key)}" ${cons.has(m.key)?'checked':''}><span class="v9-li-n">${v9Esc(m.nombre)}</span></label>`).join('')}</div>
+      <button class="v9-btn" onclick="cyGuardarConservar()">💾 Guardar lo que se conserva</button>
+    </div>
+    <div class="v9-grid2">
+      <button class="v9-tile" onclick="cySimular()"><span class="v9-tile-i">🔍</span><b>Simular el cierre</b><small>Te muestra qué pasaría. No toca nada.</small></button>
+      <button class="v9-tile ${puedeCerrar?'':'v9-tile-off'}" ${puedeCerrar?'':'disabled'} onclick="cyCerrarManual()"><span class="v9-tile-i">🔒</span><b>Cerrar el ciclo ${e.actual}</b><small>${puedeCerrar?'Ya se puede':'Se habilita el 01/01/'+(e.actual+1)}</small></button>
+    </div>
+    <div id="cySim"></div>
+    <div class="v9-card">
+      <div class="v9-h3">📚 Ciclos cerrados</div>
+      ${e.cerrados.length ? e.cerrados.slice().sort((a,b)=>b.anio-a.anio).map(c=>`
+        <div class="v9-ciclo">
+          <div><b>Ciclo ${c.anio}</b><small>Cerrado el ${v9Esc(new Date(c.ts).toLocaleString('es-AR'))} · ${c.registros} registros · ${v9Esc(c.por||'')}</small></div>
+          <div class="v9-fila">
+            <button class="v9-mini" onclick="cyVer(${c.anio})">👁️ Mirar</button>
+            <button class="v9-mini" onclick="cyDevolverTodo(${c.anio})">↩️ Devolver todo</button>
+          </div>
+        </div>`).join('') + `<button class="v9-btn v9-btn-sec" onclick="cyBarrer(true)">🧹 Revisar si quedó algo de ${e.actual-1} suelto</button>`
+      : '<div class="v9-p">Todavía no se cerró ningún ciclo. Después del 01/01/'+(e.actual+1)+' acá vas a poder mirar el ciclo '+e.actual+' y devolver lo que quieras.</div>'}
+    </div>
+  </div>`;
+}
+async function cyGuardarConservar(){
+  const lista = Array.from(document.querySelectorAll('.cy-cons:checked')).map(c=>c.value);
+  const e = cicloEstado(); e.conservar = lista;
+  cicloGrabarEstado(e);
+  try{ await v9Escribir([{ key:CICLO_KEY, value:e }]); alert('✅ Guardado. En el cierre se conservan '+lista.length+' pestañas.'); }
+  catch(_){ try{ syncToSupabase(CICLO_KEY, e); }catch(__){} alert('Guardado en este equipo; se sube a la nube cuando vuelva la conexión.'); }
+}
+async function cySimular(){
+  const box = document.getElementById('cySim'); if(!box) return;
+  box.innerHTML = '<div class="v9-card">🔍 Simulando…</div>';
+  try{
+    const res = await cyCerrar({ anio:cicloActual(), simular:true });
+    const filas = res.reporte.filter(r=>r.total).sort((a,b)=>b.archivar-a.archivar);
+    const tot = filas.reduce((t,r)=>t+r.archivar,0), q = filas.reduce((t,r)=>t+r.quedan,0);
+    box.innerHTML = `<div class="v9-card"><div class="v9-h3">Si el cierre fuera ahora:</div>
+      <div class="v9-p"><b>${tot}</b> registros pasarían al archivo ${cicloActual()} · <b>${q}</b> se quedarían (tienen fecha de ${cicloActual()+1} o posterior).</div>
+      <table class="v9-tabla"><thead><tr><th>Pestaña</th><th>Hoy</th><th>Al archivo</th><th>Se quedan</th></tr></thead>
+      <tbody>${filas.map(r=>`<tr><td>${v9Esc(r.nombre)}</td><td>${r.total}</td><td>${r.archivar}</td><td>${r.quedan}</td></tr>`).join('')}</tbody></table></div>`;
+  }catch(e){ box.innerHTML = '<div class="v9-card v9-mal">⚠️ No se pudo simular: '+v9Esc(e&&e.message?e.message:e)+'</div>'; }
+}
+async function cyCerrarManual(){
+  const a = cicloActual();
+  if(v9AnioAR() <= a){ alert('El ciclo '+a+' se puede cerrar recién desde el 01/01/'+(a+1)+'.'); return; }
+  if(!confirm('🔒 ¿Cerrar el ciclo '+a+'?\n\nTodo lo de '+a+' se copia al archivo, se verifica, y recién ahí sale de las pestañas. No se borra nada.')) return;
+  if(confirm('¿Querés bajar antes un respaldo completo? (recomendado)')) await rspDescargarJSON('Antes del cierre del ciclo '+a);
+  await cyCerrarCicloCompleto(a, true);
+  renderPadmCiclo();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 3) EDITOR DE PESTAÑAS
+// ══════════════════════════════════════════════════════════════════════════
+const PE_HOLD = {};          // módulos sacados del menú: 'S>M' → {sec, mod, idx}
+let PE_GRUPOS_ORIG = null;   // copia original de las carpetas
+let _peUltimoAplicado = null;
+function peModulosRetenidos(secId){ return Object.values(PE_HOLD).filter(h=>h.sec.id===secId).map(h=>h.mod); }
+function peCfg(){
+  const c = v9Local(PE_KEY, null) || {};
+  c.sec = c.sec || {}; c.mod = c.mod || {}; c.campos = c.campos || {};
+  c.carpetas = c.carpetas || {}; c.nuevasCarpetas = Array.isArray(c.nuevasCarpetas)?c.nuevasCarpetas:[];
+  c.gids = c.gids || {}; c.nuevas = Array.isArray(c.nuevas)?c.nuevas:[];
+  return c;
+}
+function peGrabar(c){
+  c.ts = v9Ahora(); c.por = (CU&&CU.nombre)||'—';
+  try{ localStorage.setItem(PE_KEY, JSON.stringify(c)); }catch(_){}
+  try{ syncToSupabase(PE_KEY, c); }catch(_){}
+  peAplicar(true);
+  try{ buildSidebar(); }catch(_){}
+}
+function peSecEliminada(id){ const c=peCfg(); return !!(c.sec[id] && c.sec[id].eliminada); }
+function _peAclarar(hex){
+  const h=String(hex||'').replace('#',''); if(!/^[0-9a-f]{6}$/i.test(h)) return '#e0f2fe';
+  const m=i=>Math.round(parseInt(h.slice(i,i+2),16)*0.15+255*0.85).toString(16).padStart(2,'0');
+  return '#'+m(0)+m(2)+m(4);
+}
+function _peBuscarGrupo(id, lista){
+  for(const g of (lista||SB_GRUPOS)){
+    if(g.id===id) return g;
+    const s = _peBuscarGrupo(id, g.subgrupos||[]); if(s) return s;
+  }
+  return null;
+}
+function _peTodosGrupos(lista, out, padre){
+  out = out || [];
+  (lista||SB_GRUPOS).forEach(g=>{ out.push({g, padre:padre||null}); _peTodosGrupos(g.subgrupos||[], out, g); });
+  return out;
+}
+function _peCampoNuevoBase(c){
+  const f = { key:c.key, label:c.label||c.key, type:c.type||'text' };
+  if(f.type==='select') f.opts = Array.isArray(c.opts)?c.opts.slice():[];
+  if(c.req) f.req = true;
+  return f;
+}
+function _peCamposAplicados(orig, conf){
+  if(!conf || !Array.isArray(conf.lista)) return orig.map(f=>({...f}));
+  const porKey = new Map(orig.map(f=>[f.key, f]));
+  const out = [], usados = new Set();
+  conf.lista.forEach(c=>{
+    if(!c || !c.key) return;
+    usados.add(c.key);
+    if(c.oculto) return;
+    const b = porKey.get(c.key);
+    if(b){
+      const f = {...b};
+      if(c.label) f.label = c.label;
+      if('req' in c) { if(c.req) f.req = true; else delete f.req; }
+      if(f.type==='select' && Array.isArray(c.opts) && c.opts.length) f.opts = c.opts.slice();
+      out.push(f);
+    }else if(c.nuevo){ out.push(_peCampoNuevoBase(c)); }
+  });
+  orig.forEach(f=>{ if(!usados.has(f.key)) out.push({...f}); });   // campos que se agreguen en versiones futuras
+  return out;
+}
+function peAplicar(forzar){
+  if(typeof SECTORS==='undefined' || typeof SB_GRUPOS==='undefined') return;
+  const c = peCfg();
+  const firma = JSON.stringify(c);
+  if(!forzar && firma===_peUltimoAplicado) return;
+  _peUltimoAplicado = firma;
+  if(!PE_GRUPOS_ORIG) PE_GRUPOS_ORIG = v9Clon(SB_GRUPOS);
+  // 1) vuelvo todo a como venía de fábrica
+  Object.keys(PE_HOLD).forEach(k=>{
+    const h = PE_HOLD[k];
+    if(!h.sec.modules.includes(h.mod)) h.sec.modules.splice(Math.min(h.idx, h.sec.modules.length), 0, h.mod);
+    delete PE_HOLD[k];
+  });
+  for(let i=SECTORS.length-1;i>=0;i--) if(SECTORS[i].__nueva) SECTORS.splice(i,1);
+  SB_GRUPOS.splice(0, SB_GRUPOS.length, ...v9Clon(PE_GRUPOS_ORIG));
+  SECTORS.forEach(s=>{
+    if(!s.__o) s.__o = { name:s.name, icon:s.icon, color:s.color, bg:s.bg };
+    s.name=s.__o.name; s.icon=s.__o.icon; s.color=s.__o.color; s.bg=s.__o.bg;
+    (s.modules||[]).forEach(m=>{
+      const fix = x=>{ if(!x.__o) x.__o = { name:x.name, fields:Array.isArray(x.fields)?x.fields.map(f=>({...f})):null };
+        x.name = x.__o.name; if(x.__o.fields) x.fields = x.__o.fields.map(f=>({...f})); };
+      fix(m); (m.subTabs||[]).forEach(fix);
+    });
+  });
+  // 2) pestañas nuevas
+  c.nuevas.forEach(n=>{
+    if(!n || !n.id || SECTORS.some(s=>s.id===n.id)) return;
+    const sec = { id:n.id, name:n.name||'Pestaña nueva', icon:n.icon||'📄', color:n.color||'#2563eb', bg:_peAclarar(n.color||'#2563eb'),
+      __nueva:true, modules:[{ id:'REGISTROS', name:n.name||'Registros', fields:[] }] };
+    if(n.acceso==='admin') sec.restringido = 'admin';
+    else { sec.universal = true; if(n.acceso==='admin_carga') sec.cargaComo = '__SOLO_ADMIN__'; }
+    sec.__o = { name:sec.name, icon:sec.icon, color:sec.color, bg:sec.bg };
+    sec.modules[0].__o = { name:sec.modules[0].name, fields:(n.campos||[]).map(_peCampoNuevoBase) };
+    sec.modules[0].fields = sec.modules[0].__o.fields.map(f=>({...f}));
+    SECTORS.push(sec);
+  });
+  // 3) cambios de cada pestaña
+  SECTORS.forEach(s=>{
+    const o = c.sec[s.id];
+    if(o){
+      if(o.name) s.name = o.name;
+      if(o.icon) s.icon = o.icon;
+      if(o.color){ s.color = o.color; s.bg = _peAclarar(o.color); }
+    }
+    (s.modules||[]).slice().forEach(m=>{
+      const todos = [m].concat(m.subTabs||[]);
+      todos.forEach(x=>{
+        const k = s.id+'>'+x.id;
+        const om = c.mod[k];
+        if(om && om.name) x.name = om.name;
+        if(c.campos[k] && Array.isArray(x.fields)) x.fields = _peCamposAplicados(x.__o && x.__o.fields ? x.__o.fields : x.fields, c.campos[k]);
+      });
+      const om = c.mod[s.id+'>'+m.id];
+      if(om && om.eliminada && s.modules.length>1){
+        const idx = s.modules.indexOf(m);
+        s.modules.splice(idx,1);
+        PE_HOLD[s.id+'>'+m.id] = { sec:s, mod:m, idx };
+      }
+    });
+  });
+  // 4) carpetas
+  c.nuevasCarpetas.forEach(n=>{ if(n && n.id && !_peBuscarGrupo(n.id)) SB_GRUPOS.push({ id:n.id, name:n.name||'Carpeta', icon:n.icon||'📁', color:n.color||'#5aa6dd', ac:n.ac||'', ids:[], __nueva:true }); });
+  Object.keys(c.carpetas).forEach(id=>{
+    const g = _peBuscarGrupo(id); if(!g) return; const o = c.carpetas[id];
+    if(o.name) g.name = o.name;
+    if(o.icon) g.icon = o.icon;
+    if(o.color) g.color = o.color;
+    if('ac' in o) g.ac = o.ac;
+  });
+  Object.keys(c.gids).forEach(id=>{ const g=_peBuscarGrupo(id); if(g && Array.isArray(c.gids[id])) g.ids = c.gids[id].slice(); });
+  Object.keys(c.carpetas).forEach(id=>{
+    if(!c.carpetas[id].eliminada) return;
+    const g = _peBuscarGrupo(id); if(!g) return;
+    const lista = _peTodosGrupos(); const ref = lista.find(x=>x.g===g);
+    const arr = ref && ref.padre ? ref.padre.subgrupos : SB_GRUPOS;
+    const i = arr.indexOf(g); if(i>=0) arr.splice(i,1);
+  });
+  // si estaba parada en una pestaña que ya no existe, vuelvo al inicio
+  try{
+    if(typeof CS!=='undefined' && CS && (peSecEliminada(CS.id) || !SECTORS.includes(CS) || (CM && !v9Modulos().some(x=>x.s===CS.id && x.m===CM.id && (CS.modules.includes(x.mod) || (CS.modules.some(m=>(m.subTabs||[]).includes(x.mod)))))))){
+      CS = null; CM = null; if(typeof showInicio==='function' && document.getElementById('appScreen') && !document.getElementById('appScreen').hasAttribute('hidden')) showInicio();
+    }
+  }catch(_){}
+}
+
+// ─── Panel "Pestañas" ───
+let PE_VISTA = null;   // null = lista; {tipo:'sec', id} | {tipo:'campos', s, m} | {tipo:'carpeta', id} | {tipo:'nueva'} | {tipo:'nuevaCarpeta'}
+function _peEntradas(ids){
+  const out = [];
+  (ids||[]).forEach((e,i)=>{
+    const [sid, mid] = String(e).split('>');
+    const sec = SECTORS.find(s=>s.id===sid); if(!sec) return;
+    if(!mid) out.push({ e, i, sec, mod:null, todos:false });
+    else if(mid==='*') out.push({ e, i, sec, mod:null, todos:true });
+    else { const mod=(sec.modules||[]).find(m=>m.id===mid); if(mod) out.push({ e, i, sec, mod, todos:false }); }
+  });
+  return out;
+}
+function _peAsignadas(){
+  const set = new Set();
+  _peTodosGrupos().forEach(x=>(x.g.ids||[]).forEach(e=>set.add(String(e).split('>')[0])));
+  return set;
+}
+function _peIco(sec){ return '<span class="pe-ico">'+(sec.icon||'📄')+'</span>'; }
+function _peFilaHTML(gid, ent, n){
+  const s = ent.sec;
+  const nom = ent.mod ? v9Esc(ent.mod.name)+' <small>· '+v9Esc(s.name)+'</small>'
+    : v9Esc(s.name) + (ent.todos ? ' <small>· sus '+(s.modules||[]).length+' pestañas internas</small>' : '');
+  return `<div class="pe-fila" style="--pc:${v9Esc(s.color||'#5aa6dd')}">
+    ${_peIco(s)}<span class="pe-nom">${nom}</span>
+    <span class="pe-acc">
+      <button title="Subir" ${ent.i===0?'disabled':''} onclick="peMoverOrden('${gid}',${ent.i},-1)">▲</button>
+      <button title="Bajar" ${ent.i>=n-1?'disabled':''} onclick="peMoverOrden('${gid}',${ent.i},1)">▼</button>
+      <button title="Editar" onclick="peAbrir({tipo:'sec',id:'${s.id}'})">✏️</button>
+      <button title="Mover a otra carpeta" onclick="peMoverCarpeta('${gid}','${v9Esc(ent.e)}')">📂</button>
+      <button title="Eliminar" onclick="${ent.mod?`peEliminarMod('${s.id}','${ent.mod.id}')`:`peEliminarSec('${s.id}')`}">🗑️</button>
+    </span></div>`;
+}
+function _peGrupoHTML(g, nivel){
+  const ents = _peEntradas(g.ids);
+  return `<div class="pe-grupo${nivel?' pe-sub':''}" style="--gc:${v9Esc(g.color||'#5aa6dd')}">
+    <div class="pe-gh"><span class="pe-gh-i">${g.icon||'📁'}</span><span class="pe-gh-n">${v9Esc(g.name)}${g.ac?`<small>${v9Esc(g.ac)}</small>`:''}</span>
+      <span class="pe-acc"><button title="Editar carpeta" onclick="peAbrir({tipo:'carpeta',id:'${g.id}'})">✏️</button></span></div>
+    ${ents.length ? ents.map(e=>_peFilaHTML(g.id, e, (g.ids||[]).length)).join('') : (g.subgrupos&&g.subgrupos.length?'':'<div class="pe-vacio">Carpeta vacía</div>')}
+    ${(g.subgrupos||[]).map(sg=>_peGrupoHTML(sg, nivel+1)).join('')}
+  </div>`;
+}
+function renderPadmPestanas(){
+  const body = document.getElementById('padmBody');
+  if(PE_VISTA) return peRenderEditor();
+  const c = peCfg();
+  const asign = _peAsignadas();
+  const sueltas = SECTORS.filter(s=>!asign.has(s.id) && !peSecEliminada(s.id));
+  const elimSec = SECTORS.filter(s=>peSecEliminada(s.id));
+  const elimMod = Object.keys(PE_HOLD).map(k=>PE_HOLD[k]);
+  const elimCarp = Object.keys(c.carpetas).filter(id=>c.carpetas[id].eliminada).map(id=>({id, name:(c.carpetas[id].name||(_peBuscarGrupo(id, PE_GRUPOS_ORIG||[])||{}).name||id)}));
+  body.innerHTML = `<div class="v9" data-cc-no>
+    <div class="v9-card v9-hero">
+      <div class="v9-h">🗂️ Pestañas y carpetas del menú</div>
+      <div class="v9-p">Lo que cambies acá lo ven todos los equipos. Eliminar una pestaña la saca del menú, pero <b>sus datos quedan guardados</b> y la podés restaurar abajo, en "Eliminadas".</div>
+      <div class="v9-fila">
+        <button class="v9-btn v9-btn-ok" onclick="peAbrir({tipo:'nueva'})">➕ Pestaña nueva</button>
+        <button class="v9-btn" onclick="peAbrir({tipo:'nuevaCarpeta'})">📁 Carpeta nueva</button>
+      </div>
+    </div>
+    ${SB_GRUPOS.map(g=>_peGrupoHTML(g,0)).join('')}
+    ${sueltas.length ? `<div class="pe-grupo" style="--gc:#8fb0cb"><div class="pe-gh"><span class="pe-gh-i">📂</span><span class="pe-gh-n">Otras <small>pestañas sin carpeta</small></span></div>
+      ${sueltas.map(s=>_peFilaHTML('OTRAS', {e:s.id, i:0, sec:s, mod:null}, 1)).join('')}</div>` : ''}
+    ${(elimSec.length||elimMod.length||elimCarp.length) ? `<div class="v9-card pe-papelera"><div class="v9-h3">🗑️ Eliminadas (los datos siguen guardados)</div>
+      ${elimSec.map(s=>`<div class="pe-fila">${_peIco(s)}<span class="pe-nom">${v9Esc(s.name)}</span><span class="pe-acc">
+        <button class="v9-mini" onclick="peRestaurarSec('${s.id}')">↩️ Restaurar</button>
+        ${s.__nueva ? `<button class="v9-mini" onclick="peBorrarNueva('${s.id}')">Borrar para siempre</button>`:''}</span></div>`).join('')}
+      ${elimMod.map(h=>`<div class="pe-fila">${_peIco(h.sec)}<span class="pe-nom">${v9Esc(h.mod.name)} <small>· ${v9Esc(h.sec.name)}</small></span><span class="pe-acc">
+        <button class="v9-mini" onclick="peRestaurarMod('${h.sec.id}','${h.mod.id}')">↩️ Restaurar</button></span></div>`).join('')}
+      ${elimCarp.map(g=>`<div class="pe-fila"><span class="pe-ico">📁</span><span class="pe-nom">${v9Esc(g.name)} <small>· carpeta</small></span><span class="pe-acc">
+        <button class="v9-mini" onclick="peRestaurarCarpeta('${g.id}')">↩️ Restaurar</button></span></div>`).join('')}
+    </div>`:''}
+    <div class="v9-fila" style="justify-content:flex-end"><button class="v9-mini" onclick="peVolverFabrica()">Volver todo el menú a como venía</button></div>
+  </div>`;
+}
+function peAbrir(v){ PE_VISTA = v; renderPadmPestanas(); const b=document.getElementById('padmBody'); if(b) b.scrollTop=0; }
+function peCerrar(){ PE_VISTA = null; renderPadmPestanas(); }
+
+// Orden y carpetas: siempre se guarda la lista completa de las carpetas tocadas
+function peMoverOrden(gid, i, d){
+  const g = _peBuscarGrupo(gid); if(!g) return;
+  const ids = (g.ids||[]).slice(); const j = i+d;
+  if(j<0 || j>=ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  const c = peCfg(); c.gids[gid] = ids; peGrabar(c); renderPadmPestanas();
+}
+function _peOpcionesCarpetas(excluir){
+  return _peTodosGrupos().filter(x=>x.g.id!==excluir && !x.g.sola).map(x=>`<option value="${x.g.id}">${x.padre?'— ':''}${v9Esc(String(x.g.name).replace(/<[^>]+>/g,''))}</option>`).join('')
+    + '<option value="OTRAS">Otras (sin carpeta)</option>';
+}
+function peMoverCarpeta(gid, entrada){
+  const sid = String(entrada).split('>')[0];
+  const sec = SECTORS.find(s=>s.id===sid);
+  const body = document.getElementById('padmBody');
+  const box = document.createElement('div');
+  box.className = 'v9-prog'; box.setAttribute('data-cc-no','');
+  box.innerHTML = `<div class="v9-prog-box"><div class="v9-prog-t">📂 Mover "${v9Esc(sec?sec.name:entrada)}"</div>
+    <div class="v9-p">¿A qué carpeta va?</div>
+    <select id="peDest" class="v9-in">${_peOpcionesCarpetas(gid)}</select>
+    <div class="v9-fila" style="margin-top:12px"><button class="v9-btn v9-btn-ok" id="peMovOk">Mover</button><button class="v9-btn v9-btn-sec" onclick="this.closest('.v9-prog').remove()">Cancelar</button></div></div>`;
+  document.body.appendChild(box);
+  box.querySelector('#peMovOk').onclick = ()=>{
+    const dest = box.querySelector('#peDest').value; box.remove();
+    const c = peCfg();
+    if(gid!=='OTRAS'){ const g=_peBuscarGrupo(gid); if(g){ c.gids[gid] = (g.ids||[]).filter(e=>e!==entrada); } }
+    else {
+      // estaba en "Otras": por las dudas la saco de cualquier carpeta que la tenga
+      _peTodosGrupos().forEach(x=>{ if((x.g.ids||[]).some(e=>String(e).split('>')[0]===sid && e===entrada)) c.gids[x.g.id]=(x.g.ids||[]).filter(e=>e!==entrada); });
+    }
+    if(dest!=='OTRAS'){ const g=_peBuscarGrupo(dest); if(g){ const base = c.gids[dest] || (g.ids||[]).slice(); if(!base.includes(entrada)) base.push(entrada); c.gids[dest]=base; } }
+    peGrabar(c); renderPadmPestanas();
+  };
+}
+function peEliminarSec(id){
+  const s = SECTORS.find(x=>x.id===id); if(!s) return;
+  if(!confirm('🗑️ ¿Eliminar la pestaña "'+s.name+'"?\n\nSale del menú de todos. Sus datos NO se borran: quedan guardados y la podés restaurar cuando quieras desde "Eliminadas".')) return;
+  const c = peCfg(); c.sec[id] = {...(c.sec[id]||{}), eliminada:true, elimTs:v9Ahora(), elimPor:(CU&&CU.nombre)||'—'};
+  peGrabar(c); renderPadmPestanas();
+}
+function peRestaurarSec(id){ const c=peCfg(); if(c.sec[id]){ delete c.sec[id].eliminada; } peGrabar(c); renderPadmPestanas(); }
+function peEliminarMod(sid, mid){
+  const s = SECTORS.find(x=>x.id===sid); if(!s) return;
+  const m = (s.modules||[]).find(x=>x.id===mid); if(!m) return;
+  if((s.modules||[]).length<=1){ return peEliminarSec(sid); }
+  if(!confirm('🗑️ ¿Eliminar "'+m.name+'" (dentro de '+s.name+')?\n\nSale del menú. Sus datos NO se borran y la podés restaurar.')) return;
+  const c = peCfg(); c.mod[sid+'>'+mid] = {...(c.mod[sid+'>'+mid]||{}), eliminada:true};
+  peGrabar(c); renderPadmPestanas();
+}
+function peRestaurarMod(sid, mid){ const c=peCfg(); if(c.mod[sid+'>'+mid]) delete c.mod[sid+'>'+mid].eliminada; peGrabar(c); renderPadmPestanas(); }
+function peRestaurarCarpeta(id){ const c=peCfg(); if(c.carpetas[id]) delete c.carpetas[id].eliminada; peGrabar(c); renderPadmPestanas(); }
+function peBorrarNueva(id){
+  const n = S.get(id,'REGISTROS').length;
+  if(n){ alert('Esta pestaña tiene '+n+' registros. Para no perder nada, no se borra para siempre: queda en "Eliminadas".'); return; }
+  if(!confirm('¿Borrar para siempre la pestaña? (no tiene ningún registro)')) return;
+  const c = peCfg(); c.nuevas = c.nuevas.filter(x=>x.id!==id); delete c.sec[id];
+  Object.keys(c.gids).forEach(g=>c.gids[g]=c.gids[g].filter(e=>String(e).split('>')[0]!==id));
+  peGrabar(c); renderPadmPestanas();
+}
+function peVolverFabrica(){
+  if(!confirm('¿Volver TODO el menú a como venía? Se deshacen nombres, colores, carpetas, órdenes y campos editados. Las pestañas nuevas que creaste y sus datos NO se borran: quedan en "Otras".')) return;
+  const c = peCfg();
+  peGrabar({ nuevas:c.nuevas, sec:{}, mod:{}, campos:{}, carpetas:{}, nuevasCarpetas:c.nuevasCarpetas, gids:{} });
+  renderPadmPestanas();
+}
+
+// ─── Editor de una pestaña / carpeta / campos ───
+const PE_ICONOS = ['📄','📋','📑','📚','📖','🗂️','📁','📌','📎','📝','✏️','🖊️','📊','📈','🗓️','📅','⏰','🕐','🔔','📣','📢','💬','✉️','📞','🏛️','🏫','🎓','👮','🚔','🚓','🛡️','⭐','★','🎖️','🏅','⚙️','🔧','🧰','📦','🛒','🍽️','🏥','💊','🩺','🏃','⚽','🧾','💰','🔑','🔒','📶','💻','🖥️','📷','🧭','🗺️','🌐','✅','❗','❓'];
+const PE_COLORES = ['#1d4ed8','#2563eb','#0369a1','#0891b2','#0d9488','#15803d','#4d7c0f','#a16207','#b45309','#c2410c','#b91c1c','#be123c','#db2777','#a21caf','#7c3aed','#4338ca','#374151','#475569'];
+function _peSelIcono(id, actual){
+  return `<div class="pe-iconos">${PE_ICONOS.map(i=>`<button type="button" class="${i===actual?'on':''}" onclick="document.getElementById('${id}').value='${i}';this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${i}</button>`).join('')}</div>
+    <input id="${id}" class="v9-in" value="${v9Esc(actual||'')}" placeholder="o pegá cualquier emoji">`;
+}
+function _peSelColor(id, actual){
+  return `<div class="pe-colores">${PE_COLORES.map(c=>`<button type="button" style="background:${c}" class="${c===actual?'on':''}" onclick="document.getElementById('${id}').value='${c}';this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')"></button>`).join('')}
+    <input type="color" id="${id}" value="${/^#[0-9a-f]{6}$/i.test(actual||'')?actual:'#2563eb'}" title="Otro color"></div>`;
+}
+function _peEsGenerico(sec, mod){
+  return !!(mod && Array.isArray(mod.fields) && !sec.custom && !mod.custom && !mod.subTabs);
+}
+function peRenderEditor(){
+  const body = document.getElementById('padmBody');
+  const v = PE_VISTA;
+  const top = `<button class="v9-btn v9-btn-sec" onclick="peCerrar()">← Volver a la lista</button>`;
+  if(v.tipo==='sec'){
+    const s = SECTORS.find(x=>x.id===v.id); if(!s){ PE_VISTA=null; return renderPadmPestanas(); }
+    const mods = (s.modules||[]).concat(peModulosRetenidos(s.id));
+    const nueva = peCfg().nuevas.find(n=>n.id===s.id);
+    body.innerHTML = `<div class="v9" data-cc-no>${top}
+      <div class="v9-card"><div class="v9-h">✏️ ${v9Esc(s.name)}</div>
+        <label class="v9-lab">Nombre</label><input id="peNom" class="v9-in" value="${v9Esc(s.name)}">
+        <label class="v9-lab">Ícono</label>${_peSelIcono('peIco', s.icon)}
+        <label class="v9-lab">Color</label>${_peSelColor('peCol', s.color)}
+        ${nueva ? `<label class="v9-lab">Quién la ve y quién carga</label>
+          <select id="peAcc" class="v9-in">
+            <option value="todos" ${nueva.acceso==='todos'?'selected':''}>La ven todos · cargan quienes tienen permiso de carga</option>
+            <option value="admin_carga" ${nueva.acceso==='admin_carga'?'selected':''}>La ven todos · cargan solo las administradoras</option>
+            <option value="admin" ${nueva.acceso==='admin'?'selected':''}>Solo la ven las administradoras</option>
+          </select>` : ''}
+        <div class="v9-fila" style="margin-top:14px"><button class="v9-btn v9-btn-ok" onclick="peGuardarSec('${s.id}')">💾 Guardar</button>
+          <button class="v9-btn v9-btn-sec" onclick="peFabricaSec('${s.id}')">Volver a como venía</button></div>
+      </div>
+      <div class="v9-card"><div class="v9-h3">Pestañas internas y campos</div>
+        ${s.custom ? '<div class="v9-p">Esta pestaña tiene un diseño propio (no es un formulario común): se puede renombrar, cambiar de ícono y color, mover y eliminar, pero sus campos son fijos.</div>':''}
+        ${mods.map(m=>{
+          const elim = !!PE_HOLD[s.id+'>'+m.id];
+          const subs = m.subTabs || [];
+          const fila = (x, pad)=>`<div class="pe-mod${elim?' pe-elim':''}" style="${pad?'margin-left:18px':''}">
+              <input class="v9-in pe-mod-in" data-k="${s.id}>${x.id}" value="${v9Esc(x.name)}" ${elim?'disabled':''}>
+              ${_peEsGenerico(s, x) && !elim ? `<button class="v9-mini" onclick="peAbrir({tipo:'campos',s:'${s.id}',m:'${x.id}'})">🧩 Campos (${x.fields.length})</button>`:''}
+              ${pad ? '' : (elim ? `<button class="v9-mini" onclick="peRestaurarMod('${s.id}','${m.id}');peAbrir({tipo:'sec',id:'${s.id}'})">↩️ Restaurar</button>`
+                : (mods.length>1 ? `<button class="v9-mini" onclick="peEliminarMod('${s.id}','${m.id}');peAbrir({tipo:'sec',id:'${s.id}'})">🗑️</button>`:''))}
+            </div>`;
+          return fila(m, false) + subs.map(st=>fila(st, true)).join('');
+        }).join('')}
+        <button class="v9-btn" onclick="peGuardarNombresMod('${s.id}')">💾 Guardar nombres</button>
+      </div></div>`;
+    return;
+  }
+  if(v.tipo==='campos'){
+    const s = SECTORS.find(x=>x.id===v.s);
+    let mod = s && ((s.modules||[]).find(m=>m.id===v.m) || (s.modules||[]).flatMap(m=>m.subTabs||[]).find(m=>m.id===v.m));
+    if(!mod){ PE_VISTA=null; return renderPadmPestanas(); }
+    const k = s.id+'>'+mod.id;
+    const conf = peCfg().campos[k];
+    const orig = (mod.__o && mod.__o.fields) ? mod.__o.fields : mod.fields;
+    if(!PE_VISTA.lista){
+      const lista = conf && Array.isArray(conf.lista) ? v9Clon(conf.lista) : [];
+      const vistos = new Set(lista.map(x=>x.key));
+      orig.forEach(f=>{ if(!vistos.has(f.key)) lista.push({ key:f.key }); });
+      PE_VISTA.lista = lista.map(x=>{
+        const b = orig.find(f=>f.key===x.key);
+        return b ? { key:x.key, label:x.label||b.label, type:b.type, opts:(x.opts&&x.opts.length?x.opts:(b.opts||[])), req:('req' in x)?!!x.req:!!b.req, oculto:!!x.oculto, base:true }
+                 : { ...x, nuevo:true };
+      });
+    }
+    const TIPOS = {text:'Texto corto', textarea:'Texto largo', number:'Número', date:'Fecha', time:'Hora', select:'Lista para elegir', image:'Imagen'};
+    body.innerHTML = `<div class="v9" data-cc-no><button class="v9-btn v9-btn-sec" onclick="peAbrir({tipo:'sec',id:'${s.id}'})">← Volver a ${v9Esc(s.name)}</button>
+      <div class="v9-card"><div class="v9-h">🧩 Campos de "${v9Esc(mod.name)}"</div>
+      <div class="v9-p">Ocultar un campo lo saca del formulario y de la tabla, pero lo ya cargado en ese campo no se borra: si lo volvés a mostrar, aparece de nuevo.</div>
+      ${PE_VISTA.lista.map((f,i)=>`<div class="pe-campo${f.oculto?' pe-elim':''}">
+        <div class="pe-campo-ord"><button ${i===0?'disabled':''} onclick="peCampoMover(${i},-1)">▲</button><button ${i===PE_VISTA.lista.length-1?'disabled':''} onclick="peCampoMover(${i},1)">▼</button></div>
+        <div class="pe-campo-b">
+          <input class="v9-in" value="${v9Esc(f.label)}" oninput="PE_VISTA.lista[${i}].label=this.value" ${f.oculto?'disabled':''}>
+          <div class="v9-fila">
+            ${f.base ? `<span class="v9-chip">${TIPOS[f.type]||f.type}</span>` :
+              `<select class="v9-in pe-tipo" onchange="PE_VISTA.lista[${i}].type=this.value;peRenderEditor()">${Object.keys(TIPOS).filter(t=>t!=='image').map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${TIPOS[t]}</option>`).join('')}</select>`}
+            <label class="pe-chk"><input type="checkbox" ${f.req?'checked':''} onchange="PE_VISTA.lista[${i}].req=this.checked" ${f.oculto?'disabled':''}> Obligatorio</label>
+            ${f.base ? `<button class="v9-mini" onclick="PE_VISTA.lista[${i}].oculto=${!f.oculto};peRenderEditor()">${f.oculto?'👁️ Mostrar':'🙈 Ocultar'}</button>`
+                     : `<button class="v9-mini" onclick="PE_VISTA.lista.splice(${i},1);peRenderEditor()">✕ Quitar</button>`}
+          </div>
+          ${f.type==='select' && !f.oculto ? `<input class="v9-in" placeholder="Opciones separadas por coma" value="${v9Esc((f.opts||[]).join(', '))}" oninput="PE_VISTA.lista[${i}].opts=this.value.split(',').map(x=>x.trim()).filter(Boolean)">`:''}
+        </div></div>`).join('')}
+      <div class="v9-fila" style="margin-top:10px">
+        <button class="v9-btn" onclick="peCampoNuevo()">➕ Agregar campo</button>
+        <button class="v9-btn v9-btn-ok" onclick="peGuardarCampos('${s.id}','${mod.id}')">💾 Guardar campos</button>
+        <button class="v9-btn v9-btn-sec" onclick="peFabricaCampos('${s.id}','${mod.id}')">Volver a como venía</button>
+      </div></div></div>`;
+    return;
+  }
+  if(v.tipo==='carpeta' || v.tipo==='nuevaCarpeta'){
+    const g = v.tipo==='carpeta' ? _peBuscarGrupo(v.id) : { name:'', icon:'📁', color:'#5aa6dd', ac:'' };
+    if(!g){ PE_VISTA=null; return renderPadmPestanas(); }
+    const icoTxt = String(g.icon||'').replace(/<[^>]+>/g,'');
+    body.innerHTML = `<div class="v9" data-cc-no>${top}
+      <div class="v9-card"><div class="v9-h">${v.tipo==='carpeta'?'✏️ Carpeta "'+v9Esc(g.name)+'"':'📁 Carpeta nueva'}</div>
+        <label class="v9-lab">Nombre</label><input id="peNom" class="v9-in" value="${v9Esc(g.name)}">
+        <label class="v9-lab">A cargo de (segunda línea, opcional)</label><input id="peAc" class="v9-in" value="${v9Esc(g.ac||'')}">
+        <label class="v9-lab">Ícono</label>${_peSelIcono('peIco', icoTxt)}
+        <label class="v9-lab">Color</label>${_peSelColor('peCol', g.color)}
+        <div class="v9-fila" style="margin-top:14px"><button class="v9-btn v9-btn-ok" onclick="peGuardarCarpeta(${v.tipo==='carpeta'?`'${g.id}'`:'null'})">💾 Guardar</button>
+        ${v.tipo==='carpeta' ? `<button class="v9-btn v9-btn-sec" onclick="peEliminarCarpeta('${g.id}')">🗑️ Eliminar carpeta</button>`:''}</div>
+      </div></div>`;
+    return;
+  }
+  if(v.tipo==='nueva'){
+    body.innerHTML = `<div class="v9" data-cc-no>${top}
+      <div class="v9-card"><div class="v9-h">➕ Pestaña nueva</div>
+        <label class="v9-lab">Nombre</label><input id="peNom" class="v9-in" placeholder="Ej: Control de Uniformes">
+        <label class="v9-lab">Ícono</label>${_peSelIcono('peIco', '📋')}
+        <label class="v9-lab">Color</label>${_peSelColor('peCol', '#2563eb')}
+        <label class="v9-lab">¿En qué carpeta?</label><select id="peCarp" class="v9-in">${_peOpcionesCarpetas(null)}</select>
+        <label class="v9-lab">Quién la ve y quién carga</label>
+        <select id="peAcc" class="v9-in">
+          <option value="todos">La ven todos · cargan quienes tienen permiso de carga</option>
+          <option value="admin_carga">La ven todos · cargan solo las administradoras</option>
+          <option value="admin">Solo la ven las administradoras</option>
+        </select>
+        <div class="v9-p" style="margin-top:10px">Arranca con los campos Fecha, Detalle y Observaciones. Después de crearla los cambiás desde "🧩 Campos".</div>
+        <button class="v9-btn v9-btn-ok" onclick="peCrearNueva()">➕ Crear pestaña</button>
+      </div></div>`;
+  }
+}
+function peGuardarSec(id){
+  const c = peCfg();
+  const nom = (document.getElementById('peNom').value||'').trim();
+  if(!nom){ alert('Poné un nombre.'); return; }
+  c.sec[id] = {...(c.sec[id]||{}), name:nom, icon:(document.getElementById('peIco').value||'').trim()||undefined, color:document.getElementById('peCol').value};
+  const acc = document.getElementById('peAcc');
+  const n = c.nuevas.find(x=>x.id===id);
+  if(n){ n.name = nom; n.icon = c.sec[id].icon || n.icon; n.color = c.sec[id].color; if(acc) n.acceso = acc.value; }
+  peGrabar(c); alert('✅ Guardado. Ya se ve en el menú de todos.'); peAbrir({tipo:'sec', id});
+}
+function peGuardarNombresMod(sid){
+  const c = peCfg();
+  document.querySelectorAll('.pe-mod-in').forEach(inp=>{
+    if(inp.disabled) return;
+    const k = inp.getAttribute('data-k'), v = (inp.value||'').trim();
+    if(!v) return;
+    c.mod[k] = {...(c.mod[k]||{}), name:v};
+  });
+  peGrabar(c); alert('✅ Nombres guardados.'); peAbrir({tipo:'sec', id:sid});
+}
+function peFabricaSec(id){
+  if(!confirm('¿Volver esta pestaña a como venía (nombre, ícono, color, nombres internos y campos)? Los datos no se tocan.')) return;
+  const c = peCfg(); const n = c.nuevas.find(x=>x.id===id);
+  const elim = c.sec[id] && c.sec[id].eliminada;
+  delete c.sec[id]; if(elim) c.sec[id] = {eliminada:true};
+  Object.keys(c.mod).forEach(k=>{ if(k.indexOf(id+'>')===0){ const e=c.mod[k].eliminada; delete c.mod[k]; if(e) c.mod[k]={eliminada:true}; } });
+  if(!n) Object.keys(c.campos).forEach(k=>{ if(k.indexOf(id+'>')===0) delete c.campos[k]; });
+  peGrabar(c); peAbrir({tipo:'sec', id});
+}
+function peCampoMover(i, d){ const L=PE_VISTA.lista, j=i+d; if(j<0||j>=L.length) return; [L[i],L[j]]=[L[j],L[i]]; peRenderEditor(); }
+function peCampoNuevo(){
+  const nom = prompt('Nombre del campo nuevo:'); if(!nom || !nom.trim()) return;
+  const slug = nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,20) || 'campo';
+  PE_VISTA.lista.push({ key:'c_'+slug+'_'+Date.now().toString(36).slice(-4), label:nom.trim(), type:'text', nuevo:true, req:false });
+  peRenderEditor();
+}
+function peGuardarCampos(sid, mid){
+  const L = PE_VISTA.lista || [];
+  if(!L.some(f=>!f.oculto)){ alert('Tiene que quedar al menos un campo visible.'); return; }
+  if(L.some(f=>!f.oculto && !String(f.label||'').trim())){ alert('Hay un campo sin nombre.'); return; }
+  const c = peCfg();
+  const lista = L.map(f=>f.base ? { key:f.key, label:f.label, req:!!f.req, oculto:!!f.oculto, opts:f.type==='select'?(f.opts||[]):undefined }
+                                : { key:f.key, label:f.label, type:f.type, req:!!f.req, opts:f.type==='select'?(f.opts||[]):undefined, nuevo:true });
+  const n = c.nuevas.find(x=>x.id===sid);
+  if(n && mid==='REGISTROS'){ n.campos = lista.filter(f=>!f.oculto).map(f=>({ key:f.key, label:f.label, type:f.type||'text', req:f.req, opts:f.opts })); delete c.campos[sid+'>'+mid]; }
+  else c.campos[sid+'>'+mid] = { lista };
+  peGrabar(c); alert('✅ Campos guardados. El formulario ya cambió para todos.');
+  PE_VISTA.lista = null; peRenderEditor();
+}
+function peFabricaCampos(sid, mid){
+  if(!confirm('¿Volver los campos a como venían? Lo cargado no se toca.')) return;
+  const c = peCfg(); delete c.campos[sid+'>'+mid]; peGrabar(c); PE_VISTA.lista = null; peRenderEditor();
+}
+function peGuardarCarpeta(id){
+  const nom = (document.getElementById('peNom').value||'').trim(); if(!nom){ alert('Poné un nombre.'); return; }
+  const o = { name:nom, icon:(document.getElementById('peIco').value||'').trim()||'📁', color:document.getElementById('peCol').value, ac:(document.getElementById('peAc').value||'').trim() };
+  const c = peCfg();
+  if(id){ c.carpetas[id] = {...(c.carpetas[id]||{}), ...o}; }
+  else { c.nuevasCarpetas.push({ id:'NC_'+Date.now().toString(36), ...o }); }
+  peGrabar(c); peCerrar();
+}
+function peEliminarCarpeta(id){
+  const g = _peBuscarGrupo(id); if(!g) return;
+  if(!confirm('¿Eliminar la carpeta "'+g.name+'"?\n\nLas pestañas que tiene adentro NO se eliminan: pasan a "Otras" y las podés mover a otra carpeta.')) return;
+  const c = peCfg();
+  if(g.__nueva){ c.nuevasCarpetas = c.nuevasCarpetas.filter(x=>x.id!==id); delete c.gids[id]; }
+  else c.carpetas[id] = {...(c.carpetas[id]||{}), eliminada:true, name:g.name};
+  peGrabar(c); peCerrar();
+}
+function peCrearNueva(){
+  const nom = (document.getElementById('peNom').value||'').trim(); if(!nom){ alert('Poné un nombre.'); return; }
+  const id = 'NX_'+Date.now().toString(36).toUpperCase();
+  const c = peCfg();
+  c.nuevas.push({ id, name:nom, icon:(document.getElementById('peIco').value||'').trim()||'📋', color:document.getElementById('peCol').value,
+    acceso:document.getElementById('peAcc').value,
+    campos:[ {key:'fecha',label:'Fecha',type:'date',req:true}, {key:'detalle',label:'Detalle',type:'text',req:true}, {key:'obs',label:'Observaciones',type:'textarea'} ] });
+  const dest = document.getElementById('peCarp').value;
+  if(dest && dest!=='OTRAS'){ const g=_peBuscarGrupo(dest); if(g){ const base = c.gids[dest] || (g.ids||[]).slice(); base.push(id); c.gids[dest]=base; } }
+  peGrabar(c);
+  alert('✅ Pestaña "'+nom+'" creada. Ya aparece en el menú de todos.');
+  peAbrir({tipo:'sec', id});
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ENGANCHES con el resto de la app
+// ══════════════════════════════════════════════════════════════════════════
+(function v9Enganchar(){
+  // Panel de Administración: tres solapas nuevas
+  const _sw = switchPadmTab;
+  switchPadmTab = function(tab){
+    if(tab!=='pestanas') PE_VISTA = null;
+    if(tab==='respaldo' || tab==='ciclo' || tab==='pestanas'){
+      padmTab = tab;
+      document.querySelectorAll('.padm-tab').forEach(t=>t.classList.remove('active'));
+      const el = document.getElementById('padmTab_'+tab); if(el) el.classList.add('active');
+      if(tab==='respaldo') renderPadmRespaldo();
+      else if(tab==='ciclo') renderPadmCiclo();
+      else renderPadmPestanas();
+      return;
+    }
+    return _sw.apply(this, arguments);
+  };
+  // El menú se arma siempre con la configuración de pestañas aplicada
+  const _bs = buildSidebar;
+  buildSidebar = function(){
+    try{ peAplicar(); }catch(e){ console.warn('Editor de pestañas:', e); }
+    const r = _bs.apply(this, arguments);
+    try{ if(CY_VISTA) cyPintarBanda(); }catch(_){}
+    return r;
+  };
+  // Pestaña eliminada = fuera del menú y del Panel de inicio (como el Archivo)
+  if(typeof archSectorArchivado === 'function'){
+    const _as = archSectorArchivado;
+    archSectorArchivado = function(id){ return _as.apply(this, arguments) || peSecEliminada(id); };
+  }
+  const _isv = iniSectorVisible;
+  iniSectorVisible = function(sec){ if(sec && peSecEliminada(sec.id)) return false; return _isv.apply(this, arguments); };
+  // Banda del ciclo viejo: se actualiza al cambiar de pestaña
+  const _ss = selectSector;
+  selectSector = function(){ const r=_ss.apply(this, arguments); try{ if(CY_VISTA){ cyPintarBanda(); const b=document.getElementById('addBtn'); if(b) b.style.display='none'; } }catch(_){} return r; };
+  // Solo lectura mientras se mira un ciclo cerrado
+  const _set = S.set;
+  S.set = function(){ if(_cyBloqueado()) return; return _set.apply(this, arguments); };
+  if(typeof _S_set_local==='function'){ const _sl=_S_set_local; _S_set_local=function(){ if(CY_VISTA) return; return _sl.apply(this, arguments); }; }
+  if(typeof _guardarModuloSeguro==='function'){ const _g=_guardarModuloSeguro; _guardarModuloSeguro=async function(s,m,l){ if(_cyBloqueado()) return S.get(s,m); return _g.apply(this, arguments); }; }
+  if(typeof _sincronizarRegistro==='function'){ const _sr=_sincronizarRegistro; _sincronizarRegistro=async function(){ if(_cyBloqueado()) return false; return _sr.apply(this, arguments); }; }
+  const _sts = syncToSupabase;
+  syncToSupabase = function(key){ if(CY_VISTA && CY_VISTA.modulos.has(key)) return; return _sts.apply(this, arguments); };
+  // Cuando llega de otro equipo un cambio de pestañas o de ciclo
+  const _rv = _refrescarVistasVivas;
+  _refrescarVistasVivas = function(clave){
+    if(clave===PE_KEY){ try{ peAplicar(); buildSidebar(); }catch(_){} }
+    if(clave===CICLO_KEY){ try{ cyAlCambiarCiclo(); }catch(_){} }
+    return _rv.apply(this, arguments);
+  };
+  const _pull = pullAllFromSupabase;
+  pullAllFromSupabase = function(){
+    const p = _pull.apply(this, arguments);
+    Promise.resolve(p).then(()=>{
+      try{ const f = JSON.stringify(peCfg()); if(f!==_peUltimoAplicado && typeof CU!=='undefined' && CU){ peAplicar(); buildSidebar(); } }catch(_){}
+      try{ cyAlCambiarCiclo(); }catch(_){}
+    });
+    return p;
+  };
+  // Al entrar
+  const _ini = iniciarSesion;
+  iniciarSesion = function(){
+    try{ peAplicar(); }catch(_){}
+    const r = _ini.apply(this, arguments);
+    try{ if(_cyUltimoVisto===null) _cyUltimoVisto = cicloActual(); }catch(_){}
+    setTimeout(()=>{ cyVigilar(); }, 8000);
+    setTimeout(()=>{ try{ cyBienvenida(); }catch(_){} }, 2500);
+    setTimeout(()=>{ try{ v9RecordarRespaldo(); }catch(_){} }, 6000);
+    // las administradoras, una vez por día, revisan que no haya quedado nada del ciclo viejo suelto
+    setTimeout(()=>{
+      try{
+        if(!v9Admin() || cicloActual()<=CICLO_BASE) return;
+        const hoy = new Date().toDateString();
+        if(v9Local('suep_ciclo_barrido', '')===hoy) return;
+        localStorage.setItem('suep_ciclo_barrido', JSON.stringify(hoy));
+        cyBarrer(false);
+      }catch(_){}
+    }, 20000);
+    return r;
+  };
+  setInterval(()=>{ cyVigilar(); }, 60000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) cyVigilar(); });
+  // Aplicar ya mismo lo que haya en el equipo
+  try{ peAplicar(); }catch(e){ console.warn('Editor de pestañas:', e); }
+})();
+
+// Recordatorio de respaldo para las administradoras
+function v9RecordarRespaldo(){
+  if(!v9Admin()) return;
+  const d = rspDiasDesdeUltimo();
+  const hoy = new Date();
+  const finDeAnio = hoy.getMonth()===11 && hoy.getDate()>=26;
+  if(!finDeAnio && d!==null && d<7) return;
+  const k = 'suep_rec_resp_'+hoy.toDateString();
+  if(v9Local(k, null)) return;
+  try{ localStorage.setItem(k,'1'); }catch(_){}
+  const t = document.createElement('div');
+  t.className = 'v9-toast'; t.setAttribute('data-cc-no','');
+  t.innerHTML = `<span>💾 ${finDeAnio ? 'Se viene el cierre del ciclo: bajá el respaldo completo antes del 31/12 a las 23:59.' : (d===null ? 'Todavía no bajaste un respaldo desde este equipo.' : 'Hace '+d+' días que no bajás un respaldo.')}</span>
+    <button onclick="this.parentNode.remove();showPanelAdmin();switchPadmTab('respaldo')">Ir</button><button onclick="this.parentNode.remove()">✕</button>`;
+  document.body.appendChild(t);
+  setTimeout(()=>{ try{ t.remove(); }catch(_){} }, 20000);
 }
 
 </script>
