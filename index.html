@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.9">
+<meta name="app-version" content="1.6.10">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4126,8 +4126,8 @@ const ORGANIGRAMA_SEED = [
 
   // 3 Jefes (dependen del Rector)
   {apellidoNombre:'Elías Miguel Muñoz',            jerarquia:'Comisario', cargo:'Jefe Secretaría Operacional', sector:'Operacional', dependeDe:'Marcos Antonio Blanco'},
-  {apellidoNombre:'Eliana Velázquez',              jerarquia:'Comisario', cargo:'Jefe Secretaría Académica',   sector:'Académica',   dependeDe:'Marcos Antonio Blanco'},
   {apellidoNombre:'Adriana María Luján Sánchez',   jerarquia:'Comisario', cargo:'Jefe de Logística',           sector:'Logística',   dependeDe:'Marcos Antonio Blanco'},
+  {apellidoNombre:'Carlos Andrés Manriquez',       jerarquia:'Subcomisario', cargo:'Jefe Secretaría Académica', sector:'Académica',   dependeDe:'Marcos Antonio Blanco'},   // v1.6.10: reemplaza a Eliana Velázquez (retirada)
 
   // Operacional — bajo Muñoz
   {apellidoNombre:'Ariel Osvaldo Cumillan',          jerarquia:'Oficial Principal',    cargo:'Supervisor Operacional', sector:'Operacional', dependeDe:'Elías Miguel Muñoz'},
@@ -4149,13 +4149,13 @@ const ORGANIGRAMA_SEED = [
   {apellidoNombre:'Guillermo Ariel Badagnani',jerarquia:'Sargento',            cargo:'Jefe de Guardia', sector:'Operacional', dependeDe:'Elías Miguel Muñoz'},
   {apellidoNombre:'Mauro Jonatan Balta',              jerarquia:'Cabo Primero',         cargo:'Jefe de Guardia', sector:'Operacional', dependeDe:'Elías Miguel Muñoz'},
 
-  // Académica — bajo Velázquez
-  {apellidoNombre:'Juana Abigail Catricura',           jerarquia:'Oficial Principal',    cargo:'Administrativa',          sector:'Académica', dependeDe:'Eliana Velázquez'},
-  {apellidoNombre:'Sergio Leonardo Bascur',           jerarquia:'Sargento',             cargo:'Académico/Reclutamiento', sector:'Académica', dependeDe:'Eliana Velázquez'},
-  {apellidoNombre:'Melina Ailén La Fuente',           jerarquia:'Agente N/C',           cargo:'Académico/Reclutamiento', sector:'Académica', dependeDe:'Eliana Velázquez'},
-  {apellidoNombre:'Héctor Martín Bastías',            jerarquia:'Cabo',                 cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Eliana Velázquez'},
-  {apellidoNombre:'Claudio Alexis Pérez',             jerarquia:'Cabo',                 cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Eliana Velázquez'},
-  {apellidoNombre:'Aixa Sofía Beatriz Pelliza',       jerarquia:'Agente N/C',           cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Eliana Velázquez'},
+  // Académica — bajo Manriquez (antes Velázquez)
+  {apellidoNombre:'Juana Abigail Catricura',           jerarquia:'Oficial Principal',    cargo:'Administrativa',          sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
+  {apellidoNombre:'Sergio Leonardo Bascur',           jerarquia:'Sargento',             cargo:'Académico/Reclutamiento', sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
+  {apellidoNombre:'Melina Ailén La Fuente',           jerarquia:'Agente N/C',           cargo:'Académico/Reclutamiento', sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
+  {apellidoNombre:'Héctor Martín Bastías',            jerarquia:'Cabo',                 cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
+  {apellidoNombre:'Claudio Alexis Pérez',             jerarquia:'Cabo',                 cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
+  {apellidoNombre:'Aixa Sofía Beatriz Pelliza',       jerarquia:'Agente N/C',           cargo:'Prof. Ed. Física',        sector:'Académica', dependeDe:'Carlos Andrés Manriquez'},
 
   // Logística — bajo Sánchez
   {apellidoNombre:'Giuliana Ayelén Escobar',          jerarquia:'Sargento',             cargo:'Administrativa', sector:'Logística', dependeDe:'Adriana María Luján Sánchez'},
@@ -5196,7 +5196,7 @@ const SB_GRUPOS = [
     // pestañas que tiene adentro, al mismo nivel que las demás. También se puede
     // poner una sola: 'SECTOR>MODULO'. Los datos, permisos y el contenido de cada
     // pestaña son EXACTAMENTE los mismos: cambia solo cómo se llega desde el menú.
-    { id:'AREA_ACAD', name:'Secretaría Académica', ac:'A/C Crio. E. Velázquez', icon:'🎓', color:'#8ed08a',
+    { id:'AREA_ACAD', name:'Secretaría Académica', ac:'A/C Subcrio. C. A. Manriquez', icon:'🎓', color:'#8ed08a',
       ids:['ACADEMICA>*','RECLUTAMIENTO','DOCENTES_GEN','MATERIAS','SECCIONES_GEN'] },
     { id:'AREA_OPER', name:'Secretaría Operacional', ac:'A/C Crio. E. Muñoz', icon:'⚙️', color:'#f2b264',
       ids:['OPERACIONAL>*','ASPIRANTES','MOVILES'] },
@@ -15919,8 +15919,8 @@ const LIC_CUPOS_M = 'CUPOS';
 const LIC_PERSONAL = [
   {n:1,  nombre:'BLANCO MARCOS ANTONIO',              jerarquia:'COMISARIO INSPECTOR',   lp:'108208'},
   {n:2,  nombre:'MUÑOZ ELIAS MIGUEL',                 jerarquia:'COMISARIO',             lp:'607131'},
-  {n:3,  nombre:'VELAZQUEZ ELIANA',                   jerarquia:'COMISARIO',             lp:'935228'},
-  {n:4,  nombre:'SANCHEZ ADRIANA MARIA LUJAN',        jerarquia:'COMISARIO',             lp:'818289'},
+  {n:3,  nombre:'SANCHEZ ADRIANA MARIA LUJAN',        jerarquia:'COMISARIO',             lp:'818289'},
+  {n:4,  nombre:'MANRIQUEZ CARLOS ANDRES',            jerarquia:'SUBCOMISARIO',          lp:'523157'},   // v1.6.10: reemplaza a VELAZQUEZ ELIANA (LP 935228, retirada); va debajo de la Crio. Sánchez por jerarquía
   {n:5,  nombre:'BARACCO MIGUEL ANGEL',               jerarquia:'SUBCOMISARIO',          lp:'4448'},
   {n:6,  nombre:'CUMILLAN ARIEL OSVALDO',             jerarquia:'OFICIAL PRINCIPAL',     lp:'249057'},
   {n:7,  nombre:'CATRICURA JUANA ABIGAIL',            jerarquia:'OFICIAL PRINCIPAL',     lp:'185547'},
@@ -15975,7 +15975,7 @@ const LIC_AUTORIZA = {
                       '6479','11222','44065','47841','47894'],        // Valenzuela, Tolosa, Agurto, Castro, Guañaco
 };
 // LPs de los cuatro jefes (nadie autoriza a un jefe desde esta pestaña)
-const LIC_LP_JEFES = ['108208','607131','935228','818289'];
+const LIC_LP_JEFES = ['108208','607131','935228','818289','523157'];
 // Muñoz: el resto del personal
 LIC_AUTORIZA['elias.munoz'] = LIC_PERSONAL
   .map(p=>p.lp)
@@ -16201,7 +16201,9 @@ function _licTipoCorto(id){
 function _licCupos(){ try{ return S.get(LIC_S, LIC_CUPOS_M); }catch(_){ return []; } }
 function _licDePersona(lp){ return _licRows().filter(r=>String(r.lp)===String(lp)); }
 function _licAnioActual(){ return new Date().getFullYear(); }
-function _licPersona(lp){ return LIC_PERSONAL.find(x=>String(x.lp)===String(lp)) || null; }
+// v1.6.10 — Personal que ya no está en el listado, para que sus registros viejos sigan mostrando el nombre
+const LIC_HISTORICO = [{n:0, nombre:'VELAZQUEZ ELIANA', jerarquia:'COMISARIO', lp:'935228'}];
+function _licPersona(lp){ return LIC_PERSONAL.find(x=>String(x.lp)===String(lp)) || LIC_HISTORICO.find(x=>String(x.lp)===String(lp)) || null; }
 
 // Nivel de acceso del usuario logueado en ESTA pestaña
 function _licNivel(){
@@ -23562,6 +23564,361 @@ function v9RecordarRespaldo(){
   document.body.appendChild(t);
   setTimeout(()=>{ try{ t.remove(); }catch(_){} }, 20000);
 }
+
+</script>
+<style id="v1610css">
+/* ══ v1.6.10 · Organigrama editable ══ */
+.org-ed-on{background:rgba(16,185,129,.18)!important;border-color:rgba(16,185,129,.55)!important;color:#6ee7b7!important}
+.org-ed-aviso{margin:-8px auto 18px;max-width:720px;font-size:12px;line-height:1.5;color:#fde68a;background-color:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:8px 12px;text-align:center}
+.org-ed-aviso b{color:#fcd34d}
+.org-ed{margin-top:8px;padding-top:8px;border-top:1px dashed rgba(122,175,212,.3);text-align:left}
+.org-ed-lab{display:block;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#8fb0cb;margin-bottom:3px}
+.org-ed-sel{width:100%;box-sizing:border-box;font-family:inherit;font-size:11.5px;padding:5px 6px;border-radius:7px;border:1px solid rgba(122,175,212,.35);background-color:#0f2038;color:#e6f0fa}
+.org-ed-btns{display:flex;gap:5px;margin-top:6px}
+.org-ed-btns button{flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:5px 6px;border-radius:7px;border:1px solid rgba(122,175,212,.3);background-color:rgba(122,175,212,.12);color:#dbe9f6;cursor:pointer}
+.org-ed-btns button:last-child{flex:none;background-color:rgba(248,113,113,.12);border-color:rgba(248,113,113,.35)}
+.org-box-ed,.org-mini-ed{max-width:260px}
+.org-huerfanos{margin-top:26px;padding:16px;border-radius:14px;border:1px dashed rgba(248,113,113,.55);background-color:rgba(248,113,113,.06);text-align:center}
+.org-huer-tit{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fca5a5}
+.org-huer-sub{font-size:11.5px;color:#cfdeeb;margin:4px 0 14px}
+.org-huer-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.org-huer-era{font-size:10.5px;color:#fca5a5;font-style:italic;margin-top:-2px}
+.org-box-huer{border-top-color:#f87171!important}
+.light-mode .org-ed-sel{background-color:#ffffff;color:#0f2236;border-color:#b9cde0}
+.light-mode .org-ed-lab{color:#3d5a74}
+.light-mode .org-ed-btns button{background-color:#eef3f8;color:#173452;border-color:#c0cfdd}
+.light-mode .org-ed-aviso{background-color:#fffbeb;color:#7c4a03;border-color:#f3d48a}
+.light-mode .org-ed-aviso b{color:#7c4a03}
+.light-mode .org-huer-sub{color:#3d5a74}
+.light-mode .org-huer-tit,.light-mode .org-huer-era{color:#b91c1c}
+
+
+/* ══ v1.6.10 · Pizarra de horario: en modo oscuro va sobre fondo BLANCO ══
+   Se usan los mismos colores que la pizarra tiene en modo claro, así las
+   secciones no se confunden con el fondo oscuro. */
+body:not(.light-mode) .hz-scroll{background-color:#ffffff;border-radius:16px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+body:not(.light-mode) .hz-sfs{background-color:#ffffff;border-radius:14px;padding:8px 10px;margin-bottom:8px}
+body:not(.light-mode) .hz-sf{background-color:#f1f6fb;border-color:#cbdcec;color:#15314f}
+body:not(.light-mode) .hz-sf.on{background-color:#1f6fb8;border-color:#1f6fb8;color:#ffffff}
+body:not(.light-mode) .hz-h{border-top-width:4px}
+body:not(.light-mode) .hz-hn{color:var(--sc)}
+body:not(.light-mode) .hz-x{background-color:rgba(0,0,0,.08);color:#7a4a02}
+body:not(.light-mode) .hz-pt{color:#a5761c}
+body:not(.light-mode) .hz-h{background-color:#eef4fa}
+body:not(.light-mode) .hz-h0{border-top-color:#c9d9ea}
+body:not(.light-mode) .hz .s1{--sc:#1f6fb8}
+body:not(.light-mode) .hz .s2{--sc:#15803d}
+body:not(.light-mode) .hz .s3{--sc:#6d28d9}
+body:not(.light-mode) .hz .s4{--sc:#a5761c}
+body:not(.light-mode) .hz .s5{--sc:#be185d}
+body:not(.light-mode) .hz-aula{color:#33526f}
+body:not(.light-mode) .hz-hora{background-color:#f3f8fc;border-color:#dbe6f1}
+body:not(.light-mode) .hz-hora b{color:#15314f}
+body:not(.light-mode) .hz-hora small{color:#4a6a88}
+body:not(.light-mode) .hz-hora i{background-color:#dc2626;color:#fff}
+body:not(.light-mode) .hz-hora.ahora{background-color:#fdecec;border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.2)}
+body:not(.light-mode) .hz-hora.paso b{color:#4a6a88}
+body:not(.light-mode) .hz-sep{background-color:#fdf5e4;border-color:#e6d2a4;color:#7a4a02}
+body:not(.light-mode) .hz-com{background-color:#eaf3fc;border-color:#cbe0f4;border-left-color:#1f6fb8}
+body:not(.light-mode) .hz-ct{color:#15314f}
+body:not(.light-mode) .hz-com.k-comida{background-color:#fdf5e4;border-color:#eddcb4;border-left-color:#a5761c}
+body:not(.light-mode) .hz-com.k-pausa{background-color:#f1f5f9;border-color:#dbe3ec;border-left-color:#64748b}
+body:not(.light-mode) .hz-com.k-estudio{background-color:#e8f1fd;border-color:#c8dcf6;border-left-color:#2563eb}
+body:not(.light-mode) .hz-com.k-orden{background-color:#e6f7f5;border-color:#bfe7e1;border-left-color:#0f766e}
+body:not(.light-mode) .hz-com.k-clase{background-color:#f1ecfe;border-color:#ddd2f7;border-left-color:#6d28d9}
+body:not(.light-mode) .hz-c{background-color:#fff;border-color:#e2eaf3;box-shadow:0 2px 6px rgba(21,49,79,.06)}
+body:not(.light-mode) .hz-c.s1{background-color:#f2f8fe}
+body:not(.light-mode) .hz-c.s2{background-color:#f0faf4}
+body:not(.light-mode) .hz-c.s3{background-color:#f6f2fe}
+body:not(.light-mode) .hz-c.s4{background-color:#fdf8ec}
+body:not(.light-mode) .hz-c.s5{background-color:#fdf1f6}
+body:not(.light-mode) .hz-c.vac{background-color:#fafcfe}
+body:not(.light-mode) .hz-tx b{color:#15314f}
+body:not(.light-mode) .hz-tx small{color:#4a6a88}
+body:not(.light-mode) .hz-vac{color:#5b7997}
+body:not(.light-mode) .hz-junta{color:#5b7997}
+body:not(.light-mode) .hz-tag{background-color:#a5761c;color:#fff}
+body:not(.light-mode) .hz-dot{background-color:#a5761c;box-shadow:none}
+body:not(.light-mode) .hz-c.toc,body:not(.light-mode) .hz-com.toc{border-color:#e6c982}
+body:not(.light-mode) .hz-x{background-color:rgba(0,0,0,.08);color:#7a4a02}
+body:not(.light-mode) .hz-click:hover{filter:none;box-shadow:0 6px 16px rgba(21,49,79,.14)}
+body:not(.light-mode) .hz-sf{background-color:#fff;border-color:#dbe6f1;color:#22405c}
+body:not(.light-mode) .hz-sf.s1{--sc:#1f6fb8}
+body:not(.light-mode) .hz-sf.s2{--sc:#15803d}
+body:not(.light-mode) .hz-sf.s3{--sc:#6d28d9}
+body:not(.light-mode) .hz-sf.s4{--sc:#a5761c}
+body:not(.light-mode) .hz-sf.s5{--sc:#be185d}
+body:not(.light-mode) .hz-sf.on{background-color:#1a6199;border-color:#1f6fb8;color:#fff}
+body:not(.light-mode) .hz-now{background-color:#f3f8fc;border-color:#dbe6f1}
+body:not(.light-mode) .hz-now.n-ya{background-color:#fdecec;border-color:#f3c9c9}
+body:not(.light-mode) .hz-now-l{color:#b91c1c}
+body:not(.light-mode) .hz-now.n-sig .hz-now-l{color:#14568f}
+body:not(.light-mode) .hz-now-t{color:#15314f}
+</style>
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// v1.6.10 — ORGANIGRAMA EDITABLE · MANRIQUEZ EN LUGAR DE VELÁZQUEZ · OSCURO NUEVO
+// ──────────────────────────────────────────────────────────────────────────
+// POR QUÉ SE TOCÓ ESTO
+// En el Organigrama cada persona queda "colgada" de su jefe por el campo
+// "Depende de", que guarda el NOMBRE del jefe. Al cambiar el nombre de la ficha
+// de Eliana Velázquez por el de Carlos Andrés Manriquez, las 6 personas que
+// decían "Depende de: Eliana Velázquez" quedaron apuntando a alguien que ya no
+// existía y se cayeron del árbol.
+// AHORA:
+//  • Al renombrar a alguien, todos los que dependían de él pasan solos al nombre
+//    nuevo (cascada).
+//  • Si alguien queda sin jefe, se reacomoda solo cuando se puede deducir quién
+//    ocupa ese cargo; si no, aparece en "Sin jefe asignado" (nunca desaparece).
+//  • Las administradoras tienen un "Modo edición" en el árbol: cambiar de quién
+//    depende cada uno con un desplegable, editar la ficha, agregar y quitar.
+//  • Manriquez (Subcomisario, LP 523157) toma el lugar de Velázquez como jefe de
+//    la Secretaría Académica. Velázquez sigue como administradora (su usuario no
+//    se toca); solo deja de figurar en el Organigrama y en los listados.
+// ══════════════════════════════════════════════════════════════════════════
+
+const MQ_NOMBRE = 'Carlos Andrés Manriquez';
+const MQ_LP = '523157';
+const MQ_JERARQUIA = 'Subcomisario';
+const MQ_CARGO = 'Jefe Secretaría Académica';
+const ORG_S = 'ORGANIGRAMA', ORG_M = 'ORGANIGRAMA';
+
+function orgNorm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+function orgEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function orgEsAdmin(){ try{ return !!(CU && CU.permiso==='admin'); }catch(_){ return false; } }
+
+// ─── Usuario de Manriquez (lo creó Mely desde el Panel de Administración) ───
+function mqUsuario(){
+  try{
+    const u = (typeof getAllUsers==='function' ? getAllUsers() : []).find(x=>!x.eliminado && orgNorm(x.nombre).includes('manriquez'));
+    return u ? u.usuario : 'carlos.manriquez';
+  }catch(_){ return 'carlos.manriquez'; }
+}
+// Le da a Manriquez lo que tenía Velázquez como jefa de la Secretaría Académica.
+function mqAplicarPermisos(){
+  const u = mqUsuario();
+  try{ if(typeof LIC_AUTORIZA!=='undefined') LIC_AUTORIZA[u] = (LIC_AUTORIZA['eliana.velazquez']||[]).slice(); }catch(_){}
+  try{ if(typeof LIC_JEFES!=='undefined') LIC_JEFES[u] = 1; }catch(_){}
+  try{ if(typeof LIC_USUARIO_LP!=='undefined') LIC_USUARIO_LP[u] = MQ_LP; }catch(_){}
+  try{ if(typeof ACA_CARGAN!=='undefined' && !ACA_CARGAN.includes(u)) ACA_CARGAN.push(u); }catch(_){}
+  try{ if(typeof HOR_EDITAN!=='undefined' && !HOR_EDITAN.includes(u)) HOR_EDITAN.push(u); }catch(_){}
+}
+
+// ─── Reparación del árbol ───────────────────────────────────────────────
+// Devuelve { lista, cambios:[{id, antes, despues}], huerfanos:[registros] }
+function orgCalcularReparacion(lista){
+  lista = (lista||[]).map(r=>({...r}));
+  const nombres = new Set(lista.map(r=>orgNorm(r.apellidoNombre)));
+  const cambios = [];
+  // 1) La ficha que quedó con el nombre de Manriquez: jerarquía y cargo correctos
+  const mq = lista.find(r=>orgNorm(r.apellidoNombre).includes('manriquez'));
+  if(mq){
+    const fix = {};
+    if(orgNorm(mq.jerarquia) !== orgNorm(MQ_JERARQUIA) && !mq._mqOk) fix.jerarquia = MQ_JERARQUIA;
+    if(!mq.cargo) fix.cargo = MQ_CARGO;
+    if(Object.keys(fix).length){ Object.assign(mq, fix, {_mqOk:true}); cambios.push({ id:mq._id, datos:{...fix, _mqOk:true} }); }
+  }
+  // 2) Huérfanos: dicen depender de alguien que no está
+  const porCargoSeed = {};
+  (typeof ORGANIGRAMA_SEED!=='undefined' ? ORGANIGRAMA_SEED : []).forEach(p=>{ porCargoSeed[orgNorm(p.apellidoNombre)] = p.cargo; });
+  porCargoSeed[orgNorm('Eliana Velázquez')] = MQ_CARGO;   // la jefa anterior de la Secretaría Académica
+  const huerfanos = [];
+  lista.forEach(r=>{
+    if(!r.dependeDe || nombres.has(orgNorm(r.dependeDe))) return;
+    // ¿Quién ocupa hoy el cargo que tenía ese jefe?
+    const cargo = porCargoSeed[orgNorm(r.dependeDe)];
+    const titulares = cargo ? lista.filter(x=>x !== r && orgNorm(x.cargo) === orgNorm(cargo)) : [];
+    if(titulares.length === 1){
+      const nuevo = titulares[0].apellidoNombre;
+      cambios.push({ id:r._id, datos:{ dependeDe:nuevo }, antes:r.dependeDe });
+      r.dependeDe = nuevo;
+    } else huerfanos.push(r);
+  });
+  return { lista, cambios, huerfanos };
+}
+let _orgReparando = false;
+async function orgReparar(silencioso){
+  if(!orgEsAdmin() || _orgReparando) return 0;
+  const actual = S.get(ORG_S, ORG_M);
+  if(!actual.length) return 0;
+  const res = orgCalcularReparacion(actual);
+  if(!res.cambios.length) return 0;
+  _orgReparando = true;
+  try{
+    for(const c of res.cambios){
+      if(c.id) await _orgUpdOrig(ORG_S, ORG_M, c.id, c.datos, { sinNotif:true });
+    }
+  }finally{ _orgReparando = false; }
+  const n = res.cambios.filter(c=>c.datos.dependeDe).length;
+  if(n && !silencioso) try{ syncStatus('🌳 Organigrama: se reacomodaron '+n+' persona'+(n!==1?'s':'')+' bajo su jefe', '#34d399'); }catch(_){}
+  return n;
+}
+
+// ─── Cascada: si cambia el nombre de alguien, sus dependientes lo siguen ───
+let _orgUpdOrig = null;
+(function(){
+  _orgUpdOrig = S.updSafe;
+  S.updSafe = async function(s, m, id, data, opts){
+    if(s===ORG_S && m===ORG_M && data && 'apellidoNombre' in data){
+      const antes = (S.get(s,m).find(r=>r._id===id)||{}).apellidoNombre;
+      const r = await _orgUpdOrig.apply(this, arguments);
+      const despues = data.apellidoNombre;
+      if(antes && despues && orgNorm(antes) !== orgNorm(despues)){
+        const hijos = S.get(s,m).filter(x=>orgNorm(x.dependeDe) === orgNorm(antes));
+        for(const h of hijos) await _orgUpdOrig(s, m, h._id, { dependeDe:despues }, { sinNotif:true });
+        if(hijos.length) try{ syncStatus('🌳 '+hijos.length+' persona'+(hijos.length!==1?'s':'')+' pasaron a depender de '+despues, '#34d399'); }catch(_){}
+        try{ renderTable(); }catch(_){}
+      }
+      return r;
+    }
+    return _orgUpdOrig.apply(this, arguments);
+  };
+})();
+
+// ─── Árbol con modo edición ─────────────────────────────────────────────
+let ORG_EDIT = false;
+function orgToggleEdicion(){ ORG_EDIT = !ORG_EDIT; renderTable(); }
+async function orgCambiarJefe(id, nombre){
+  const r = S.get(ORG_S, ORG_M).find(x=>x._id===id); if(!r) return;
+  if(nombre === r.apellidoNombre){ alert('Una persona no puede depender de sí misma.'); renderTable(); return; }
+  // Evita ciclos: el nuevo jefe no puede depender (directa o indirectamente) de esta persona
+  const lista = S.get(ORG_S, ORG_M);
+  let p = lista.find(x=>x.apellidoNombre===nombre), pasos = 0;
+  while(p && p.dependeDe && pasos++ < 50){
+    if(orgNorm(p.dependeDe) === orgNorm(r.apellidoNombre)){ alert('No se puede: '+nombre+' depende de '+r.apellidoNombre+'.'); renderTable(); return; }
+    p = lista.find(x=>orgNorm(x.apellidoNombre)===orgNorm(p.dependeDe));
+  }
+  await S.updSafe(ORG_S, ORG_M, id, { dependeDe:nombre }, { sinNotif:true });
+  renderTable();
+}
+async function orgQuitar(id){
+  const lista = S.get(ORG_S, ORG_M);
+  const r = lista.find(x=>x._id===id); if(!r) return;
+  const hijos = lista.filter(x=>orgNorm(x.dependeDe)===orgNorm(r.apellidoNombre));
+  if(!confirm('¿Quitar a '+r.apellidoNombre+' del Organigrama?'+(hijos.length?'\n\nLas '+hijos.length+' personas que dependen de él/ella pasan a depender de '+(r.dependeDe||'nadie')+'.':'')+'\n\nSu usuario y lo que cargó no se tocan.')) return;
+  for(const h of hijos) await S.updSafe(ORG_S, ORG_M, h._id, { dependeDe:r.dependeDe||'' }, { sinNotif:true });
+  if(typeof S.delSafe==='function'){
+    _S_set_local(ORG_S, ORG_M, S.get(ORG_S, ORG_M).filter(x=>x._id!==id));
+    await S.delSafe(ORG_S, ORG_M, id);
+  } else S.del(ORG_S, ORG_M, id);
+  renderTable();
+}
+function _orgOpcionesJefe(r, lista){
+  const opts = ['<option value="">— Nadie (máxima jerarquía) —</option>'].concat(
+    lista.filter(x=>x._id!==r._id).sort((a,b)=>String(a.apellidoNombre).localeCompare(b.apellidoNombre))
+      .map(x=>`<option value="${orgEsc(x.apellidoNombre)}" ${orgNorm(x.apellidoNombre)===orgNorm(r.dependeDe)?'selected':''}>${orgEsc(x.apellidoNombre)}${x.cargo?' · '+orgEsc(x.cargo):''}</option>`));
+  return opts.join('');
+}
+function _orgControles(r, lista){
+  if(!ORG_EDIT || !orgEsAdmin()) return '';
+  return `<div class="org-ed" onclick="event.stopPropagation()">
+    <label class="org-ed-lab">Depende de</label>
+    <select class="org-ed-sel" onchange="orgCambiarJefe('${orgEsc(r._id)}', this.value)">${_orgOpcionesJefe(r, lista)}</select>
+    <div class="org-ed-btns">
+      <button title="Editar ficha" onclick="openEdit('${orgEsc(r._id)}')">✏️ Editar</button>
+      <button title="Quitar del Organigrama" onclick="orgQuitar('${orgEsc(r._id)}')">🗑️</button>
+    </div></div>`;
+}
+const _orgBox = (r, lista, extra) => `
+  <div class="org-box ${sectorClass(r.sector,'sec-')}${ORG_EDIT?' org-box-ed':''}${extra||''}">
+    <div class="org-box-cargo">${orgEsc(r.cargo||'')}</div>
+    <div class="org-box-name">${orgEsc(r.apellidoNombre)}</div>
+    <div class="org-box-jerarquia">${orgEsc(r.jerarquia||'')}</div>
+    ${_orgControles(r, lista)}
+  </div>`;
+
+renderOrgTree = function(all){
+  if(!all || !all.length){
+    return `<div class="empty-state"><div class="empty-icon">🌳</div><p>Sin datos para mostrar el árbol</p><small>Cargá personas en la lista para verlas acá</small></div>`;
+  }
+  const nombres = new Set(all.map(r=>orgNorm(r.apellidoNombre)));
+  const roots = all.filter(r => !r.dependeDe);
+  const huerfanos = all.filter(r => r.dependeDe && !nombres.has(orgNorm(r.dependeDe)));
+  const aviso = (ORG_EDIT && orgEsAdmin()) ? `<div class="org-ed-aviso">✏️ <b>Modo edición:</b> cambiá de quién depende cada persona con su desplegable. Si le cambiás el nombre a un jefe desde "Editar", los que dependen de él lo siguen solos.</div>` : '';
+  return `<div class="org-tree-wrap fade-in">
+    <div class="org-tree-title">Actualidad DCFyCCCO<small>Organigrama institucional · Personal en actividad</small></div>
+    ${aviso}
+    ${roots.length ? roots.map(r=>renderOrgRoot(r, all)).join('') : '<div class="empty-state"><p>No se encontró la máxima jerarquía</p><small>Al menos una persona tiene que tener "Depende de" vacío</small></div>'}
+    ${huerfanos.length ? `<div class="org-huerfanos">
+      <div class="org-huer-tit">⚠️ Sin jefe asignado (${huerfanos.length})</div>
+      <div class="org-huer-sub">Dependen de alguien que ya no está en el Organigrama.${orgEsAdmin()?' Elegí su jefe en el desplegable.':' Avisale a una administradora.'}</div>
+      <div class="org-huer-row">${huerfanos.map(r=>{
+        const vieja = ORG_EDIT; ORG_EDIT = ORG_EDIT || orgEsAdmin();
+        const h = _orgBox(r, all, ' org-box-huer') + `<div class="org-huer-era">Decía: ${orgEsc(r.dependeDe)}</div>`;
+        ORG_EDIT = vieja; return '<div>'+h+'</div>';
+      }).join('')}</div></div>` : ''}
+  </div>`;
+};
+renderOrgRoot = function(rector, all){
+  const hijosDe = n => all.filter(r => orgNorm(r.dependeDe) === orgNorm(n));
+  const directos = hijosDe(rector.apellidoNombre);
+  // Los jefes van por jerarquía (Comisario antes que Subcomisario, etc.); a igual grado, en el orden cargado
+  const RANGO = ['comisario mayor','comisario inspector','comisario','subcomisario','oficial principal','oficial inspector','oficial subinspector','oficial ayudante'];
+  const rango = r => { const j = orgNorm(r.jerarquia); const i = RANGO.indexOf(j); return i<0 ? 99 : i; };
+  const jefes = directos.filter(r => hijosDe(r.apellidoNombre).length)
+    .map((r,i)=>({r,i})).sort((a,b)=> rango(a.r)-rango(b.r) || a.i-b.i).map(x=>x.r);
+  const otros = directos.filter(r => !hijosDe(r.apellidoNombre).length);
+  return `
+    <div class="org-level-top">${_orgBox(rector, all, ' org-box-rector')}</div>
+    ${jefes.length?`<div class="org-jefes-row">${jefes.map(j=>renderOrgJefe(j, all)).join('')}</div>`:''}
+    ${otros.length?`<div class="org-salud-section"><div class="org-salud-label">${otros.every(o=>o.sector==='Área de Salud')?'Área de Salud':'Dependen directamente de '+orgEsc(rector.apellidoNombre)}</div>
+      <div class="org-salud-row">${otros.map(o=>_orgBox(o, all)).join('')}</div></div>`:''}`;
+};
+renderOrgJefe = function(jefe, all){
+  const reports = all.filter(r => orgNorm(r.dependeDe) === orgNorm(jefe.apellidoNombre));
+  const groups = {};
+  reports.forEach(r=>{ const k = r.cargo || 'Otros'; (groups[k] = groups[k] || []).push(r); });
+  return `<div class="org-column">${_orgBox(jefe, all)}
+    ${Object.entries(groups).map(([cargo, people]) => `
+      <div class="org-sub-group"><div class="org-sub-label">${orgEsc(cargo)} (${people.length})</div>
+        ${people.map(p => `<div class="org-mini ${sectorClass(p.sector,'mini-')}${ORG_EDIT?' org-mini-ed':''}">
+          <div class="org-mini-cargo">${orgEsc(p.jerarquia||'')}</div>
+          <div class="org-mini-name">${orgEsc(p.apellidoNombre)}</div>
+          ${_orgControles(p, all)}
+        </div>`).join('')}
+      </div>`).join('')}
+  </div>`;
+};
+// Barra de la pestaña: se suma el botón de Modo edición para administradoras
+const _orgToggleOrig = orgToggleHTML;
+orgToggleHTML = function(total){
+  let h = _orgToggleOrig(total);
+  if(orgEsAdmin()){
+    const btn = `<button class="org-toggle-btn${ORG_EDIT?' org-ed-on':''}" onclick="${ORG_VIEW==='arbol'?'':'setOrgView(\'arbol\');'}orgToggleEdicion()">${ORG_EDIT?'✅ Terminar edición':'✏️ Editar organigrama'}</button>`;
+    h = h.replace('<span class="org-toggle-count">', btn + '<span class="org-toggle-count">');
+  }
+  return h;
+};
+const _setOrgViewOrig = setOrgView;
+setOrgView = function(v){ if(v!=='arbol') ORG_EDIT = false; return _setOrgViewOrig(v); };
+// Al entrar al Organigrama, una administradora repara lo que haya quedado suelto
+(function(){
+  const _rt = renderTable;
+  renderTable = function(){
+    const r = _rt.apply(this, arguments);
+    try{
+      if(CS && CS.id===ORG_S && orgEsAdmin() && !_orgReparando){
+        const res = orgCalcularReparacion(S.get(ORG_S, ORG_M));
+        if(res.cambios.length) orgReparar(false).then(n=>{ if(n || res.cambios.length) _rt(); });
+      }
+    }catch(_){}
+    return r;
+  };
+})();
+
+(function(){
+  // El tono "nuevo" del modo oscuro se descartó: se borra la elección guardada
+  try{ localStorage.removeItem('suep_tema_oscuro'); }catch(_){}
+  mqAplicarPermisos();
+  const _ini = iniciarSesion;
+  iniciarSesion = function(){
+    mqAplicarPermisos();
+    const r = _ini.apply(this, arguments);
+    mqAplicarPermisos();
+    setTimeout(()=>{ try{ mqAplicarPermisos(); orgReparar(true); }catch(_){} }, 6000);
+    return r;
+  };
+})();;
 
 </script>
 </body>
