@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.10">
+<meta name="app-version" content="1.6.11">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2808,31 +2808,84 @@ function _verMayor(a, b){
 
 let _versionRemotaPendiente = null;
 
-// ─── Qué versión está REALMENTE publicada en GitHub ───
-// Se consulta una sola vez por minuto (el resultado queda cacheado) y la usan
-// tanto el chequeo automático como la validación del aviso que llega por la nube.
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.11 — POR QUÉ "BUSCAR ACTUALIZACIÓN" DABA PROBLEMAS DE CONEXIÓN
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA: la versión publicada se le preguntaba a raw.githubusercontent.com
+// cada 90 segundos desde CADA equipo. Desde 2025 GitHub limita las consultas
+// sin cuenta por dirección de internet, y todos los equipos de la escuela salen
+// a internet por la MISMA dirección: entre todos se pasaban del tope, GitHub
+// respondía "demasiadas consultas" (error 429) y la app lo mostraba como
+// "No se pudo consultar — revisá la conexión". Y si no se podía consultar, el
+// equipo no se enteraba de la versión nueva y seguía mostrando cosas viejas
+// (por ejemplo, la pizarra de horario sin los cambios "de acá en adelante").
+// Además raw.githubusercontent.com puede ir unos minutos atrás de la página
+// publicada, y la app recargaba… y le volvía a llegar la versión de antes.
+// AHORA:
+//   1) Se le pregunta a la MISMA dirección de la app (GitHub Pages), que es
+//      justamente lo que el equipo va a bajar al actualizar y no tiene ese tope.
+//   2) Solo se lee el principio del archivo (donde está el número de versión)
+//      y se corta la descarga: el chequeo sigue pesando casi nada.
+//   3) raw.githubusercontent.com queda solo de respaldo.
+//   4) El chequeo automático pasa de cada 90 segundos a cada 5 minutos: el
+//      aviso inmediato ya viaja por la nube (Supabase) en segundos.
+// ═══════════════════════════════════════════════════════════════════
 let _verPublicadaCache = { ver:null, ts:0 };
+let _verUltimoError = 0;      // último código de error al consultar (429 = GitHub frenó)
+function _urlPublicada(){
+  try{ return location.origin + location.pathname; }catch(_){ return ''; }
+}
+// Lee el número de versión de una dirección, bajando solo el principio.
+async function _leerVersionDe(url, conRango){
+  let ctl = null, tope = null;
+  try{
+    ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    tope = setTimeout(()=>{ try{ if(ctl) ctl.abort(); }catch(_){} }, 9000);
+    const opt = { cache:'no-store', credentials:'omit' };
+    if(ctl) opt.signal = ctl.signal;
+    if(conRango) opt.headers = { 'Range':'bytes=0-8191' };
+    const r = await fetch(url, opt);
+    if(!r || !(r.ok || r.status === 206)){ _verUltimoError = r ? r.status : -1; return null; }
+    let txt = '';
+    const patron = /<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i;
+    if(r.body && typeof r.body.getReader === 'function' && typeof TextDecoder !== 'undefined'){
+      const rd = r.body.getReader(), dec = new TextDecoder();
+      while(txt.length < 131072){
+        const { value, done } = await rd.read();
+        if(done) break;
+        txt += dec.decode(value, { stream:true });
+        if(patron.test(txt)) break;
+      }
+      try{ const c = rd.cancel(); if(c && c.catch) c.catch(()=>{}); }catch(_){}
+      try{ if(ctl) ctl.abort(); }catch(_){}   // cortar lo que falte bajar
+    }else{
+      txt = await r.text();
+    }
+    const m = txt.match(patron);
+    return m ? m[1].trim() : null;
+  }catch(e){
+    if(!_verUltimoError) _verUltimoError = -1;
+    return null;
+  }finally{
+    if(tope) clearTimeout(tope);
+  }
+}
 async function _versionPublicadaEnGitHub(){
   if(APP_EN_PRUEBA) return null;                                        // en prueba no se consulta
-  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return null;
   if(_verPublicadaCache.ver && (Date.now() - _verPublicadaCache.ts) < 60*1000) return _verPublicadaCache.ver;
-  try{
-    let html = '';
-    try{
-      const r = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store', headers:{ 'Range':'bytes=0-4095' } });
-      if(r.ok) html = await r.text();
-    }catch(_){ /* si el servidor no acepta Range, caemos al pedido completo */ }
-    if(!html){
-      const resp = await fetch(GITHUB_RAW_URL + '?_=' + Date.now(), { cache:'no-store' });
-      if(!resp.ok) return null;
-      html = await resp.text();
-    }
-    const m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
-    if(!m) return null;
-    const ver = m[1].trim();
-    _verPublicadaCache = { ver, ts: Date.now() };
-    return ver;
-  }catch(e){ return null; }   // sin conexión: se reintenta en el próximo ciclo
+  _verUltimoError = 0;
+  let ver = null;
+  const propia = _urlPublicada();
+  // 1) La dirección de la app (GitHub Pages), pidiendo solo los primeros 8 KB
+  if(propia) ver = await _leerVersionDe(propia, true);
+  // 2) Misma dirección sin pedir un pedazo (por si algo en el medio no lo acepta)
+  if(!ver && propia) ver = await _leerVersionDe(propia, false);
+  // 3) Respaldo: el archivo crudo del repositorio
+  if(!ver && GITHUB_RAW_URL && !GITHUB_RAW_URL.includes('TU_USUARIO')){
+    ver = await _leerVersionDe(GITHUB_RAW_URL + '?_=' + Math.floor(Date.now()/60000), true);
+  }
+  if(ver){ _verUltimoError = 0; _verPublicadaCache = { ver, ts: Date.now() }; }
+  return ver;
 }
 
 // v1.5.91 — El cartel FLOTANTE se retiró: tapaba el contenido al entrar. El
@@ -2868,7 +2921,6 @@ function _updOcultarSiAlDia(remota){
 // Consulta GitHub y, si hay una versión más nueva publicada, muestra el banner.
 async function checkForUpdates(){
   if(APP_EN_PRUEBA) return;                                             // 🧪 probando: no avisar nada
-  if(!GITHUB_RAW_URL || GITHUB_RAW_URL.includes('TU_USUARIO')) return; // sin configurar aún
   try{
     // ✅ v1.5.50: se piden SOLO los primeros 4 KB del archivo (donde está el
     // <meta app-version>) en vez de bajarlo entero, así el chequeo pesa casi nada.
@@ -2886,10 +2938,12 @@ async function checkForUpdates(){
   }catch(e){ /* sin conexión: reintenta en el próximo ciclo */ }
 }
 
-// Revisar al arrancar y cada 90 segundos mientras la app está abierta.
-// (v1.5.50: se puede chequear más seguido porque ahora el pedido pesa ~4 KB.)
+// Revisar al arrancar y cada 5 minutos mientras la app está abierta.
+// (v1.6.11: antes era cada 90 segundos y, sumando todos los equipos de la
+// escuela, GitHub empezaba a rechazar las consultas. El aviso rápido de una
+// versión nueva ya llega por la nube en segundos.)
 document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(checkForUpdates, 1200); });
-setInterval(checkForUpdates, 90 * 1000);
+setInterval(checkForUpdates, 5 * 60 * 1000);
 // Revisar también cuando el usuario vuelve a la app (clave en celular)
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdates(); });
 
@@ -4476,8 +4530,17 @@ function _ajustarBotoneraNotifs(){
   if(b) b.style.display = _puedeBorrarNotifs() ? 'inline-block' : 'none';
 }
 // ¿La notificación n está leída por el usuario actual?
+// v1.6.11 — Lo que tiene más de NOTIF_VIGENCIA_DIAS días ya no cuenta como
+// "nueva": se sigue viendo en la lista, pero no suma al numerito rojo. Así nadie
+// entra y se encuentra con 200 avisos de cosas de hace semanas.
+const NOTIF_VIGENCIA_DIAS = 3;
+function _notifVieja(n){
+  const ms = _notifMs(n);
+  return !ms || (Date.now() - ms) > NOTIF_VIGENCIA_DIAS * 24 * 60 * 60 * 1000;
+}
 function _notifLeida(n){
   if(!CU) return false;
+  if(_notifVieja(n)) return true;
   return !!(n.leidaPor && n.leidaPor[CU.usuario]);
 }
 // Marca una notificación como leída SOLO para el usuario actual (sin pisar a los demás)
@@ -4494,7 +4557,10 @@ function _notifMs(n){
   if(!n) return 0;
   if(typeof n._tsMs === 'number' && n._tsMs > 0) return n._tsMs;
   // id con forma "1717...123_rId" (reconstruidas viejas)
-  if(typeof n.id === 'string' && n.id.includes('_')){
+  // v1.6.11 — Si es una reconstruida SIN fecha (_tsMs: 0), el número del id es
+  // el momento en que se reconstruyó, no el de la carga: no sirve. Antes eso la
+  // hacía figurar como recién cargada y salía arriba de todo como nueva.
+  if(typeof n.id === 'string' && n.id.includes('_') && n._tsMs !== 0){
     const num = parseInt(n.id.split('_')[0], 10);
     if(!isNaN(num) && num > 1e10) return num;
   }
@@ -4505,6 +4571,11 @@ function _notifMs(n){
     return new Date(anio, +m[2]-1, +m[1], +m[4], +m[5], +(m[6]||0)).getTime();
   }
   return 0;
+}
+// v1.6.11 — Fecha sacada SOLO del texto "dd/mm/aaaa hh:mm" (0 si no tiene año)
+function _notifMsDeTexto(n){
+  const m = String((n && n.time) || '').match(/(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})/);
+  return m ? new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime() : 0;
 }
 // 🔑 Identidad ESTABLE de una notificación. Si está vinculada a un registro
 // (rId), usamos el registro como clave (sector+módulo+rId). Así una notificación
@@ -13222,7 +13293,25 @@ async function cfgBuscarActualizacion(){
     _verPublicadaCache = { ver:null, ts:0 };     // que no use el dato guardado
     remota = await _versionPublicadaEnGitHub();
   }catch(_){}
-  if(!remota){ poner('No se pudo consultar — revisá la conexión'); return; }
+  if(!remota){
+    // v1.6.11 — Aunque no se pueda averiguar el número, la recarga limpia igual
+    // baja el archivo que esté publicado. Antes acá se quedaba trabado.
+    const frenado = (_verUltimoError === 429 || _verUltimoError === 403);
+    poner(frenado ? 'GitHub no respondió (demasiadas consultas desde esta red)'
+                  : (navigator.onLine === false ? 'Sin internet en este momento' : 'No se pudo averiguar la versión publicada'));
+    if(navigator.onLine === false){
+      alert('Este equipo no tiene internet en este momento. Probá de nuevo cuando tengas señal.');
+      return;
+    }
+    if(confirm('No se pudo averiguar qué versión está publicada' +
+               (frenado ? ' (GitHub está frenando las consultas desde esta red)' : '') + '.\n\n' +
+               'Igual se puede bajar la app de nuevo, limpia, desde internet: así queda la última que esté publicada.\n' +
+               'Tarda unos segundos y NO se pierde nada de lo cargado.\n\n¿Recargar ahora?')){
+      poner('Recargando limpia…');
+      _forzarRecargaLimpia(APP_VERSION);
+    }
+    return;
+  }
   if(_verMayor(remota, APP_VERSION) === 1){
     _versionRemotaPendiente = remota;
     poner('Está publicada la ' + remota + ' — actualizando…');
@@ -14374,12 +14463,33 @@ document.addEventListener('visibilitychange', ()=>{
 // autor (_por) reales. Cada notificación se vincula al registro por su rId, así que
 // nunca generamos duplicados: solo creamos las que faltan.
 function reconstruirNotifsFaltantes(){
+  // v1.6.11 — Limpieza: se sacan las reconstruidas que quedaron SIN fecha
+  // (eran las que aparecían como "recién cargadas" sin serlo).
+  try{
+    const todas = S.gn();
+    const limpias = todas.filter(n => !(n && n._tsMs === 0 && typeof n.id === 'string'
+                                        && /^\d{12,}_/.test(n.id) && !_notifMsDeTexto(n)));
+    if(limpias.length !== todas.length){
+      S.sn(limpias);
+      console.log('🧹 Notificaciones sin fecha retiradas: ' + (todas.length - limpias.length));
+    }
+  }catch(_){}
   const notifs = S.gn();
   // Deduplicamos por la MISMA clave estable que usan las fusiones (sector+módulo+rId),
   // así no recreamos una "gemela" no leída de una notificación que ya existe (y que
   // quizás ya leíste). Antes se comparaba solo por rId y la copia reconstruida tenía
   // otro id, por lo que las fusiones no la reconocían y resucitaba como no leída.
   const clavesConNotif = new Set(notifs.filter(n=>n.rId).map(n=>_notifKey(n)));
+  // v1.6.11 — POR QUÉ SALÍAN HASTA 200 NOTIFICACIONES AL ACTUALIZAR
+  // Al entrar (y después de cada actualización la app vuelve a entrar sola) se
+  // "reconstruía" un aviso por CADA registro que no tuviera el suyo. Como la
+  // lista guarda solo los 200 más nuevos, los registros viejos nunca tenían
+  // aviso, y se volvían a crear sin leer, una y otra vez. Los que no tenían
+  // fecha legible encima figuraban como cargados "recién", así que salían
+  // arriba de todo. Ahora solo se reconstruye lo de los últimos días, con
+  // fecha real, y nunca lo que una administradora borró.
+  const borradasRec = _keysBorradas();
+  const limiteRec = Date.now() - NOTIF_VIGENCIA_DIAS * 24 * 60 * 60 * 1000;
 
   // Convierte "dd/mm/aaaa hh:mm[:ss]" (es-AR) a timestamp para poder ordenar
   const parseTs = (ts)=>{
@@ -14406,9 +14516,11 @@ function reconstruirNotifsFaltantes(){
           if(_esCargaSistema(r)) return;
           // ¿ya hay una notificación para este registro (real o reconstruida)?
           if(clavesConNotif.has('r:'+sec.id+':'+t.id+':'+r._id)) return;
+          if(borradasRec.has('r:'+sec.id+':'+t.id+':'+r._id)) return;
           const tsMs = parseTs(r._ts);
+          if(!tsMs || tsMs < limiteRec || tsMs > Date.now() + 60*60*1000) return;
           nuevos.push({
-            id: (tsMs||Date.now()) + '_' + r._id,   // id estable por registro
+            id: tsMs + '_' + r._id,   // id estable por registro
             secId: sec.id, modId: t.id, rId: r._id,
             txt: `<strong>${r._por||'Alguien'}</strong> cargó un registro en <strong>${t.name||t.id}</strong>`,
             sec: sec.name||sec.id, icon: sec.icon||'📌',
@@ -20397,56 +20509,161 @@ function avVigentes(){
 // pasa del 45% del alto de la pantalla: si el texto sigue, scrollea adentro
 // del propio recuadro. Los avisos cortos se muestran completos como siempre.
 // La × sigue ocultándolo por el resto del día.
-var AV_ABIERTO = {};   // avisos desplegados a mano (dura mientras la app esté abierta)
+var AV_ABIERTO = {};   // (se conserva por compatibilidad)
 
-function avEsLargo(t){
-  const s = String(t == null ? '' : t);
-  return s.length > 85 || s.indexOf('\n') !== -1;
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.11 — AVISOS EN UNA SOLA TIRA QUE NO TAPA
+// ───────────────────────────────────────────────────────────────────
+// EL PROBLEMA: cada aviso vigente era un recuadro propio, uno debajo del
+// otro. Con dos o tres avisos (más el saludo del día) se comían media pantalla
+// del celular y empujaban hacia abajo el Panel de inicio, también en la PC.
+// AHORA: todos los avisos van en UNA tira finita de un renglón. Si hay más de
+// uno, van pasando solos (y con las flechitas). Al tocar la tira se abre una
+// ventana con todos los avisos completos, que se cierra con la × o tocando
+// afuera. La × de la tira lo oculta por hoy, como siempre.
+// ═══════════════════════════════════════════════════════════════════
+var AV_IDX = 0, AV_ROT_T = null, AV_PAUSA = false;
+const AV_ROT_SEG = 7;
+function avIcono(id){
+  return ({ ambar:'📢', rojo:'⚠️', azul:'ℹ️', verde:'📌' })[id] || '📢';
 }
-
+function avCss(){
+  if(document.getElementById('avtCss')) return;
+  const st = document.createElement('style');
+  st.id = 'avtCss';
+  st.textContent = `
+  body{--avt-bg:#0e1c2e;--avt-bd:rgba(122,175,212,.22);--avt-tit:#eaf2fa;--avt-txt:#b9cde0;--avt-mut:#86a6c0;
+       --avs-bg:#0d1a2b;--avs-card:#12233a;--avs-sh:0 18px 50px rgba(0,0,0,.55)}
+  body.light-mode{--avt-bg:#ffffff;--avt-bd:rgba(20,52,86,.16);--avt-tit:#0e2238;--avt-txt:#33506b;--avt-mut:#5a7590;
+       --avs-bg:#f4f8fc;--avs-card:#ffffff;--avs-sh:0 18px 50px rgba(10,30,60,.25)}
+  .avt{display:flex;align-items:center;gap:9px;height:42px;margin:0 0 8px;padding:0 6px 0 0;
+       background-color:var(--avt-bg);border:1px solid var(--avt-bd);border-radius:12px;overflow:hidden;
+       box-shadow:0 2px 10px rgba(0,0,0,.12);position:relative}
+  .avt-bar{align-self:stretch;width:4px;flex-shrink:0}
+  .avt-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+       font-size:14px;flex-shrink:0}
+  .avt-main{flex:1;min-width:0;display:flex;align-items:center;gap:7px;line-height:1.2;cursor:pointer;background:none;border:none;
+       padding:0;font-family:inherit;text-align:left;height:100%}
+  .avt-main:focus-visible{outline:2px solid #7aafd4;outline-offset:-2px;border-radius:6px}
+  .avt-tit{font-size:12.5px;font-weight:700;color:var(--avt-tit);white-space:nowrap;flex-shrink:1;min-width:0;
+       max-width:45%;overflow:hidden;text-overflow:ellipsis}
+  .avt-txt{font-size:12.5px;color:var(--avt-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .avt-nav{display:flex;align-items:center;gap:2px;flex-shrink:0}
+  .avt-btn{background:none;border:none;color:var(--avt-mut);font-size:15px;line-height:1;cursor:pointer;
+       width:26px;height:30px;border-radius:7px;font-family:inherit;display:flex;align-items:center;justify-content:center}
+  .avt-btn:hover{background:rgba(122,175,212,.14);color:var(--avt-tit)}
+  .avt-n{font-size:10.5px;color:var(--avt-mut);font-variant-numeric:tabular-nums;min-width:26px;text-align:center}
+  .avt-fade{animation:avtIn .35s ease}
+  @keyframes avtIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media (max-width:600px){ .avt-tit{max-width:60%} .avt-txt{display:none} .avt-n{display:none} }
+  .avs-ov{position:fixed;inset:0;z-index:10050;background:rgba(4,10,20,.55);display:flex;align-items:center;
+       justify-content:center;padding:16px;animation:avsBg .2s ease}
+  @keyframes avsBg{from{opacity:0}to{opacity:1}}
+  .avs-box{width:min(560px,100%);max-height:min(78vh,640px);display:flex;flex-direction:column;
+       background-color:var(--avs-bg);border:1px solid var(--avt-bd);border-radius:18px;box-shadow:var(--avs-sh);overflow:hidden}
+  .avs-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;gap:10px}
+  .avs-head b{font-size:14px;letter-spacing:.4px;color:var(--avt-tit)}
+  .avs-list{overflow:auto;-webkit-overflow-scrolling:touch;padding:0 14px 14px}
+  .avs-card{background-color:var(--avs-card);border:1px solid var(--avt-bd);border-radius:12px;padding:12px 13px;
+       margin-bottom:9px;border-left-width:4px}
+  .avs-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;
+       padding:3px 8px;border-radius:999px;color:#08131f;margin-bottom:7px}
+  .avs-tit{font-size:14px;font-weight:700;color:var(--avt-tit);margin-bottom:5px}
+  .avs-txt{font-size:13px;line-height:1.55;color:var(--avt-txt);white-space:pre-wrap;word-break:break-word}
+  .avs-pie{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--avt-mut)}
+  .avs-ocu{background:none;border:1px solid var(--avt-bd);color:var(--avt-mut);border-radius:8px;padding:6px 10px;
+       font-size:11.5px;cursor:pointer;font-family:inherit}
+  .avs-ocu:hover{color:var(--avt-tit)}
+  @media (max-width:600px){
+    .avs-ov{align-items:flex-end;padding:0}
+    .avs-box{width:100%;max-height:82vh;border-radius:18px 18px 0 0;animation:avsUp .25s ease}
+    @keyframes avsUp{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+  }`;
+  document.head.appendChild(st);
+}
+function avVisiblesHoy(){
+  const hoy = todayISO();
+  return avVigentes()
+    .filter(a => localStorage.getItem('suep_aviso_oculto_' + a._id) !== hoy)
+    .sort((a,b)=>{ // urgentes primero, después lo más nuevo
+      const u = (b.color === 'rojo') - (a.color === 'rojo');
+      return u || String(b.desde||'').localeCompare(String(a.desde||''));
+    });
+}
 function avPintarBanner(){
   const cont = document.getElementById('avisoBanner');
   if(!cont) return;
+  clearTimeout(AV_ROT_T); AV_ROT_T = null;
   if(typeof CU === 'undefined' || !CU){ cont.innerHTML = ''; return; }
-  const hoy = todayISO();
-  const vis = avVigentes().filter(a => localStorage.getItem('suep_aviso_oculto_' + a._id) !== hoy);
-  cont.innerHTML = vis.map(a => {
-    const c = avColor(a.color);
-    const largo   = avEsLargo(a.texto);
-    const abierto = !largo || AV_ABIERTO[a._id] === true;
-
-    const cuerpo = abierto
-      ? `<div style="font-size:12.5px;line-height:1.5;color:var(--av-txt);white-space:pre-wrap;
-           margin-top:4px;max-height:45vh;overflow:auto;-webkit-overflow-scrolling:touch">${avEsc(a.texto)}</div>
-         ${a.hasta ? `<div style="font-size:10.5px;color:var(--av-txt2);margin-top:6px">Hasta el ${avEsc(avFechaCorta(a.hasta))}</div>` : ''}`
-      : `<div style="font-size:12.5px;line-height:1.45;color:var(--av-txt);margin-top:2px;
-           display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${avEsc(String(a.texto == null ? '' : a.texto).replace(/\s+/g, ' ').trim())}</div>`;
-
-    const toggle = largo
-      ? `<button onclick="avToggle('${a._id}')"
-          style="background:none;border:none;color:${c.texto};font-size:11.5px;font-weight:700;
-          cursor:pointer;padding:5px 0 0;font-family:inherit;opacity:.9">${abierto ? 'Ver menos ▲' : 'Ver más ▼'}</button>`
-      : '';
-
-    return `<div style="background:${c.fondo};border:1px solid ${c.borde};border-left:4px solid ${c.borde};
-      border-radius:10px;padding:9px 11px;margin:0 0 8px;display:flex;gap:9px;align-items:flex-start">
-      <div style="flex:1;min-width:0">
-        <div ${largo ? `onclick="avToggle('${a._id}')"` : ''} style="cursor:${largo ? 'pointer' : 'default'}">
-          <div style="font-size:12.5px;font-weight:700;color:${c.texto};overflow:hidden;
-            text-overflow:ellipsis;${abierto ? '' : 'white-space:nowrap'}">${avEsc(a.titulo)}</div>
-          ${cuerpo}
-        </div>
-        ${toggle}
-      </div>
-      <button onclick="avOcultarHoy('${a._id}')" title="Ocultar por hoy"
-        style="background:none;border:none;color:${c.texto};font-size:17px;line-height:1;cursor:pointer;padding:0 2px">×</button>
-    </div>`;
-  }).join('');
+  avCss();
+  const vis = avVisiblesHoy();
+  if(!vis.length){ cont.innerHTML = ''; return; }
+  if(AV_IDX >= vis.length || AV_IDX < 0) AV_IDX = 0;
+  const a = vis[AV_IDX], c = avColor(a.color);
+  const plano = String(a.texto == null ? '' : a.texto).replace(/\s+/g, ' ').trim();
+  const varios = vis.length > 1;
+  cont.setAttribute('data-cc-no', '');
+  cont.innerHTML = `<div class="avt" role="region" aria-label="Avisos"
+      onmouseenter="AV_PAUSA=true" onmouseleave="AV_PAUSA=false">
+    <div class="avt-bar" style="background-color:${c.borde}"></div>
+    <div class="avt-ic" style="background-color:${c.fondo}">${avIcono(a.color)}</div>
+    <button class="avt-main avt-fade" onclick="avAbrirTodos()" title="Ver ${varios ? 'todos los avisos' : 'el aviso completo'}">
+      <span class="avt-tit">${avEsc(a.titulo || c.et)}</span>
+      <span class="avt-txt">${avEsc(plano)}</span>
+    </button>
+    <div class="avt-nav">
+      ${varios ? `<button class="avt-btn" onclick="avMover(-1)" title="Aviso anterior">‹</button>
+        <span class="avt-n">${AV_IDX + 1}/${vis.length}</span>
+        <button class="avt-btn" onclick="avMover(1)" title="Aviso siguiente">›</button>` : ''}
+      <button class="avt-btn" onclick="avOcultarHoy('${a._id}')" title="Ocultar este aviso por hoy">×</button>
+    </div>
+  </div>`;
+  if(varios){
+    AV_ROT_T = setTimeout(function rot(){
+      if(AV_PAUSA || document.hidden || document.getElementById('avSheet')){ AV_ROT_T = setTimeout(rot, 2000); return; }
+      AV_IDX = (AV_IDX + 1) % vis.length;
+      avPintarBanner();
+    }, AV_ROT_SEG * 1000);
+  }
 }
-function avToggle(id){
-  AV_ABIERTO[id] = !AV_ABIERTO[id];
+function avMover(d){
+  const n = avVisiblesHoy().length || 1;
+  AV_IDX = (AV_IDX + d + n) % n;
   avPintarBanner();
 }
+// Ventana con TODOS los avisos completos
+function avAbrirTodos(){
+  avCerrarTodos();
+  const vis = avVisiblesHoy();
+  if(!vis.length) return;
+  avCss();
+  const ov = document.createElement('div');
+  ov.id = 'avSheet';
+  ov.className = 'avs-ov';
+  ov.setAttribute('data-cc-no', '');
+  ov.onclick = e => { if(e.target === ov) avCerrarTodos(); };
+  ov.innerHTML = `<div class="avs-box" role="dialog" aria-modal="true" aria-label="Avisos vigentes">
+    <div class="avs-head"><b>📢 Avisos vigentes (${vis.length})</b>
+      <button class="avt-btn" onclick="avCerrarTodos()" title="Cerrar" style="font-size:20px">×</button></div>
+    <div class="avs-list">${vis.map(a => {
+      const c = avColor(a.color);
+      return `<div class="avs-card" style="border-left-color:${c.borde}">
+        <span class="avs-tag" style="background-color:${c.borde}">${avEsc(c.et)}</span>
+        <div class="avs-tit">${avEsc(a.titulo || '')}</div>
+        <div class="avs-txt">${avEsc(a.texto || '')}</div>
+        <div class="avs-pie"><span>${a.hasta ? 'Hasta el ' + avEsc(avFechaCorta(a.hasta)) : ''}${a._por ? ' · ' + avEsc(a._por) : ''}</span>
+          <button class="avs-ocu" onclick="avOcultarHoy('${a._id}');avAbrirTodos()">Ocultar por hoy</button></div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function avCerrarTodos(){
+  const o = document.getElementById('avSheet');
+  if(o) o.remove();
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') avCerrarTodos(); });
+function avToggle(id){ avAbrirTodos(); }
 function avOcultarHoy(id){
   localStorage.setItem('suep_aviso_oculto_' + id, todayISO());
   avPintarBanner();
@@ -21780,7 +21997,8 @@ function renderAvisos(){
   return `<div style="padding:4px 2px 30px">
     <div style="background:rgba(37,99,235,.08);border:1px solid rgba(96,165,250,.28);border-radius:11px;
       padding:11px 13px;font-size:12.5px;line-height:1.55;color:#a9c8e4;margin-bottom:14px">
-      El aviso se muestra arriba de todo, en cualquier pestaña, hasta la fecha que le pongas.
+      El aviso se muestra en una tira finita arriba de todo, en cualquier pestaña, hasta la fecha que le pongas.
+      Si hay varios, van pasando solos; tocando la tira se leen completos.
       Cada usuario lo puede ocultar por el día, pero al otro día vuelve a aparecer.
       ${avPuedeCargar() ? 'Podés publicar los tuyos; los que cargó otra persona los ves pero no los podés cambiar.' : ''}
       ${avOcultosHoy() ? `<div style="margin-top:9px">
