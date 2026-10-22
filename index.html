@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.14">
+<meta name="app-version" content="1.6.15">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8016,9 +8016,11 @@ const HOR_DESDE  = '2026-08-24';        // primer lunes del horario
 const HOR_DIAS   = ['LUN','MAR','MIE','JUE','VIE'];
 const HOR_NOM    = { LUN:'Lunes', MAR:'Martes', MIE:'Miércoles', JUE:'Jueves', VIE:'Viernes' };
 // Quiénes pueden editar, además de las administradoras.
-// v1.6.8 — Se suma Nahuel Calderón (pasó a la Secretaría Académica), con los mismos
-// permisos sobre la pizarra que el Sgto. Bascur.
-const HOR_EDITAN = ['melina.lafuente','eliana.velazquez','sergio.bascur','nahuel.calderon'];
+// v1.6.15 — Editan la pizarra: Mely, Eliana, Sergio y el Subcrio. Manriquez
+// (jefe de la Secretaría Académica). Nahuel Calderón deja de editarla: la ve
+// como el resto, pero no la puede cambiar. El usuario de Manriquez se busca por
+// nombre (lo creó Mely desde el Panel de Administración), ver mqUsuario().
+const HOR_EDITAN = ['melina.lafuente','eliana.velazquez','sergio.bascur','carlos.manriquez'];
 
 let HOR_SEM = null;   // ISO del lunes de la semana que se está mirando
 let HOR_DIA = null;   // v1.5.97 — ISO del día que se está mirando
@@ -8046,7 +8048,9 @@ function horPuedeEditar(){
   try{
     if(!CU) return false;
     if(CU.permiso === 'admin') return true;
-    return HOR_EDITAN.includes(CU.usuario);
+    if(HOR_EDITAN.includes(CU.usuario)) return true;
+    try{ if(typeof mqUsuario === 'function' && CU.usuario === mqUsuario()) return true; }catch(_){}
+    return false;
   }catch(_){ return false; }
 }
 function horVigente(){ return horHoy() >= HOR_DESDE; }
@@ -8212,7 +8216,7 @@ function horLimpiar(todo, iso){
 }
 // Escribe un cambio en la capa que corresponda y vuelve a dibujar.
 function horAplicar(iso, ambito, fn){
-  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Nahuel pueden cambiar el horario.'); return; }
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Manriquez pueden cambiar el horario.'); return; }
   const todo = horGuardado();
   const previo = horPrevio(todo, iso, ambito);
   const capa = horCapa(todo, iso, ambito);
@@ -8358,7 +8362,7 @@ function horAhoraMin(){ const d = new Date(); return d.getHours() * 60 + d.getMi
 // «Guardar de acá en adelante» (lo normal) o «Solo este día».
 var HOR_ED = null;
 async function horEditar(iso, key, sec){
-  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Nahuel pueden cambiar el horario.'); return; }
+  if(!horPuedeEditar()){ alert('Solo Mely, Eliana, Sergio y Manriquez pueden cambiar el horario.'); return; }
   try{ if(await horTraerNube()) horRefrescar(); }catch(_){}
   const filas = horDelDia(iso); if(!filas) return;
   const f = filas.find(x => String(x.key) === String(key)); if(!f) return;
