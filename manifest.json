@@ -8,11 +8,19 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
-  "orientation": "portrait-primary",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "any",
   "background_color": "#08111f",
   "theme_color": "#08111f",
-  "categories": ["productivity", "education", "government"],
+  "categories": [
+    "productivity",
+    "education",
+    "government"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {

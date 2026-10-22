@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.11">
+<meta name="app-version" content="1.6.14">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,7 +47,7 @@ window.addEventListener('load', async ()=>{
     const man = {
       id: carpeta, name: 'SUEP · DCFyCCCO', short_name: 'SUEP',
       start_url: location.href, scope: carpeta,
-      display: 'standalone', orientation: 'portrait',
+      display: 'standalone', orientation: 'any',
       background_color: '#08111f', theme_color: '#08111f', lang: 'es-AR',
       icons: [{ src: iconoLink.href, sizes: '512x512', type: 'image/png', purpose: 'any' }]
     };
@@ -2345,6 +2345,19 @@ body[data-paleta="7"]{--acc:#c98ab5;--acc-ink:#8d4a79;--acc-soft:rgba(201,138,18
 }
 
 </style>
+<style>
+/* ══ v1.6.12 · CELULAR ACOSTADO (horizontal) ══
+   Al girar el teléfono la pantalla queda bajita y ancha: el menú lateral pasa a
+   ser desplegable (como en vertical) y el pie se achica, para que el contenido
+   tenga lugar. En tablets y PC no cambia nada. */
+@media (orientation:landscape) and (max-height:520px) and (max-width:1100px){
+  .menu-btn{display:flex;align-items:center}
+  .sidebar{position:fixed;top:54px;left:0;bottom:0;z-index:90;transform:translateX(-100%);box-shadow:4px 0 20px rgba(0,0,0,.4)}
+  .sidebar.open{transform:translateX(0)}
+  .app-footer{font-size:9px !important;padding-top:3px !important;padding-bottom:3px !important;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+</style>
 </head>
 <body>
 
@@ -2876,11 +2889,13 @@ async function _versionPublicadaEnGitHub(){
   _verUltimoError = 0;
   let ver = null;
   const propia = _urlPublicada();
-  // 1) La dirección de la app (GitHub Pages), pidiendo solo los primeros 8 KB
-  if(propia) ver = await _leerVersionDe(propia, true);
-  // 2) Misma dirección sin pedir un pedazo (por si algo en el medio no lo acepta)
-  if(!ver && propia) ver = await _leerVersionDe(propia, false);
-  // 3) Respaldo: el archivo crudo del repositorio
+  // 1) La dirección de la app (GitHub Pages), pidiendo solo los primeros 8 KB.
+  // v1.6.12 — Va con "?suepver=" para que el service worker (sw.js nuevo) la
+  // deje pasar tal cual. Antes el sw.js trataba este pedido como "abrir la app":
+  // le sacaba el pedido de 8 KB, bajaba el archivo ENTERO (3 MB) y en el celular
+  // se cortaba por tiempo. Por eso el chequeo fallaba y no se actualizaban.
+  if(propia) ver = await _leerVersionDe(propia + '?suepver=' + Math.floor(Date.now()/60000), true);
+  // 2) Respaldo: el archivo crudo del repositorio
   if(!ver && GITHUB_RAW_URL && !GITHUB_RAW_URL.includes('TU_USUARIO')){
     ver = await _leerVersionDe(GITHUB_RAW_URL + '?_=' + Math.floor(Date.now()/60000), true);
   }
@@ -3150,6 +3165,48 @@ function _publicarVersion(){
     }
   }catch(_){}
 }
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.12 — POR QUÉ LOS DEMÁS NO SE ACTUALIZABAN SOLOS
+// ───────────────────────────────────────────────────────────────────
+// La versión nueva se anunciaba en la nube SOLO cuando alguien escribía usuario
+// y contraseña. Si se entraba con la sesión guardada o con la huella (lo de
+// todos los días), no se anunciaba nunca, y los equipos con versiones viejas no
+// tenían cómo enterarse (su consulta a GitHub además estaba bloqueada).
+// AHORA: cada vez que la app arranca (de cualquier forma) le pregunta a la nube
+// qué versión está anunciada y, si la suya es más nueva, la anuncia. Así, apenas
+// un equipo abre la versión nueva, todos los demás se actualizan en segundos,
+// incluso los que tienen versiones viejas. Si algún equipo viejo "baja" la
+// marca por error, el primero que tenga la nueva la vuelve a subir.
+// ═══════════════════════════════════════════════════════════════════
+var _verNubeUlt = 0;
+async function _asegurarVersionEnNube(forzar){
+  if(APP_EN_PRUEBA) return;
+  if(!forzar && Date.now() - _verNubeUlt < 5*60*1000) return;
+  _verNubeUlt = Date.now();
+  try{
+    if(typeof clienteS === 'undefined' || !clienteS) return;
+    // No anunciar una versión que todavía no está publicada en la dirección real
+    const pub = await _versionPublicadaEnGitHub();
+    if(pub && _verMayor(APP_VERSION, pub) === 1) return;
+    const q = clienteS.from('app_data').select('value').eq('key', VERSION_KEY).maybeSingle();
+    const r = (typeof _conTimeout === 'function') ? await _conTimeout(q, 8000) : await q;
+    if(!r || r.error) return;
+    const nube = String((r.data && r.data.value) || '').replace(/"/g,'').trim();
+    if(!nube || _verMayor(APP_VERSION, nube) === 1){
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      if(typeof syncToSupabase === 'function') syncToSupabase(VERSION_KEY, APP_VERSION);
+      console.log('📣 Versión ' + APP_VERSION + ' anunciada en la nube (estaba ' + (nube || 'vacía') + ').');
+    }
+  }catch(_){}
+}
+function _arrancarAnuncioVersion(){
+  if(APP_EN_PRUEBA) return;
+  setTimeout(()=>_asegurarVersionEnNube(true), 4000);
+  setInterval(()=>_asegurarVersionEnNube(false), 20*60*1000);
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _arrancarAnuncioVersion);
+else _arrancarAnuncioVersion();
+
 // Llega una versión (por realtime o al bajar datos): si es más nueva, actualizar solo.
 async function _recibirVersionRemota(valor){
   try{
@@ -3157,6 +3214,9 @@ async function _recibirVersionRemota(valor){
     if(!remota || !/^\d+(\.\d+)*$/.test(remota)) return;
     localStorage.setItem(VERSION_KEY, remota);
     if(APP_EN_PRUEBA) return;                        // 🧪 probando: no avisar ni recargar
+    // v1.6.12 — Si la nube anuncia una versión MÁS VIEJA que la mía (la bajó un
+    // equipo atrasado), la vuelvo a subir para que los demás no queden atrás.
+    if(_verMayor(remota, APP_VERSION) === -1){ _asegurarVersionEnNube(false); return; }
     if(_verMayor(remota, APP_VERSION) !== 1) return; // no es más nueva: nada que hacer
     // 🧪 v1.5.63 — Antes de avisar, confirmamos que esa versión EXISTE publicada
     // en GitHub. Si la nube anuncia una versión más nueva que la publicada (por
@@ -6508,7 +6568,7 @@ function iniEsqueleto(){
   return `<div class="ini-wrap fade-in">
     <div class="ini-head">
       <div><h3>🏠 Panel de inicio</h3><p>${f}</p></div>
-      <button class="ini-ref" onclick="showInicio()">🔄 Actualizar</button>
+      <button class="ini-ref" onclick="iniActualizarTodo(this)">🔄 Actualizar</button>
     </div>
     <div id="iniUpdBox"></div>
     <div id="iniCuerpo"><div class="ini-vacio">Armando el resumen…</div></div>
@@ -8028,16 +8088,38 @@ function horGrabar(todo){
 // Si en este equipo hay cambios del horario que todavía no subieron, NO se
 // pisan: quedan los de acá.
 var _horNubeTs = 0;
+// v1.6.13 — Quien NO edita el horario nunca puede tener "cambios del horario sin
+// subir". Si quedó una marca así de antes, bloqueaba para siempre que le llegara
+// la pizarra nueva (la app creía que tenía que cuidar la copia de ese equipo).
+function _horSoltarPendiente(){
+  try{
+    if(typeof CU === 'undefined' || !CU || horPuedeEditar()) return;
+    const quitar = k => {
+      try{
+        const l = JSON.parse(localStorage.getItem(k) || '[]');
+        if(Array.isArray(l) && l.includes(HOR_KEY)) localStorage.setItem(k, JSON.stringify(l.filter(x => x !== HOR_KEY)));
+      }catch(_){}
+    };
+    quitar('suep_pending_sync'); quitar('suep_pending_replace');
+    if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) delete _pendingWrites[HOR_KEY];
+    if(typeof _getOpsPendientes === 'function' && typeof _setOpsPendientes === 'function'){
+      const ops = _getOpsPendientes();
+      if(ops.some(o => o && o.key === HOR_KEY)) _setOpsPendientes(ops.filter(o => !o || o.key !== HOR_KEY));
+    }
+  }catch(_){}
+}
 async function horTraerNube(forzar){
   try{
     if(typeof clienteS === 'undefined' || !clienteS) return false;
+    _horSoltarPendiente();
     if(!forzar && Date.now() - _horNubeTs < 8000) return false;   // recién se trajo
     if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) return false;
     if(typeof _getPendientes === 'function' && _getPendientes().includes(HOR_KEY)) return false;
-    const q = clienteS.from('app_data').select('value').eq('key', HOR_KEY).maybeSingle();
-    const r = (typeof _conTimeout === 'function') ? await _conTimeout(q, 3500) : await q;
+    const q = clienteS.from('app_data').select('value,updated_at').eq('key', HOR_KEY).maybeSingle();
+    const r = (typeof _conTimeout === 'function') ? await _conTimeout(q, 6000) : await q;
     _horNubeTs = Date.now();
     const v = r && r.data ? r.data.value : null;
+    try{ if(r && r.data && r.data.updated_at){ _uaGuardar(HOR_KEY, r.data.updated_at); _anotarVisto(r.data.updated_at); } }catch(_){}
     if(!v || typeof v !== 'object' || Array.isArray(v)) return false;
     if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) return false;
     const antes = localStorage.getItem(HOR_KEY) || '';
@@ -8823,6 +8905,7 @@ function horTablaHTML(){
         <span class="hr-dia-nom">${horEsc(lab)}${HOR_DIA===hoy?' <b class="hr-chip">HOY</b>':''}</span>
         <span class="hr-dia-der">
           ${cambios?`<span class="hr-mod">✏️ ${cambios} ${cambios===1?'cambio':'cambios'} respecto del Excel</span>`:''}
+          <button class="hr-reset hr-img-btn" onclick="horDescargarImagen('${HOR_DIA}', this)" title="Bajar este día como imagen para mandarlo por WhatsApp">📷 Imagen</button>
           ${puede?`<button class="hr-reset${HOR_EDIT?' on':''}" onclick="horModo()">${HOR_EDIT?'✅ Listo':'🛠️ Modo edición'}</button>`:''}
           ${(puede&&cambios)?`<button class="hr-reset" onclick="horVolverDia('${HOR_DIA}')">↺ Volver al Excel</button>`:''}
         </span>
@@ -8838,6 +8921,296 @@ function horTablaHTML(){
     </div>`;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.14 — PIZARRA COMO IMAGEN (para mandar por WhatsApp)
+// ───────────────────────────────────────────────────────────────────
+// Arma una imagen prolija del día (no es una captura de pantalla: se dibuja
+// de nuevo, siempre en claro y del mismo tamaño, se vea como se vea la app en
+// ese equipo). Antes de dibujar se trae la pizarra de la nube, así la imagen
+// sale con lo último. Si hay una sección elegida arriba, sale solo esa.
+// En el celular abre directo el menú de compartir (WhatsApp); en la PC se
+// descarga el archivo PNG.
+// ═══════════════════════════════════════════════════════════════════
+const HOR_IMG_SEC = [
+  { c:'#1f6fb8', bg:'#eef6fe' }, { c:'#15803d', bg:'#eefaf2' }, { c:'#6d28d9', bg:'#f4effe' },
+  { c:'#a5761c', bg:'#fdf7e9' }, { c:'#be185d', bg:'#fdf0f5' }
+];
+const HOR_IMG_COM = {
+  'k-comida':  { bg:'#fdf5e4', bd:'#a5761c' }, 'k-pausa': { bg:'#f1f5f9', bd:'#64748b' },
+  'k-estudio': { bg:'#e8f1fd', bd:'#2563eb' }, 'k-orden': { bg:'#e6f7f5', bd:'#0f766e' },
+  'k-clase':   { bg:'#f1ecfe', bd:'#6d28d9' }
+};
+function _horImgLineas(ctx, txt, ancho, maxL){
+  const pal = String(txt || '').split(/\s+/).filter(Boolean);
+  const out = []; let lin = '';
+  pal.forEach(w=>{
+    const prueba = lin ? lin + ' ' + w : w;
+    if(ctx.measureText(prueba).width <= ancho || !lin){ lin = prueba; }
+    else { out.push(lin); lin = w; }
+  });
+  if(lin) out.push(lin);
+  if(maxL && out.length > maxL){
+    const c = out.slice(0, maxL);
+    let u = c[maxL - 1];
+    while(u.length > 1 && ctx.measureText(u + '…').width > ancho) u = u.slice(0, -1);
+    c[maxL - 1] = u + '…';
+    return c;
+  }
+  return out;
+}
+function _horImgRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+async function horDescargarImagen(iso, btn){
+  if(typeof _vlBloquear === 'function' && _vlBloquear('🔒 Tu cuenta es de solo consulta: la descarga no está habilitada.')) return;
+  const txtBtn = btn ? btn.textContent : '';
+  try{ if(btn){ btn.disabled = true; btn.textContent = '⏳ Armando…'; } }catch(_){}
+  try{
+    try{ await horTraerNube(true); }catch(_){}
+    try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(_){}
+    const filas = horDelDia(iso);
+    if(!filas || !filas.length){ alert('Ese día no tiene horario de clases.'); return; }
+    const spans = filas.spans || {}, aulas = filas.aulas || {};
+    const sf = (typeof HOR_SECF === 'number') ? HOR_SECF : -1;
+    const secs = sf >= 0 ? [sf] : [0,1,2,3,4];
+    const F = 'Inter, "Segoe UI", Roboto, system-ui, sans-serif';
+    const EF = '"Exo 2", Inter, "Segoe UI", Roboto, system-ui, sans-serif';
+
+    // Medidas
+    const M = 36, HC = 132, GAP = 8;
+    const CW = sf >= 0 ? 760 : 286;
+    const W = M * 2 + HC + secs.length * (CW + GAP);
+    const colX = i => M + HC + GAP + i * (CW + GAP);
+
+    // Quién tapa a quién (combinados), igual que en la pizarra
+    const tapa = {}, origen = {};
+    filas.forEach((f, r)=>{
+      if(f.tipo !== 'cel') return;
+      for(let c = 0; c < 5; c++){
+        if(tapa[r + ',' + c]) continue;
+        const sp = spans[f.key + '|' + c] || {};
+        const cn = Math.max(1, Math.min(Number(sp.c) || 1, 5 - c));
+        let tope = 1;
+        for(let k = r + 1; k < filas.length && filas[k].tipo === 'cel'; k++) tope++;
+        const rn = Math.min(Math.max(1, Number(sp.r) || 1), tope);
+        origen[r + ',' + c] = { cn, rn };
+        for(let i = 0; i < rn; i++) for(let j = 0; j < cn; j++){ if(i || j) tapa[(r + i) + ',' + (c + j)] = 1; }
+      }
+    });
+    // Qué columnas visibles ocupa cada casillero
+    const visibles = (c0, cn) => secs.map((s, i) => (s >= c0 && s < c0 + cn) ? i : -1).filter(i => i >= 0);
+
+    const cv = document.createElement('canvas');
+    const ctx = cv.getContext('2d');
+    // Alto de cada fila según el texto
+    const PADC = 14;
+    const altoCel = (txt, ancho) => {
+      const p = horPartir(txt);
+      if(!p.mat && !p.doc) return 58;
+      ctx.font = '700 19px ' + F;
+      const lm = _horImgLineas(ctx, p.mat, ancho - PADC * 2 - 30, 4).length;
+      ctx.font = '500 15px ' + F;
+      const ld = p.doc ? _horImgLineas(ctx, p.doc, ancho - PADC * 2 - 30, 2).length : 0;
+      return PADC * 2 + lm * 24 + (ld ? 6 + ld * 19 : 0);
+    };
+    const alto = filas.map(f => f.tipo === 'hdr' ? 44 : 66);
+    const anchoDe = cols => cols.length ? (cols[cols.length - 1] - cols[0] + 1) * CW + (cols.length - 1) * GAP : 0;
+    filas.forEach((f, r)=>{
+      if(f.tipo === 'comun'){
+        ctx.font = '700 21px ' + F;
+        const anchoT = anchoDe(secs.map((_, i) => i)) - 80;
+        const l = _horImgLineas(ctx, f.t || '—', anchoT, 3).length;
+        alto[r] = Math.max(alto[r], 30 + l * 27);
+      }
+    });
+    const multi = [];
+    filas.forEach((f, r)=>{
+      if(f.tipo !== 'cel') return;
+      for(let c = 0; c < 5; c++){
+        const o = origen[r + ',' + c]; if(!o) continue;
+        const cols = visibles(c, o.cn); if(!cols.length) continue;
+        const need = altoCel(((f.cel || [])[c] || {}).v, anchoDe(cols));
+        if(o.rn === 1) alto[r] = Math.max(alto[r], need);
+        else multi.push({ r, rn:o.rn, need });
+      }
+    });
+    multi.forEach(m=>{
+      let tot = 0; for(let i = 0; i < m.rn; i++) tot += alto[m.r + i] + (i ? GAP : 0);
+      if(tot < m.need) alto[m.r + m.rn - 1] += (m.need - tot);
+    });
+
+    const HEAD = 150, SECH = 60, FOOT = 64;
+    let H = HEAD + 24 + SECH + GAP;
+    alto.forEach(a => H += a + GAP);
+    H += FOOT;
+
+    const ESC = Math.min(2, Math.max(1, 3200 / W));
+    cv.width = Math.round(W * ESC); cv.height = Math.round(H * ESC);
+    ctx.scale(ESC, ESC);
+    ctx.textBaseline = 'alphabetic';
+
+    // Fondo
+    ctx.fillStyle = '#f5f8fc'; ctx.fillRect(0, 0, W, H);
+    // Encabezado
+    const g = ctx.createLinearGradient(0, 0, W, HEAD);
+    g.addColorStop(0, '#0a1a30'); g.addColorStop(1, '#14406b');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, HEAD);
+    ctx.fillStyle = '#7aafd4'; ctx.fillRect(0, HEAD - 5, W, 5);
+    ctx.font = '800 30px ' + EF; ctx.fillStyle = '#7aafd4'; ctx.fillText('S', M, 52);
+    const ws = ctx.measureText('S').width;
+    ctx.fillStyle = '#ffffff'; ctx.fillText('UEP', M + ws, 52);
+    const wsuep = ws + ctx.measureText('UEP').width;
+    ctx.font = '600 15px ' + F; ctx.fillStyle = '#a9c8e4';
+    ctx.fillText('  ·  DCFyCCCO  ·  Pizarra Digital de Horario de Clases', M + wsuep, 51);
+    const d = horParse(iso);
+    let lab = d ? d.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) : iso;
+    lab = lab.charAt(0).toUpperCase() + lab.slice(1);
+    ctx.font = '800 40px ' + EF; ctx.fillStyle = '#ffffff';
+    ctx.fillText(lab, M, 106);
+    ctx.font = '600 16px ' + F; ctx.fillStyle = '#bfd7ea';
+    ctx.fillText(sf >= 0 ? ('Sección ' + (sf + 1) + (aulas[sf] ? '  ·  📍 ' + aulas[sf] : '')) : '2ª Convocatoria 2026  ·  las 5 secciones', M, 133);
+    if(iso === horHoy()){
+      ctx.font = '800 15px ' + F;
+      const t = 'HOY', tw = ctx.measureText(t).width + 26;
+      ctx.fillStyle = '#34d399'; _horImgRect(ctx, W - M - tw, 30, tw, 30, 15); ctx.fill();
+      ctx.fillStyle = '#05261a'; ctx.fillText(t, W - M - tw + 13, 51);
+    }
+
+    let y = HEAD + 24;
+    // Encabezados de sección
+    ctx.fillStyle = '#e3ebf4'; _horImgRect(ctx, M, y, HC, SECH, 12); ctx.fill();
+    ctx.font = '700 22px ' + F; ctx.fillStyle = '#33506b'; ctx.textAlign = 'center';
+    ctx.fillText('🕐', M + HC / 2, y + 38); ctx.textAlign = 'left';
+    secs.forEach((sc, i)=>{
+      const x = colX(i), col = HOR_IMG_SEC[sc];
+      ctx.fillStyle = '#ffffff'; _horImgRect(ctx, x, y, CW, SECH, 12); ctx.fill();
+      ctx.fillStyle = col.c; _horImgRect(ctx, x, y, CW, 6, 3); ctx.fill();
+      ctx.font = '800 18px ' + EF; ctx.fillStyle = col.c;
+      ctx.fillText('SECCIÓN ' + (sc + 1), x + 16, y + (aulas[sc] && sf < 0 ? 31 : 39));
+      if(aulas[sc] && sf < 0){
+        ctx.font = '500 13px ' + F; ctx.fillStyle = '#5a7590';
+        ctx.fillText(_horImgLineas(ctx, '📍 ' + aulas[sc], CW - 30, 1)[0] || '', x + 16, y + 50);
+      }
+    });
+    y += SECH + GAP;
+
+    // Filas
+    const yFila = []; { let yy = y; alto.forEach((a, r)=>{ yFila[r] = yy; yy += a + GAP; }); }
+    filas.forEach((f, r)=>{
+      const yy = yFila[r], hh = alto[r];
+      if(f.tipo === 'hdr'){
+        ctx.fillStyle = '#0e2238'; _horImgRect(ctx, M, yy, W - M * 2, hh, 10); ctx.fill();
+        ctx.font = '800 17px ' + EF; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+        ctx.fillText(String(f.hdr || '').toUpperCase(), W / 2, yy + hh / 2 + 6); ctx.textAlign = 'left';
+        return;
+      }
+      // Hora
+      const rg = horRango(f.h);
+      ctx.fillStyle = '#ffffff'; _horImgRect(ctx, M, yy, HC, hh, 12); ctx.fill();
+      ctx.strokeStyle = '#d6e1ec'; ctx.lineWidth = 1; _horImgRect(ctx, M + .5, yy + .5, HC - 1, hh - 1, 12); ctx.stroke();
+      ctx.textAlign = 'center';
+      if(rg){
+        ctx.font = '800 22px ' + EF; ctx.fillStyle = '#0e2238'; ctx.fillText(rg.ini, M + HC / 2, yy + hh / 2 + 1);
+        ctx.font = '600 15px ' + F; ctx.fillStyle = '#5a7590'; ctx.fillText('a ' + rg.fin, M + HC / 2, yy + hh / 2 + 22);
+      }else{
+        ctx.font = '700 15px ' + F; ctx.fillStyle = '#0e2238';
+        const l = _horImgLineas(ctx, f.h || '—', HC - 16, 3);
+        l.forEach((t, k) => ctx.fillText(t, M + HC / 2, yy + hh / 2 - (l.length - 1) * 9 + k * 19 + 5));
+      }
+      ctx.textAlign = 'left';
+
+      if(f.tipo === 'comun'){
+        const k = HOR_IMG_COM[horClaseComun(f.t)] || HOR_IMG_COM['k-clase'];
+        const x0 = colX(0), wTot = anchoDe(secs.map((_, i) => i));
+        ctx.fillStyle = k.bg; _horImgRect(ctx, x0, yy, wTot, hh, 12); ctx.fill();
+        ctx.fillStyle = k.bd; _horImgRect(ctx, x0, yy, 7, hh, 3); ctx.fill();
+        ctx.font = '700 21px ' + F;
+        const l = _horImgLineas(ctx, f.t || '—', wTot - 80, 3);
+        ctx.font = '24px ' + F; ctx.fillText(horIcono(f.t), x0 + 22, yy + hh / 2 + 8);
+        ctx.font = '700 21px ' + F; ctx.fillStyle = '#0e2238';
+        l.forEach((t, i) => ctx.fillText(t, x0 + 60, yy + hh / 2 - (l.length - 1) * 13.5 + i * 27 + 7));
+        return;
+      }
+      for(let c = 0; c < 5; c++){
+        const o = origen[r + ',' + c]; if(!o) continue;
+        const cols = visibles(c, o.cn); if(!cols.length) continue;
+        const x = colX(cols[0]), w = anchoDe(cols);
+        let h = 0; for(let i = 0; i < o.rn; i++) h += alto[r + i] + (i ? GAP : 0);
+        const col = HOR_IMG_SEC[c];
+        const cel = (f.cel || [])[c] || { v:'' };
+        ctx.fillStyle = cel.v ? col.bg : '#ffffff'; _horImgRect(ctx, x, yy, w, h, 12); ctx.fill();
+        ctx.strokeStyle = cel.v ? col.c + '55' : '#d6e1ec'; ctx.lineWidth = 1; _horImgRect(ctx, x + .5, yy + .5, w - 1, h - 1, 12); ctx.stroke();
+        ctx.fillStyle = col.c; _horImgRect(ctx, x, yy, 6, h, 3); ctx.fill();
+        const p = horPartir(cel.v);
+        if(!p.mat && !p.doc){
+          ctx.font = 'italic 500 16px ' + F; ctx.fillStyle = '#90a4b8';
+          ctx.fillText('Libre', x + PADC + 8, yy + h / 2 + 6);
+          continue;
+        }
+        ctx.font = '700 19px ' + F;
+        const lm = _horImgLineas(ctx, p.mat, w - PADC * 2 - 30, 4);
+        ctx.font = '500 15px ' + F;
+        const ld = p.doc ? _horImgLineas(ctx, p.doc, w - PADC * 2 - 30, 2) : [];
+        const bloque = lm.length * 24 + (ld.length ? 6 + ld.length * 19 : 0);
+        let ty = yy + (h - bloque) / 2 + 18;
+        ctx.font = '18px ' + F; ctx.fillText(horIcono(p.mat), x + PADC + 2, ty);
+        ctx.font = '700 19px ' + F; ctx.fillStyle = '#0e2238';
+        lm.forEach(t => { ctx.fillText(t, x + PADC + 30, ty); ty += 24; });
+        if(ld.length){
+          ty += 4; ctx.font = '500 15px ' + F; ctx.fillStyle = '#4a6580';
+          ld.forEach(t => { ctx.fillText(t, x + PADC + 30, ty); ty += 19; });
+        }
+        if(sf < 0 && o.cn > 1){
+          ctx.font = '700 12px ' + F; ctx.fillStyle = col.c; ctx.textAlign = 'right';
+          ctx.fillText('SECCIONES ' + (c + 1) + ' A ' + (c + o.cn), x + w - 12, yy + 20); ctx.textAlign = 'left';
+        }
+      }
+    });
+
+    // Pie
+    const yf = H - FOOT + 14;
+    ctx.fillStyle = '#e3ebf4'; ctx.fillRect(0, H - FOOT, W, FOOT);
+    const ahora = new Date();
+    const gen = ahora.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' ' +
+                ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', hour12:false });
+    ctx.font = '600 14px ' + F; ctx.fillStyle = '#33506b';
+    ctx.fillText('Generada el ' + gen + ' hs · SUEP v' + APP_VERSION, M, yf + 20);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#5a7590';
+    ctx.fillText('Desarrollado por MLF · Secretaría Académica DCFyCCCO', W - M, yf + 20);
+    ctx.textAlign = 'left';
+
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    if(!blob){ alert('No se pudo armar la imagen en este equipo.'); return; }
+    const nombre = 'Horario_' + iso + (sf >= 0 ? '_Seccion' + (sf + 1) : '') + '.png';
+    // En el celular: menú de compartir (WhatsApp). En la PC: descarga.
+    let compartido = false;
+    try{
+      const file = new File([blob], nombre, { type:'image/png' });
+      const tactil = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+      if(tactil && navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:'Horario de clases', text:'Horario de clases · ' + lab });
+        compartido = true;
+      }
+    }catch(e){
+      if(e && e.name === 'AbortError') compartido = true;   // la persona cerró el menú: no descargar
+    }
+    if(!compartido){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    }
+  }catch(e){
+    console.error('Imagen del horario:', e);
+    alert('No se pudo armar la imagen. Probá de nuevo.');
+  }finally{
+    try{ if(btn){ btn.disabled = false; btn.textContent = txtBtn || '📷 Imagen'; } }catch(_){}
+  }
+}
 // ─── La pestaña completa ───
 function renderHorario(){
   horEnsureEstilos();
@@ -8873,7 +9246,10 @@ function horBloqueHTML(){
   return `<div class="hr-rail">
       <span class="hr-rail-tit">🕐 Horario de clases · ${iso===hoy?'hoy':'próximo día'}</span>
       <span class="hr-rail-sub">${horEsc(lab)}${aclara}</span>
-      <button class="hr-ver" onclick="selectSector('HORARIO_DIARIO')">Ver la semana completa ›</button>
+      <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
+        <button class="hr-ver" onclick="horDescargarImagen('${iso}', this)" title="Bajar como imagen para mandarlo por WhatsApp">📷 Imagen</button>
+        <button class="hr-ver" onclick="selectSector('HORARIO_DIARIO')">Ver la semana completa ›</button>
+      </span>
     </div>
     ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto del Excel.</div>`:''}
     <div class="hz-panel" data-cc-no>
@@ -9156,8 +9532,38 @@ function showInicio(){
     }, 40);
     try{ if(typeof avPintarBanner === 'function') avPintarBanner(); }catch(_){}
     if(typeof closeSidebar === 'function') closeSidebar();
+    // v1.6.13 — Al abrir el Panel se trae la pizarra de la nube (no la del equipo)
+    setTimeout(()=>{
+      try{ horTraerNube(true).then(c=>{ if(c && document.getElementById('iniCuerpo')) iniPintar(); }).catch(()=>{}); }catch(_){}
+    }, 120);
   }catch(e){ console.warn('Inicio:', e); }
 }
+// v1.6.13 — El botón «Actualizar» del Panel trae TODO lo último de la nube
+async function iniActualizarTodo(btn){
+  try{ if(btn){ btn.disabled = true; btn.textContent = '☁️ Trayendo…'; } }catch(_){}
+  try{
+    if(typeof _retrocederCursor === 'function') _retrocederCursor(60 * 60 * 1000);
+    await Promise.race([
+      Promise.all([ pullAllFromSupabase(), horTraerNube(true) ]),
+      new Promise(r => setTimeout(r, 9000))
+    ]);
+  }catch(_){}
+  showInicio();
+}
+// v1.6.13 — Mientras el Panel de inicio o la pizarra estén a la vista, la
+// pizarra se vuelve a pedir a la nube cada 2 minutos y al volver a la app.
+var _horVivoUlt = 0;
+function _horVivo(){
+  try{
+    if(document.hidden || typeof CU === 'undefined' || !CU) return;
+    if(!(document.getElementById('iniCuerpo') || document.getElementById('horTabla') || document.getElementById('horBox'))) return;
+    if(Date.now() - _horVivoUlt < 20000) return;
+    _horVivoUlt = Date.now();
+    horTraerNube(true).then(c=>{ if(c) _refrescarVistasVivas(HOR_KEY); }).catch(()=>{});
+  }catch(_){}
+}
+setInterval(_horVivo, 2 * 60 * 1000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(_horVivo, 800); });
 // ═════ Exámenes de Reclutamiento: desplegable ═════
 function toggleExams(id){
   const row = document.getElementById('exrow_'+id);
@@ -13495,7 +13901,7 @@ async function _guardarModuloSeguro(s, m, listaLocal, idPrioritario){
   if(typeof clienteS !== 'undefined'){
     try{
       const { error } = await clienteS.from('app_data').upsert([{
-        key: S.key(s, m), value: fusionada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+        key: S.key(s, m), value: fusionada, device_id: DEVICE_ID, updated_at: _tsEscritura()
       }], { onConflict: 'key' });
       if(error){
         // ✅ FIX: el cliente de Supabase NO lanza excepción ante errores de la base
@@ -13772,7 +14178,7 @@ S.delSafe = async function(s, m, id){
   if(typeof clienteS !== 'undefined'){
     try{
       const { error } = await clienteS.from('app_data').upsert([{
-        key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+        key: S.key(s, m), value: filtrada, device_id: DEVICE_ID, updated_at: _tsEscritura()
       }], { onConflict: 'key' });
       if(error){
         console.error('❌ Supabase RECHAZÓ el borrado de', S.key(s,m), '→', error.message||error, error);
@@ -13854,7 +14260,7 @@ async function flushPendingSync(){
         }catch(e){ break; } // sin conexión todavía
       }
       const { error } = await clienteS.from('app_data').upsert([{
-        key, value: subir, device_id: DEVICE_ID, updated_at: new Date().toISOString()
+        key, value: subir, device_id: DEVICE_ID, updated_at: _tsEscritura()
       }], { onConflict: 'key' });
       if(error){ console.warn('Pendiente sigue fallando:', key, error.message||error); continue; }
       _quitarPendiente(key);
@@ -13948,7 +14354,7 @@ async function flushWrites(){
       key: k,
       value: writes[k],
       device_id: DEVICE_ID,
-      updated_at: new Date().toISOString()
+      updated_at: _tsEscritura()
     }));
     const { error } = await clienteS.from('app_data').upsert(rows, { onConflict: 'key' });
     if(error){
@@ -13998,6 +14404,76 @@ function _setPullCursor(v){ if(v) localStorage.setItem('suep_pull_cursor', v); }
 const PULL_MARGEN_MS = 3 * 60 * 1000;      // margen de seguridad del cursor
 
 // Convierte milisegundos a la marca que entiende Supabase (ISO en UTC).
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.13 — POR QUÉ LA PIZARRA NO LES LLEGABA AUNQUE TUVIERAN LA ÚLTIMA VERSIÓN
+// ───────────────────────────────────────────────────────────────────
+// Cada equipo baja de la nube "solo lo que cambió desde la última vez", y para
+// saber qué es nuevo usa la HORA que cada equipo le pone a lo que guarda. Esa
+// hora sale del reloj del propio equipo. Si la PC o el celular de quien carga
+// la pizarra tiene el reloj unos minutos atrasado, lo que guarda queda con una
+// hora "vieja", y los demás —que ya habían bajado cosas más nuevas de otros—
+// creen que ya lo tienen y no lo bajan nunca. Solo lo veían si justo estaban
+// conectados en ese momento (aviso en vivo) o al día siguiente.
+// AHORA:
+//   1) Lo que se guarda nunca lleva una hora más vieja que lo último que ese
+//      equipo vio en la nube (aunque su reloj esté atrasado).
+//   2) Si algún equipo tiene el reloj adelantado, el resto no "salta" al futuro.
+//   3) La pizarra de horario, los avisos y la versión se revisan SIEMPRE una
+//      por una (se pregunta solo la hora de la última modificación, que no pesa
+//      nada, y se baja el contenido únicamente si cambió).
+//   4) El Panel de inicio trae la pizarra de la nube al abrirse, cada 2 minutos
+//      mientras está a la vista y al volver a la app.
+// ═══════════════════════════════════════════════════════════════════
+function _maxVisto(){ try{ return +localStorage.getItem('suep_max_visto') || 0; }catch(_){ return 0; } }
+function _anotarVisto(iso){
+  try{
+    const t = Date.parse(iso); if(!isFinite(t)) return;
+    if(t > _maxVisto()) localStorage.setItem('suep_max_visto', String(t));
+  }catch(_){}
+}
+function _tsEscritura(){
+  const ahora = Date.now();
+  let t = Math.max(ahora, _maxVisto() + 1000);
+  t = Math.min(t, ahora + 10*60*1000);   // nunca más de 10 minutos adelante del reloj propio
+  return new Date(t).toISOString();
+}
+const CLAVES_CRITICAS = ()=>{
+  const l = [];
+  try{ l.push(HOR_KEY); }catch(_){}
+  try{ l.push(S.key(AV_S, AV_M)); }catch(_){}
+  try{ l.push(VERSION_KEY); }catch(_){}
+  return l;
+};
+function _uaGuardar(key, ua){ try{ if(ua) localStorage.setItem('suep_ua_' + key, ua); }catch(_){} }
+// Revisa las claves críticas una por una, sin depender del cursor.
+async function _pullClavesCriticas(protegidas){
+  const claves = CLAVES_CRITICAS();
+  if(!claves.length || typeof clienteS === 'undefined') return 0;
+  const r1 = await _conTimeout(clienteS.from('app_data').select('key,updated_at').in('key', claves), 6000);
+  if(!r1 || r1.error || !Array.isArray(r1.data)) return 0;
+  const cambiar = r1.data.filter(r => r && r.key && !(protegidas && protegidas.has(r.key))
+                    && localStorage.getItem('suep_ua_' + r.key) !== String(r.updated_at || ''))
+                  .map(r => r.key);
+  if(!cambiar.length) return 0;
+  const r2 = await _conTimeout(clienteS.from('app_data').select('key,value,updated_at').in('key', cambiar), 8000);
+  if(!r2 || r2.error || !Array.isArray(r2.data)) return 0;
+  let n = 0;
+  r2.data.forEach(row => {
+    try{
+      if(protegidas && protegidas.has(row.key)) return;
+      if(row.key === VERSION_KEY){ _recibirVersionRemota(row.value); }
+      else{
+        const nuevo = JSON.stringify(row.value);
+        if(localStorage.getItem(row.key) !== nuevo){ localStorage.setItem(row.key, nuevo); n++; }
+      }
+      _uaGuardar(row.key, row.updated_at);
+      _anotarVisto(row.updated_at);
+      if(row.key !== VERSION_KEY) _refrescarVistasVivas(row.key);
+    }catch(_){}
+  });
+  if(n) console.log('🔁 Claves críticas al día: ' + n + ' actualizada(s) (' + cambiar.join(', ') + ')');
+  return n;
+}
 function _cursorDesdeMs(ms){
   try{ return new Date(ms).toISOString(); }catch(_){ return ''; }
 }
@@ -14104,6 +14580,7 @@ async function _pullAllReal(opts){
       syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
       return false;
     }
+    try{ if(typeof _horSoltarPendiente === 'function') _horSoltarPendiente(); }catch(_){}
     const _protegidas = new Set([..._getPendientes(), ..._getReemplazos(),
       ...((typeof _getOpsPendientes === 'function') ? _getOpsPendientes().map(o=>o.key) : [])]);
     if(data && data.length){
@@ -14179,9 +14656,15 @@ async function _pullAllReal(opts){
         const t = r.updated_at ? Date.parse(r.updated_at) : NaN;
         if(isFinite(t) && t > maxMs) maxMs = t;
       });
-      if(maxMs) _setPullCursor(_cursorDesdeMs(maxMs - PULL_MARGEN_MS));
+      if(maxMs){
+        _anotarVisto(new Date(maxMs).toISOString());
+        // v1.6.13 — si algún equipo guardó con el reloj adelantado, no saltar al futuro
+        _setPullCursor(_cursorDesdeMs(Math.min(maxMs, Date.now()) - PULL_MARGEN_MS));
+      }
+      try{ data.forEach(r=>{ if(CLAVES_CRITICAS().includes(r.key)) _uaGuardar(r.key, r.updated_at); }); }catch(_){}
     }
     if(full){ localStorage.setItem('suep_last_full', String(Date.now())); _rtMarcarOk(); }
+    if(!full){ try{ await _pullClavesCriticas(_protegidas); }catch(e){ console.warn('Claves críticas:', e); } }
     const n = (data && data.length) || 0;
     _pullUltimoN = n;
     syncStatus(full ? ('✓ Datos al día ('+n+' claves)') : (n ? ('✓ '+n+' cambio'+(n!==1?'s':'')) : '✓ Sin cambios'), '#34d399');
@@ -14202,6 +14685,7 @@ function subscribeRealtime(){
         (payload) => {
           const row = payload.new || payload.old;
           if(!row) return;
+          try{ if(payload.new && payload.new.updated_at) _anotarVisto(payload.new.updated_at); }catch(_){}
           // v1.6.9 — archivos de ciclos cerrados: no se guardan en el equipo
           if(String(row.key||'').indexOf('zarch_') === 0) return;
           // ⛔ v1.5.85 — ACÁ ESTABA EL PROBLEMA. Antes, el cursor se adelantaba con

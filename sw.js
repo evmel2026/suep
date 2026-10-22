@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SUEP — Service worker  ·  v1.5.89
+   SUEP — Service worker  ·  v1.6.12
    ---------------------------------------------------------------------------
    PARA QUÉ SIRVE ESTE ARCHIVO
    Es lo que le permite al celular INSTALAR SUEP como aplicación (ícono propio
@@ -14,11 +14,16 @@
    se responde desde la copia guardada mientras haya conexión. La copia queda
    guardada solo como respaldo, para cuando no hay señal.
 
+   v1.6.12 — El chequeo de "¿hay versión nueva?" (dirección con ?suepver=)
+   pasa DE LARGO: no se toca, no se guarda y llega tal cual a internet. Antes
+   este archivo lo trataba como si se abriera la app: bajaba los 3 MB enteros
+   y en el celular el chequeo se cortaba por tiempo, así que no se actualizaba.
+
    ⚠️ Este archivo NO toca ni guarda datos: los registros viven en Supabase.
    Subilo a GitHub junto al index.html (misma carpeta).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const CACHE = 'suep-v1-5-89';
+const CACHE = 'suep-v1-6-12';
 const HTML_RESPALDO = 'suep-app-html';
 
 // Al instalarse, tomar el control enseguida (sin esperar a que cierren la app)
@@ -46,6 +51,9 @@ self.addEventListener('fetch', event => {
 
   let url;
   try { url = new URL(req.url); } catch (_) { return; }
+
+  // ── Chequeo de versión: pasa directo a internet, sin tocar nada ──
+  if (url.searchParams.has('suepver')) return;
 
   const esDocumento =
     req.mode === 'navigate' ||
