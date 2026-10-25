@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.16">
+<meta name="app-version" content="1.6.17">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2944,6 +2944,7 @@ async function checkForUpdates(){
     if(_updOcultarSiAlDia(remota)) return;   // v1.5.89 — ya estamos al día
     if(_verMayor(remota, APP_VERSION) === 1){
       _versionRemotaPendiente = remota;
+      try{ if(typeof _gateVersion === 'function') _gateVersion('uso'); }catch(_){}
       // Mostramos igual el cartel manual (sirve de respaldo si la actualización
       // automática no pudiera aplicarse por caché vieja del dispositivo).
       _updPintarBanner(remota);
@@ -3248,6 +3249,136 @@ try{
   const _f = JSON.parse(localStorage.getItem('suep_upd_forzado') || 'null');
   if(_f && _f.ver && _verMayor(APP_VERSION, _f.ver) >= 0) localStorage.removeItem('suep_upd_forzado');
 }catch(_){}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.17 — ACTUALIZACIÓN OBLIGATORIA PARA INGRESAR
+// ───────────────────────────────────────────────────────────────────
+// Pedido de Mely: que nadie pueda trabajar con una versión vieja. Después de
+// poner usuario y contraseña (o la huella), la app pregunta qué versión está
+// publicada en GitHub. Si hay una más nueva que la del equipo, aparece una
+// pantalla que tapa todo: «Hay una versión nueva — tocá ACTUALIZAR para poder
+// ingresar». No tiene cruz ni forma de cerrarse.
+// • Si no hay internet o no se puede consultar, se deja entrar (para no dejar
+//   a nadie afuera sin señal); se vuelve a revisar al volver a la app.
+// • Si alguien ya está adentro y sale una versión nueva, la pantalla aparece
+//   también, pero nunca en medio de una carga (espera a que cierre el formulario).
+// • Freno de seguridad: si el equipo tocó Actualizar 3 veces y SIGUE abriendo
+//   la versión vieja (pasa a veces los primeros minutos después de subir el
+//   archivo, mientras GitHub lo distribuye), aparece «Entrar igual por esta
+//   vez», para que nadie quede trabado sin poder trabajar.
+// • En MODO PRUEBA (archivo abierto desde el disco) no se bloquea nada.
+// Esto NO toca ningún dato: solo cambia el archivo de la app en el equipo.
+// ═══════════════════════════════════════════════════════════════════
+const GATE_ID = 'suepGateVer';
+const GATE_TRY_KEY = 'suep_gate_try';
+var _gateEnCurso = false, _gateDejarPasar = null, _gateReintT = null;
+function _gateIntentos(ver){
+  try{
+    const t = JSON.parse(localStorage.getItem(GATE_TRY_KEY) || 'null');
+    if(!t || t.ver !== ver || (Date.now() - (t.ts || 0)) > 30*60*1000) return 0;
+    return t.n || 0;
+  }catch(_){ return 0; }
+}
+function _gateQuitar(){ const g = document.getElementById(GATE_ID); if(g) g.remove(); }
+function _gateOcupado(){
+  try{
+    const ae = document.activeElement;
+    if(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && ae.id !== 'loginUser' && ae.id !== 'loginPass') return true;
+    if(typeof gdEscribiendoAhora === 'function' && gdEscribiendoAhora()) return true;
+    return ['modalOverlay','expModalOverlay','horMenuOv'].some(id=>{
+      const el = document.getElementById(id);
+      return el && (id === 'horMenuOv' || (el.style.display && el.style.display !== 'none'));
+    });
+  }catch(_){ return false; }
+}
+function _gatePintar(modo, nueva){
+  let g = document.getElementById(GATE_ID);
+  if(!g){
+    g = document.createElement('div');
+    g.id = GATE_ID; g.setAttribute('data-cc-no', '');
+    g.style.cssText = 'position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;'
+      + 'background-color:#071426;background-image:radial-gradient(circle at 50% 18%,rgba(122,175,212,.28),rgba(7,20,38,0) 60%);'
+      + 'font-family:inherit;color:#eaf3fb;overflow:auto';
+    document.body.appendChild(g);
+  }
+  const logo = '<div style="font-size:44px;font-weight:900;letter-spacing:6px;margin-bottom:6px;color:#ffffff">'
+             + '<span style="color:#7aafd4">S</span>UEP</div>';
+  if(modo === 'verificando'){
+    g.innerHTML = '<div style="text-align:center">' + logo
+      + '<div style="font-size:14px;color:#b9d3e8">Verificando que tengas la última versión…</div></div>';
+    return;
+  }
+  const n = _gateIntentos(nueva);
+  const trabado = n >= 3;
+  g.innerHTML = '<div style="width:100%;max-width:440px;text-align:center;background-color:#0d2240;border:1px solid rgba(122,175,212,.45);'
+    + 'border-radius:20px;padding:28px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5)">'
+    + logo
+    + '<div style="font-size:40px;margin:6px 0 4px">🔒</div>'
+    + '<div style="font-size:20px;font-weight:800;color:#ffffff;margin-bottom:8px">Hay una versión nueva de SUEP</div>'
+    + '<div style="font-size:14px;color:#cfe2f1;line-height:1.5;margin-bottom:14px">Para poder ingresar tenés que actualizar.</div>'
+    + '<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;font-size:13px">'
+    +   '<span style="background-color:#3b1d1d;color:#ffd0d0;border-radius:999px;padding:5px 12px">Tu equipo: <b>' + APP_VERSION + '</b></span>'
+    +   '<span style="background-color:#123a2a;color:#c8f5dc;border-radius:999px;padding:5px 12px">Nueva: <b>' + nueva + '</b></span></div>'
+    + '<button id="gateBtnAct" onclick="_gateActualizar(\'' + nueva + '\')" style="width:100%;border:0;border-radius:14px;padding:15px;'
+    +   'font-size:17px;font-weight:900;letter-spacing:.5px;cursor:pointer;font-family:inherit;color:#06223a;'
+    +   'background-color:#7aafd4;background-image:linear-gradient(180deg,#9cc7e6,#5f9bc7)">⚡ ACTUALIZAR AHORA</button>'
+    + '<div style="font-size:12px;color:#9fbdd6;margin-top:12px;line-height:1.45">No se pierde nada de lo cargado: los datos están guardados en la nube. '
+    +   'La app se recarga sola en unos segundos.</div>'
+    + (trabado
+        ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(122,175,212,.25);font-size:12px;color:#ffe2a8;line-height:1.45">'
+          + 'Ya intentaste ' + n + ' veces y el equipo sigue abriendo la versión anterior. Suele pasar los primeros minutos después de publicarse. '
+          + 'Probá de nuevo en un rato; si sigue igual, avisale a la administradora.</div>'
+          + '<button onclick="_gateEntrarIgual(\'' + nueva + '\')" style="margin-top:10px;background:transparent;border:1px solid rgba(255,226,168,.5);'
+          + 'color:#ffe2a8;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Entrar igual por esta vez</button>'
+        : '')
+    + '</div>';
+}
+function _gateActualizar(nueva){
+  try{
+    const n = _gateIntentos(nueva) + 1;
+    localStorage.setItem(GATE_TRY_KEY, JSON.stringify({ ver:nueva, n:n, ts:Date.now() }));
+  }catch(_){}
+  try{
+    const b = document.getElementById('gateBtnAct');
+    if(b){ b.disabled = true; b.textContent = '⬇️ Actualizando…'; }
+  }catch(_){}
+  try{ localStorage.setItem('suep_app_version', nueva); }catch(_){}
+  _forzarRecargaLimpia(nueva);
+}
+function _gateEntrarIgual(nueva){
+  _gateDejarPasar = nueva;
+  console.warn('⚠️ Se entró con la versión ' + APP_VERSION + ' aunque está publicada la ' + nueva + ' (la actualización no agarró).');
+  _gateQuitar();
+}
+window._gateActualizar = _gateActualizar; window._gateEntrarIgual = _gateEntrarIgual;
+async function _gateVersion(motivo){
+  if(APP_EN_PRUEBA) return;
+  if(typeof CU === 'undefined' || !CU) return;
+  if(_gateEnCurso) return;
+  const yaBloqueado = !!document.querySelector('#' + GATE_ID + ' #gateBtnAct');
+  if(yaBloqueado) return;
+  if(motivo !== 'login' && _gateOcupado()){
+    clearTimeout(_gateReintT); _gateReintT = setTimeout(()=>_gateVersion('uso'), 30000); return;
+  }
+  _gateEnCurso = true;
+  try{
+    if(motivo === 'login') _gatePintar('verificando');
+    let pub = null;
+    try{
+      if(motivo === 'login') _verPublicadaCache = { ver:null, ts:0 };   // al ingresar, siempre fresco
+      pub = await Promise.race([ _versionPublicadaEnGitHub(), new Promise(r=>setTimeout(()=>r(null), 6000)) ]);
+    }catch(_){ pub = null; }
+    if(pub && _verMayor(pub, APP_VERSION) === 1 && _gateDejarPasar !== pub){
+      _gatePintar('bloqueo', pub);
+    }else{
+      _gateQuitar();
+    }
+  }finally{ _gateEnCurso = false; }
+}
+// Mientras se usa la app: al volver a ella y cada 5 minutos.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(()=>_gateVersion('uso'), 1500); });
+setInterval(()=>{ try{ if(!document.hidden) _gateVersion('uso'); }catch(_){} }, 5*60*1000);
 
 // Para cambiar usuario/contraseña: editá esta lista
 // ══════════════════════════════════════════════
@@ -4965,6 +5096,7 @@ function iniciarSesion(user, esRestauracion){
         alert(_MSG_BLOQUEADA); return;
       }
       CU=user;
+      try{ setTimeout(()=>{ try{ _gateVersion('login'); }catch(_){} }, 0); }catch(_){}
       // ✅ v1.5.35: la sesión NO se guarda en el dispositivo. Al cerrar y volver
       // a abrir la app siempre se pide usuario+contraseña (o la huella, para
       // quien la tenga registrada). Así ninguna sesión queda abierta.
