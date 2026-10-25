@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.15">
+<meta name="app-version" content="1.6.16">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -7511,6 +7511,12 @@ function _n96Estilos(){
 .light-mode .hr-rail-tit{color:#155a94}\n\
 .light-mode .hr-rail-sub{color:#456480}\n\
 .light-mode .hr-panel-mod{color:#8a6410}\n\
+.hr-meta{font-size:11px;color:#9fc3df;margin:0 0 8px;padding:0 2px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}\n\
+.hr-meta b{color:#d7e9f7;font-weight:700}\n\
+.hr-meta-err{display:block;width:100%;background:#7f1d1d;color:#fff;border:1px solid #f87171;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:700}\n\
+.hr-meta-err button{margin-left:8px;background:#fff;color:#7f1d1d;border:0;border-radius:7px;padding:4px 10px;font-weight:800;font-family:inherit;cursor:pointer}\n\
+.light-mode .hr-meta{color:#3f5f7c}\n\
+.light-mode .hr-meta b{color:#15314f}\n\
 @media(max-width:640px){\n\
   .hr-nav{flex-direction:column;align-items:stretch}\n\
   .hr-b,.hr-ver{width:100%;text-align:center}\n\
@@ -8084,9 +8090,165 @@ function horVigente(){ return horHoy() >= HOR_DESDE; }
 function horGuardado(){
   try{ return JSON.parse(localStorage.getItem(HOR_KEY) || '{}') || {}; }catch(_){ return {}; }
 }
+// ═══════════════════════════════════════════════════════════════════════
+// v1.6.16 — LA PIZARRA SE SUBE SOLA, SE COMPRUEBA Y NO SE PISA
+// ───────────────────────────────────────────────────────────────────────
+// ANTES: el cambio se guardaba en el equipo y se mandaba a la nube "en
+// segundo plano", junto con otras cosas. Si esa subida fallaba, el equipo de
+// quien editó lo seguía viendo (lo tenía guardado) pero en la nube quedaba la
+// pizarra vieja, y como ese equipo cuidaba "su" copia, nadie se enteraba.
+// Además, quien editaba mandaba la pizarra ENTERA tal como la tenía: si su
+// copia estaba atrasada, pisaba lo que otro había cambiado.
+// AHORA:
+//   1) Cada cambio lleva una marca propia (#meta: quién, cuándo, n.º único).
+//   2) Se sube SOLO, enseguida, y después se vuelve a leer la nube para
+//      comprobar que quedó esa marca. Si no quedó, sale un aviso ROJO en la
+//      pizarra ("los demás no lo ven") y se reintenta solo hasta que entra.
+//   3) Antes de subir se trae lo de la nube y se juntan los cambios casillero
+//      por casillero (lo que tocó cada uno se respeta).
+//   4) Todos ven arriba de la pizarra "Última modificación: quién · cuándo",
+//      así se puede comprobar a simple vista que tienen la misma.
+// ═══════════════════════════════════════════════════════════════════════
 function horGrabar(todo){
+  try{
+    todo['#meta'] = {
+      rev: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      por: (typeof CU !== 'undefined' && CU) ? (CU.nombre || CU.usuario || '') : '',
+      usr: (typeof CU !== 'undefined' && CU) ? (CU.usuario || '') : '',
+      ts: Date.now()
+    };
+  }catch(_){}
   try{ localStorage.setItem(HOR_KEY, JSON.stringify(todo)); }catch(_){}
-  try{ if(typeof syncToSupabase === 'function') syncToSupabase(HOR_KEY, todo); }catch(_){}
+  // Queda anotado como "sin subir" hasta que la nube confirme que lo tiene:
+  // así ninguna descarga lo pisa mientras tanto.
+  try{ if(typeof _marcarPendiente === 'function') _marcarPendiente(HOR_KEY); }catch(_){}
+  try{ if(typeof _pendingWrites !== 'undefined' && _pendingWrites) delete _pendingWrites[HOR_KEY]; }catch(_){}
+  _horProgramarSubida(400);
+}
+// La última versión de la nube sobre la que trabajó este equipo (para juntar cambios).
+function _horBase(){
+  try{ const v = JSON.parse(localStorage.getItem('suep_hor_base') || 'null'); return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null; }catch(_){ return null; }
+}
+function _horNotaBase(v){
+  try{ if(v && typeof v === 'object' && !Array.isArray(v)) localStorage.setItem('suep_hor_base', JSON.stringify(v)); }catch(_){}
+}
+// Junta tres versiones: base (lo que había), local (lo mío) y nube (lo de otro).
+// Lo que cambió uno solo, queda. Si los dos cambiaron lo mismo, gana lo local.
+function _horMerge3(b, l, r){
+  const esObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+  const igual = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  if(!esObj(l) || !esObj(r)) return l;
+  const base = esObj(b) ? b : {};
+  const out = {};
+  const ks = new Set([...Object.keys(l), ...Object.keys(r), ...Object.keys(base)]);
+  ks.forEach(k=>{
+    const bk = base[k], lk = l[k], rk = r[k];
+    if(igual(lk, bk)){ if(rk !== undefined) out[k] = rk; return; }
+    if(igual(rk, bk)){ if(lk !== undefined) out[k] = lk; return; }
+    if(esObj(lk) && esObj(rk)){ out[k] = _horMerge3(bk, lk, rk); return; }
+    if(Array.isArray(lk) && Array.isArray(rk) && (k === '#del' || k === '#undel')){
+      out[k] = Array.from(new Set([...rk.map(String), ...lk.map(String)])); return;
+    }
+    if(Array.isArray(lk) && Array.isArray(rk) && k === '#add'){
+      const m = new Map();
+      rk.forEach(e=>{ if(e && e.id) m.set(e.id, e); });
+      lk.forEach(e=>{ if(e && e.id) m.set(e.id, e); });
+      out[k] = Array.from(m.values()); return;
+    }
+    if(lk !== undefined) out[k] = lk; else if(rk !== undefined) out[k] = rk;
+  });
+  return out;
+}
+var _horSubT = null, _horSubEnCurso = false, _horSubOtraVez = false, _horSubReint = null, _horSubFallos = 0;
+function _horProgramarSubida(ms){ clearTimeout(_horSubT); _horSubT = setTimeout(_horSubir, ms || 400); }
+function _horNoSubio(){ try{ return !!localStorage.getItem('suep_hor_nosubio'); }catch(_){ return false; } }
+async function _horSubir(){
+  if(_horSubEnCurso){ _horSubOtraVez = true; return; }
+  if(typeof clienteS === 'undefined' || !clienteS) return;
+  if(typeof CU === 'undefined' || !CU || !horPuedeEditar()) return;   // se reintenta al entrar
+  let pend = [];
+  try{ pend = (typeof _getPendientes === 'function') ? _getPendientes() : []; }catch(_){}
+  if(!pend.includes(HOR_KEY)) return;                                  // nada por subir
+  _horSubEnCurso = true;
+  try{
+    const L = horGuardado();
+    const revL = L['#meta'] && L['#meta'].rev;
+    const B = _horBase();
+    const r = await _conTimeout(clienteS.from('app_data').select('value,updated_at').eq('key', HOR_KEY).maybeSingle(), 8000);
+    if(r && r.error) throw r.error;
+    const R = (r && r.data && r.data.value && typeof r.data.value === 'object' && !Array.isArray(r.data.value)) ? r.data.value : null;
+    let M = L, juntado = false;
+    if(R){
+      const revR = R['#meta'] && R['#meta'].rev;
+      if(revR && revL && revR === revL){ M = null; }                    // la nube ya lo tiene
+      else if(JSON.stringify(R) !== JSON.stringify(B)){                 // alguien cambió algo en el medio
+        M = _horMerge3(B || {}, L, R); M['#meta'] = L['#meta']; juntado = true;
+        console.log('🔀 Pizarra: se juntaron mis cambios con los de otro equipo antes de subir.');
+      }
+    }
+    let enNube = R, uaNube = r && r.data ? r.data.updated_at : '';
+    if(M){
+      const up = await _conTimeout(clienteS.from('app_data').upsert([{
+        key: HOR_KEY, value: M, device_id: DEVICE_ID, updated_at: _tsEscritura()
+      }], { onConflict: 'key' }), 12000);
+      if(up && up.error) throw up.error;
+      // Comprobación: se vuelve a leer la nube y tiene que estar ESTA marca.
+      const v = await _conTimeout(clienteS.from('app_data').select('value,updated_at').eq('key', HOR_KEY).maybeSingle(), 8000);
+      if(v && v.error) throw v.error;
+      enNube = v && v.data ? v.data.value : null;
+      uaNube = v && v.data ? v.data.updated_at : '';
+      const revN = enNube && enNube['#meta'] && enNube['#meta'].rev;
+      if(!revN || revN !== (M['#meta'] && M['#meta'].rev)) throw new Error('la nube no quedó con este cambio');
+    }
+    // ✓ Confirmado: la nube tiene lo mismo que este equipo.
+    _horNotaBase(enNube);
+    try{ if(uaNube){ _uaGuardar(HOR_KEY, uaNube); _anotarVisto(uaNube); _uaAnotar(HOR_KEY, uaNube); } }catch(_){}
+    const actual = horGuardado();
+    const sigueIgual = ((actual['#meta'] && actual['#meta'].rev) === revL);
+    if(sigueIgual){
+      if(juntado && enNube){ try{ localStorage.setItem(HOR_KEY, JSON.stringify(enNube)); }catch(_){} }
+      try{ _quitarPendiente(HOR_KEY); }catch(_){}
+      try{ localStorage.removeItem('suep_hor_nosubio'); }catch(_){}
+      _horSubFallos = 0;
+      try{ syncStatus('✓ Pizarra guardada en la nube — ya la ven todos', '#34d399'); }catch(_){}
+      try{ _refrescarVistasVivas(HOR_KEY); }catch(_){}
+    }else{
+      _horSubOtraVez = true;   // se cambió algo más mientras subía: va otra vuelta
+    }
+  }catch(e){
+    _horSubFallos++;
+    const msg = (e && (e.message || e.code)) || String(e);
+    console.error('❌ La pizarra NO llegó a la nube:', msg, e);
+    try{ localStorage.setItem('suep_hor_nosubio', String(Date.now())); }catch(_){}
+    try{ _marcarPendiente(HOR_KEY); }catch(_){}
+    try{ syncStatus('⚠️ La pizarra NO llegó a la nube (' + msg + ') — se reintenta sola', '#f87171'); }catch(_){}
+    clearTimeout(_horSubReint);
+    _horSubReint = setTimeout(_horSubir, Math.min(60000, 5000 * _horSubFallos));
+    try{ _refrescarVistasVivas(HOR_KEY); }catch(_){}
+  }finally{
+    _horSubEnCurso = false;
+    if(_horSubOtraVez){ _horSubOtraVez = false; _horProgramarSubida(300); }
+  }
+}
+function horReintentarSubida(){ _horSubFallos = 0; try{ _marcarPendiente(HOR_KEY); }catch(_){} _horSubir(); }
+window.horReintentarSubida = horReintentarSubida;
+// Renglón "Última modificación" (y aviso rojo si el cambio no llegó a la nube).
+function horMetaHTML(){
+  try{
+    const m = horGuardado()['#meta'];
+    let h = '';
+    if(m && m.ts){
+      const d = new Date(m.ts);
+      const f = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0')
+              + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      h += '<span>🔄 Última modificación: <b>' + horEsc(m.por || 'sin dato') + '</b> · ' + f + ' hs</span>';
+    }
+    if(horPuedeEditar() && _horNoSubio()){
+      h += '<span class="hr-meta-err">⚠️ Tu último cambio de la pizarra TODAVÍA NO llegó a la nube: los demás no lo ven. Se reintenta solo.'
+         + '<button onclick="horReintentarSubida()">Reintentar ahora</button></span>';
+    }
+    return h ? '<div class="hr-meta">' + h + '</div>' : '';
+  }catch(_){ return ''; }
 }
 // Trae de la nube la versión más nueva del horario (con tope de tiempo).
 // Si en este equipo hay cambios del horario que todavía no subieron, NO se
@@ -8126,6 +8288,9 @@ async function horTraerNube(forzar){
     try{ if(r && r.data && r.data.updated_at){ _uaGuardar(HOR_KEY, r.data.updated_at); _anotarVisto(r.data.updated_at); } }catch(_){}
     if(!v || typeof v !== 'object' || Array.isArray(v)) return false;
     if(typeof _pendingWrites !== 'undefined' && _pendingWrites && (HOR_KEY in _pendingWrites)) return false;
+    if(typeof _getPendientes === 'function' && _getPendientes().includes(HOR_KEY)) return false;
+    _horNotaBase(v);
+    try{ if(r.data.updated_at) _uaAnotar(HOR_KEY, r.data.updated_at); }catch(_){}
     const antes = localStorage.getItem(HOR_KEY) || '';
     const ahora = JSON.stringify(v);
     if(antes === ahora) return false;
@@ -8919,6 +9084,7 @@ function horTablaHTML(){
         : (HOR_EDIT
           ? '<div class="hr-aviso hr-edit">🛠️ <b>Modo edición.</b> Tocá la <b>hora</b> de la izquierda para eliminar o agregar una fila, una <b>tarjeta</b> para separarla, juntarla, combinarla o cambiarle el texto, y el <b>título de una sección</b> para poner dónde tiene clases.</div>'
           : '<div class="hr-aviso">✏️ <b>Tocá cualquier tarjeta para cambiarla.</b> Lo que cargás queda <b>fijo de ese día en adelante</b> (todas las semanas) hasta que lo vuelvas a cambiar. Si es algo de un solo día, elegí «Solo este día». Para eliminar filas o combinar, entrá en <b>🛠️ Modo edición</b>.</div>')}
+      ${horMetaHTML()}
       ${horChipsSec()}
       ${horAhoraHTML(HOR_DIA)}
       <div class="hz-scroll">${horGrillaHTML(HOR_DIA, puede, false)}</div>
@@ -9256,6 +9422,7 @@ function horBloqueHTML(){
       </span>
     </div>
     ${cambios?`<div class="hr-panel-mod">✏️ Este día tiene ${cambios} ${cambios===1?'cambio':'cambios'} respecto del Excel.</div>`:''}
+    ${horMetaHTML()}
     <div class="hz-panel" data-cc-no>
       ${horChipsSec()}
       ${horAhoraHTML(iso)}
@@ -9548,8 +9715,9 @@ async function iniActualizarTodo(btn){
   try{
     if(typeof _retrocederCursor === 'function') _retrocederCursor(60 * 60 * 1000);
     await Promise.race([
-      Promise.all([ pullAllFromSupabase(), horTraerNube(true) ]),
-      new Promise(r => setTimeout(r, 9000))
+      Promise.all([ pullAllFromSupabase(), horTraerNube(true) ])
+        .then(()=> _sincronizarPorComparacion(true)),
+      new Promise(r => setTimeout(r, 15000))
     ]);
   }catch(_){}
   showInicio();
@@ -14249,6 +14417,7 @@ async function flushPendingSync(){
   let subidas = 0;
   try{
     for(const key of pendientes){
+      if(key === HOR_KEY){ try{ _horSubir(); }catch(_){} continue; }   // v1.6.16
       let val = null;
       try{ val = JSON.parse(localStorage.getItem(key) || 'null'); }catch(_){ }
       if(val === null){ _quitarPendiente(key); continue; }
@@ -14289,7 +14458,16 @@ window.addEventListener('offline', ()=>{ syncStatus('📴 Sin conexión — todo
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(flushPendingSync, 1500); });
 setInterval(flushPendingSync, 60000);
 window.addEventListener('DOMContentLoaded', ()=>{ setTimeout(flushPendingSync, 5000); });
+// v1.6.16 — Claves que están viajando a la nube en este momento: ninguna
+// descarga las pisa hasta que terminen de subir.
+var _enVuelo = new Set();
 async function flushWrites(){
+  const ks = Object.keys(_pendingWrites || {});
+  ks.forEach(k => _enVuelo.add(k));
+  try{ return await _flushWritesReal(); }
+  finally{ ks.forEach(k => _enVuelo.delete(k)); }
+}
+async function _flushWritesReal(){
   const writes = _pendingWrites;
   _pendingWrites = {};
   const keys = Object.keys(writes);
@@ -14369,6 +14547,7 @@ async function flushWrites(){
       syncStatus(`⚠️ Error sync: ${error.message||'ver consola'}`, '#f87171');
     } else {
       keys.forEach(_quitarPendiente);
+      try{ rows.forEach(r => _uaAnotar(r.key, r.updated_at)); }catch(_){}
       syncStatus('✓ Sincronizado', '#34d399');
     }
   }catch(err){
@@ -14472,6 +14651,7 @@ async function _pullClavesCriticas(protegidas){
       }
       _uaGuardar(row.key, row.updated_at);
       _anotarVisto(row.updated_at);
+      try{ _uaAnotar(row.key, row.updated_at); if(row.key === HOR_KEY) _horNotaBase(row.value); }catch(_){}
       if(row.key !== VERSION_KEY) _refrescarVistasVivas(row.key);
     }catch(_){}
   });
@@ -14541,6 +14721,8 @@ function pullAllFromSupabase(opts){
   const previa = _pullEnCurso || Promise.resolve();
   const p = previa.catch(()=>{}).then(()=> _pullAllReal(opts)).then(ok=>{
     try{ if(ok && _pullUltimoN > 0) _refrescarVistasVivas(); }catch(_){}
+    // v1.6.16 — red de seguridad: comparar clave por clave (en segundo plano)
+    try{ if(ok) setTimeout(()=>{ _sincronizarPorComparacion(false); }, 1500); }catch(_){}
     return ok;
   });
   _pullEnCurso = p; _pullEnCursoFull = quiereFull;
@@ -14567,32 +14749,17 @@ function _refrescarVistasVivas(clave){
     }catch(e){ console.warn('No se pudo refrescar la pantalla:', e); }
   }, 900);
 }
-async function _pullAllReal(opts){
-  // full = bajar TODO (primera vez, o reconciliación forzada). Si no, bajar solo lo nuevo.
-  const cursor = _getPullCursor();
-  const full = !!(opts && opts.full) || !cursor;
-  syncStatus(full ? '☁️ Descargando datos...' : '☁️ Sincronizando...', '#fbbf24');
-  try{
-    let consulta = clienteS.from('app_data').select('key,value,updated_at');
-    // v1.6.9 — Los archivos de ciclos cerrados (zarch_…) quedan solo en la nube:
-    // no se bajan a los equipos (pesan y no hacen falta para trabajar).
-    consulta = consulta.not('key', 'like', 'zarch_%');
-    if(!full && cursor) consulta = consulta.gt('updated_at', cursor);
-    const { data, error } = await consulta;
-    if(error){
-      console.error('Error bajando de Supabase:', error);
-      syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
-      return false;
-    }
-    try{ if(typeof _horSoltarPendiente === 'function') _horSoltarPendiente(); }catch(_){}
-    const _protegidas = new Set([..._getPendientes(), ..._getReemplazos(),
-      ...((typeof _getOpsPendientes === 'function') ? _getOpsPendientes().map(o=>o.key) : [])]);
-    if(data && data.length){
-      data.forEach(row => {
+// v1.6.16 — Aplica filas bajadas de la nube (lo usan la descarga normal y la
+// comparación por clave). Devuelve cuántas filas se aplicaron.
+function _aplicarFilasNube(data, _protegidas){
+  let aplicadas = 0;
+  (data || []).forEach(row => {
         if(_protegidas.has(row.key)){
           console.warn('⏭️ Pull: se conserva la versión local de', row.key, '(tiene cambios sin subir; se fusionan al sincronizar)');
           return;
         }
+        aplicadas++;
+        try{ _uaAnotar(row.key, row.updated_at); if(row.key === HOR_KEY) _horNotaBase(row.value); }catch(_){}
         try{
           if(row.key === VERSION_KEY){
             // ⬆️ v1.5.50: al arrancar o al entrar, si en la nube hay una versión
@@ -14643,7 +14810,28 @@ async function _pullAllReal(opts){
           console.warn('No se pudo guardar', row.key, e);
         }
       });
+  return aplicadas;
+}
+async function _pullAllReal(opts){
+  // full = bajar TODO (primera vez, o reconciliación forzada). Si no, bajar solo lo nuevo.
+  const cursor = _getPullCursor();
+  const full = !!(opts && opts.full) || !cursor;
+  syncStatus(full ? '☁️ Descargando datos...' : '☁️ Sincronizando...', '#fbbf24');
+  try{
+    let consulta = clienteS.from('app_data').select('key,value,updated_at');
+    // v1.6.9 — Los archivos de ciclos cerrados (zarch_…) quedan solo en la nube:
+    // no se bajan a los equipos (pesan y no hacen falta para trabajar).
+    consulta = consulta.not('key', 'like', 'zarch_%');
+    if(!full && cursor) consulta = consulta.gt('updated_at', cursor);
+    const { data, error } = await consulta;
+    if(error){
+      console.error('Error bajando de Supabase:', error);
+      syncStatus('⚠️ Sin conexión (datos locales)', '#f87171');
+      return false;
     }
+    try{ if(typeof _horSoltarPendiente === 'function') _horSoltarPendiente(); }catch(_){}
+    const _protegidas = _clavesProtegidas();
+    if(data && data.length){ _aplicarFilasNube(data, _protegidas); }
     // ✅ v1.5: re-mergear usuarios dinámicos tras CADA pull (antes solo pasaba en
     // el login; el wrap viejo de _origPullAll nunca llegaba a engancharse porque
     // corría antes de que esta función existiera).
@@ -14679,6 +14867,100 @@ async function _pullAllReal(opts){
     return false;
   }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// v1.6.16 — POR QUÉ A LOS DEMÁS NO LES LLEGABAN LOS CAMBIOS (de fondo)
+// ───────────────────────────────────────────────────────────────────
+// La descarga de "solo lo nuevo" decide qué es nuevo comparando HORAS, y esas
+// horas las pone el reloj de cada equipo. Basta que un celular o una PC tenga
+// la hora corrida, o que se pierda un aviso en vivo, para que un cambio quede
+// "del lado de atrás" y ese equipo no lo baje nunca (ni tocando Actualizar).
+// AHORA, además de lo de siempre, cada equipo pide la LISTA de todas las
+// claves con su marca de última modificación (es muy liviana: no trae los
+// datos) y la compara clave por clave con la que tiene anotada. Lo que no
+// coincide se baja. No depende de ningún reloj: si la marca es distinta, se
+// baja, y punto. Se hace al entrar, al volver a la app, cada 3 minutos con la
+// app a la vista y SIEMPRE al tocar «Actualizar».
+// Los registros de recorrido y accesos (que cambian todo el tiempo y solo los
+// mira la administradora) quedan afuera para no gastar "Salida".
+// ═══════════════════════════════════════════════════════════════════
+function _uaMapa(){ try{ return JSON.parse(localStorage.getItem('suep_ua_map') || '{}') || {}; }catch(_){ return {}; } }
+var _uaMapaMem = null, _uaGuardarT = null;
+function _uaAnotar(key, ua){
+  try{
+    if(!key || !ua) return;
+    const t = Date.parse(ua); if(!isFinite(t)) return;
+    if(!_uaMapaMem) _uaMapaMem = _uaMapa();
+    _uaMapaMem[key] = t;
+    clearTimeout(_uaGuardarT);
+    _uaGuardarT = setTimeout(()=>{ try{ localStorage.setItem('suep_ua_map', JSON.stringify(_uaMapaMem)); }catch(_){} }, 300);
+  }catch(_){}
+}
+function _clavesProtegidas(){
+  const p = new Set();
+  try{ _getPendientes().forEach(k => p.add(k)); }catch(_){}
+  try{ _getReemplazos().forEach(k => p.add(k)); }catch(_){}
+  try{ if(typeof _getOpsPendientes === 'function') _getOpsPendientes().forEach(o => o && p.add(o.key)); }catch(_){}
+  try{ if(typeof _pendingWrites !== 'undefined' && _pendingWrites) Object.keys(_pendingWrites).forEach(k => p.add(k)); }catch(_){}
+  try{ if(typeof _enVuelo !== 'undefined') _enVuelo.forEach(k => p.add(k)); }catch(_){}
+  return p;
+}
+function _cmpFuera(k){
+  return !k || k.indexOf('zarch_') === 0 || k === 'suep_accesos' || k === 'suep_navegacion'
+      || k === 'suep_navegacion_purge' || k === 'suep_accesos_purge' || k.indexOf('__test') >= 0;
+}
+var _cmpEnCurso = null, _cmpUlt = 0;
+function _sincronizarPorComparacion(forzar){
+  if(_cmpEnCurso) return _cmpEnCurso;
+  if(!forzar && Date.now() - _cmpUlt < 45000) return Promise.resolve(0);
+  if(typeof clienteS === 'undefined' || !clienteS) return Promise.resolve(0);
+  _cmpUlt = Date.now();
+  const p = (async ()=>{
+    const r1 = await _conTimeout(clienteS.from('app_data').select('key,updated_at').not('key', 'like', 'zarch_%'), 9000);
+    if(!r1 || r1.error || !Array.isArray(r1.data)) return 0;
+    if(!_uaMapaMem) _uaMapaMem = _uaMapa();
+    const prot = _clavesProtegidas();
+    const cambiar = r1.data.filter(r=>{
+      if(!r || _cmpFuera(r.key) || prot.has(r.key)) return false;
+      const t = Date.parse(r.updated_at || '');
+      return !isFinite(t) || _uaMapaMem[r.key] !== t;
+    }).map(r => r.key);
+    if(!cambiar.length) return 0;
+    let total = 0, filas = [];
+    for(let i = 0; i < cambiar.length; i += 25){
+      const parte = cambiar.slice(i, i + 25);
+      const r2 = await _conTimeout(clienteS.from('app_data').select('key,value,updated_at').in('key', parte), 20000);
+      if(!r2 || r2.error || !Array.isArray(r2.data)) break;
+      filas = filas.concat(r2.data);
+    }
+    if(!filas.length) return 0;
+    const prot2 = _clavesProtegidas();   // por si alguien guardó mientras bajaba
+    total = _aplicarFilasNube(filas, prot2);
+    filas.forEach(r => { try{ if(r.updated_at) _anotarVisto(new Date(Math.min(Date.parse(r.updated_at), Date.now())).toISOString()); }catch(_){} });
+    try{ if(typeof _mergeAllDynUsers === 'function') _mergeAllDynUsers(); }catch(_){}
+    console.log('🔎 Comparación con la nube: ' + total + ' clave(s) estaban desactualizadas en este equipo y se bajaron:', cambiar.join(', '));
+    if(total && typeof CU !== 'undefined' && CU){
+      try{
+        const ae = document.activeElement;
+        const tipeando = (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) || (typeof gdEscribiendoAhora === 'function' && gdEscribiendoAhora());
+        if(!tipeando && typeof CS !== 'undefined' && CS && typeof CM !== 'undefined' && CM
+           && typeof renderTable === 'function' && cambiar.includes(S.key(CS.id, CM.id))) renderTable();
+      }catch(_){}
+      try{ if(typeof refreshBadge === 'function') refreshBadge(); }catch(_){}
+      try{ if(typeof ntOpen !== 'undefined' && ntOpen && typeof renderNotifs === 'function') renderNotifs(); }catch(_){}
+      try{ _refrescarVistasVivas(); }catch(_){}
+      try{ syncStatus('🔄 Se bajaron ' + total + ' cambio' + (total !== 1 ? 's' : '') + ' que faltaban', '#7aafd4'); }catch(_){}
+    }
+    return total;
+  })().catch(e=>{ console.warn('Comparación con la nube:', e); return 0; });
+  _cmpEnCurso = p;
+  p.finally(()=>{ if(_cmpEnCurso === p) _cmpEnCurso = null; });
+  return p;
+}
+setInterval(()=>{
+  try{ if(!document.hidden && typeof CU !== 'undefined' && CU) _sincronizarPorComparacion(false); }catch(_){}
+}, 3 * 60 * 1000);
 
 // ─── Suscribirse a cambios remotos ───
 function subscribeRealtime(){
@@ -14781,13 +15063,16 @@ function subscribeRealtime(){
               console.warn('⏭️ Realtime: se conserva la versión local de', row.key, '(cambios sin subir)');
               return;
             }
+            if(typeof _enVuelo !== 'undefined' && _enVuelo.has(row.key)) return;
             try{
               localStorage.setItem(row.key, JSON.stringify(row.value));
+              if(row.key === HOR_KEY) _horNotaBase(row.value);
             }catch(e){
               console.warn('No se pudo aplicar cambio remoto', row.key, e);
               return;
             }
           }
+          try{ if(payload.new && payload.new.updated_at) _uaAnotar(row.key, payload.new.updated_at); }catch(_){}
           // Si la clave que cambió es del sector/módulo que estoy mirando, refrescar tabla
           if(row.key === 'suep_notifs'){
             refreshBadge();
@@ -14870,6 +15155,7 @@ window.doLogin = async function(){
     if(!CU) return; // login falló, no suscribir
     try{ reconstruirNotifsFaltantes(); }catch(e){ console.warn('No se pudieron reconstruir notificaciones:', e); }
     subscribeRealtime();
+    try{ setTimeout(_horSubir, 2500); }catch(_){}
     // ⬆️ v1.5.50: publico mi versión. Si soy el primero con la nueva, todos los
     // que tengan la app abierta se enteran por realtime y se actualizan solos.
     try{ _publicarVersion(); }catch(_){}
