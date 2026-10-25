@@ -14,7 +14,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ══ VERSIÓN DE LA APP: cambiá SOLO este número cada vez que subas el archivo a GitHub ══ -->
-<meta name="app-version" content="1.6.17">
+<meta name="app-version" content="1.6.18">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3134,6 +3134,16 @@ function _autoAplicarUpdate(remota){
   // persona entra directamente a la versión nueva en vez de ingresar a la vieja
   // y que a los segundos se le recargue la app en la cara.
   const sinSesion = (typeof CU === 'undefined' || !CU);
+  // v1.6.18 — Antes se recargaba sola sin mostrar nada (en la pantalla de
+  // ingreso, a los 2 segundos). Ahora sale SIEMPRE el cartel de versión nueva
+  // con su cuenta regresiva, y al llegar a cero se actualiza sola igual.
+  try{
+    if(typeof _gateMostrarConCuenta === 'function' && !APP_EN_PRUEBA){
+      if(!sinSesion && typeof _gateOcupado === 'function' && _gateOcupado()) return;   // está cargando algo: después
+      if(!document.querySelector('#suepGateVer #gateSeg')) _gateMostrarConCuenta(remota, sinSesion ? 8 : 10);
+      return;
+    }
+  }catch(_){}
   _updCuentaRegresiva(remota, sinSesion ? 2 : UPD_ESPERA);
 }
 
@@ -3292,7 +3302,7 @@ function _gateOcupado(){
     });
   }catch(_){ return false; }
 }
-function _gatePintar(modo, nueva){
+function _gatePintar(modo, nueva, segs){
   let g = document.getElementById(GATE_ID);
   if(!g){
     g = document.createElement('div');
@@ -3316,13 +3326,14 @@ function _gatePintar(modo, nueva){
     + logo
     + '<div style="font-size:40px;margin:6px 0 4px">🔒</div>'
     + '<div style="font-size:20px;font-weight:800;color:#ffffff;margin-bottom:8px">Hay una versión nueva de SUEP</div>'
-    + '<div style="font-size:14px;color:#cfe2f1;line-height:1.5;margin-bottom:14px">Para poder ingresar tenés que actualizar.</div>'
+    + '<div style="font-size:14px;color:#cfe2f1;line-height:1.5;margin-bottom:14px">' + ((typeof CU !== 'undefined' && CU) ? 'Para seguir usando SUEP tenés que actualizar.' : 'Para poder ingresar tenés que actualizar.') + '</div>'
     + '<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;font-size:13px">'
     +   '<span style="background-color:#3b1d1d;color:#ffd0d0;border-radius:999px;padding:5px 12px">Tu equipo: <b>' + APP_VERSION + '</b></span>'
     +   '<span style="background-color:#123a2a;color:#c8f5dc;border-radius:999px;padding:5px 12px">Nueva: <b>' + nueva + '</b></span></div>'
     + '<button id="gateBtnAct" onclick="_gateActualizar(\'' + nueva + '\')" style="width:100%;border:0;border-radius:14px;padding:15px;'
     +   'font-size:17px;font-weight:900;letter-spacing:.5px;cursor:pointer;font-family:inherit;color:#06223a;'
     +   'background-color:#7aafd4;background-image:linear-gradient(180deg,#9cc7e6,#5f9bc7)">⚡ ACTUALIZAR AHORA</button>'
+    + (segs > 0 ? '<div style="font-size:14px;color:#ffffff;margin-top:12px;font-weight:700">Se actualiza sola en <b id="gateSeg" style="color:#7aafd4;font-size:18px">' + segs + '</b> segundos…</div>' : '')
     + '<div style="font-size:12px;color:#9fbdd6;margin-top:12px;line-height:1.45">No se pierde nada de lo cargado: los datos están guardados en la nube. '
     +   'La app se recarga sola en unos segundos.</div>'
     + (trabado
@@ -3334,7 +3345,25 @@ function _gatePintar(modo, nueva){
         : '')
     + '</div>';
 }
+// v1.6.18 — El cartel sale SIEMPRE que hay versión nueva (aunque la
+// actualización sea automática): con cuenta regresiva, así todos lo ven y
+// igual se actualiza solo. Quien quiera, toca el botón y adelanta.
+var _gateCuentaT = null;
+function _gateMostrarConCuenta(nueva, segs){
+  _gatePintar('bloqueo', nueva, segs);
+  clearInterval(_gateCuentaT);
+  let resto = segs;
+  _gateCuentaT = setInterval(()=>{
+    const el = document.getElementById('gateSeg');
+    if(!el){ clearInterval(_gateCuentaT); return; }      // el cartel ya no está
+    resto--;
+    if(resto > 0){ el.textContent = resto; return; }
+    clearInterval(_gateCuentaT);
+    _gateActualizar(nueva);
+  }, 1000);
+}
 function _gateActualizar(nueva){
+  clearInterval(_gateCuentaT);
   try{
     const n = _gateIntentos(nueva) + 1;
     localStorage.setItem(GATE_TRY_KEY, JSON.stringify({ ver:nueva, n:n, ts:Date.now() }));
@@ -3369,8 +3398,10 @@ async function _gateVersion(motivo){
       if(motivo === 'login') _verPublicadaCache = { ver:null, ts:0 };   // al ingresar, siempre fresco
       pub = await Promise.race([ _versionPublicadaEnGitHub(), new Promise(r=>setTimeout(()=>r(null), 6000)) ]);
     }catch(_){ pub = null; }
+    if(document.querySelector('#' + GATE_ID + ' #gateSeg')) return;   // ya está el cartel con su cuenta
     if(pub && _verMayor(pub, APP_VERSION) === 1 && _gateDejarPasar !== pub){
-      _gatePintar('bloqueo', pub);
+      if(_gateIntentos(pub) < 3 && (typeof _puedeAutoActualizar !== 'function' || _puedeAutoActualizar(pub))) _gateMostrarConCuenta(pub, 10);
+      else _gatePintar('bloqueo', pub);
     }else{
       _gateQuitar();
     }
